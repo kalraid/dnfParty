@@ -80,4 +80,7 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     boolean existsByCharacterId(String characterId);
     
     boolean existsByServerIdAndCharacterName(String serverId, String characterName);
+    
+    // ID 목록으로 캐릭터 조회
+    List<Character> findAllByCharacterIdIn(List<String> characterIds);
 }

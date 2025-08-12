@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nginx
+description: Nginx Reverse Proxy for DFO Party
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

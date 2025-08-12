@@ -1,0 +1,73 @@
+# Server Configuration
+server:
+  port: 8080
+
+# H2 Database Configuration
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+    defer-datasource-initialization: true
+  
+  sql:
+    init:
+      mode: always
+  
+  web:
+    cors:
+      allowed-origins: http://localhost:5173
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+  
+  devtools:
+    restart:
+      enabled: true
+      quiet-period: 1s
+      poll-interval: 2s
+      trigger-file: .trigger
+    livereload:
+      enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.dfparty.backend: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# DFO API Configuration
+df:
+  api:
+    key: ${DF_API_KEY:your_dfo_api_key_here}
+    base-url: https://api.neople.co.kr/df
+    rate-limit: 100
+    rate-limit-window: 60000
+
+# Mock Configuration
+app:
+  mock:
+    enabled: false  # Mock 모드 활성화/비활성화
+    server-url: http://localhost:8081  # Mock 서버 URL
+    auto-save: true  # API 호출 시 응답 자동 저장
+    data-path: ./mock-data  # Mock 데이터 저장 경로
+    api-types:
+      dfo: true  # DFO API Mock 사용 여부
+      dundam: true  # Dundam API Mock 사용 여부

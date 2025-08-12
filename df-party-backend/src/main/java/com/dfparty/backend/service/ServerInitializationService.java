@@ -44,7 +44,7 @@ public class ServerInitializationService {
     public boolean initializeServers() {
         try {
             // DFO API에서 서버 목록 조회
-            Object serverList = dfoApiService.getServerList();
+            Object serverList = dfoApiService.getServers();
             
             if (serverList != null) {
                 // 서버 목록을 DB에 저장
@@ -83,9 +83,9 @@ public class ServerInitializationService {
                 
                 if (serverId != null && serverName != null) {
                     // 이미 존재하는지 확인
-                    Optional<Adventure> existingServer = adventureRepository.findByServerId(serverId);
+                    List<Adventure> existingServers = adventureRepository.findByServerId(serverId);
                     
-                    if (existingServer.isEmpty()) {
+                    if (existingServers.isEmpty()) {
                         // 새 서버 정보 생성
                         Adventure newServer = new Adventure(serverName, serverId);
                         adventureRepository.save(newServer);

@@ -1,10 +1,14 @@
 package com.dfparty.backend.service;
 
+import com.dfparty.backend.config.MockConfig;
 import com.dfparty.backend.dto.ServerDto;
 import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.dto.CharacterDetailDto;
+import com.dfparty.backend.model.MockApiData;
+import com.dfparty.backend.service.ThursdayFallbackService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,10 +16,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class DfoApiService {
 
     @Value("${df.api.base-url}")
@@ -26,13 +33,32 @@ public class DfoApiService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-
-    public DfoApiService() {
-        this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
-    }
+    private final MockConfig mockConfig;
+    private final MockDataService mockDataService;
+    private final ThursdayFallbackService thursdayFallbackService;
 
     public List<ServerDto> getServers() throws Exception {
+        // 목요일 API 제한 체크
+        Map<String, Object> restriction = thursdayFallbackService.checkThursdayApiRestriction("서버 목록 조회");
+        if (restriction != null) {
+            throw new RuntimeException("목요일 API 제한: " + restriction.get("message"));
+        }
+        
+        // Mock 모드 체크
+        if (mockConfig.isEnabled()) {
+            Optional<ResponseEntity<?>> mockResponse = mockDataService.getMockResponse(
+                MockApiData.ApiType.DFO_SERVERS, 
+                "/servers", 
+                "GET"
+            );
+            
+            if (mockResponse.isPresent()) {
+                // Mock 응답을 ServerDto로 변환
+                return convertMockResponseToServers(mockResponse.get());
+            }
+        }
+        
+        // 실제 API 호출
         String url = UriComponentsBuilder
                 .fromHttpUrl(baseUrl + "/servers")
                 .queryParam("apikey", apiKey)
@@ -40,6 +66,19 @@ public class DfoApiService {
                 .toUriString();
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        
+        // Mock 데이터 저장
+        Map<String, String> params = new HashMap<>();
+        params.put("apikey", apiKey);
+        mockDataService.saveMockData(
+            MockApiData.ApiType.DFO_SERVERS,
+            "/servers",
+            "GET",
+            params,
+            null,
+            response
+        );
+        
         JsonNode root = objectMapper.readTree(response.getBody());
         JsonNode rows = root.path("rows");
 
@@ -162,5 +201,31 @@ public class DfoApiService {
         String url = builder.build().toUriString();
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         return objectMapper.readTree(response.getBody());
+    }
+    
+    // Mock 응답을 ServerDto로 변환하는 메서드
+    private List<ServerDto> convertMockResponseToServers(ResponseEntity<?> mockResponse) {
+        try {
+            // Mock 응답을 JSON으로 변환하여 파싱
+            String responseBody = objectMapper.writeValueAsString(mockResponse.getBody());
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode rows = root.path("rows");
+            
+            List<ServerDto> servers = new ArrayList<>();
+            if (rows.isArray()) {
+                for (JsonNode row : rows) {
+                    ServerDto server = new ServerDto(
+                        row.path("serverId").asText(),
+                        row.path("serverName").asText()
+                    );
+                    servers.add(server);
+                }
+            }
+            return servers;
+            
+        } catch (Exception e) {
+            // Mock 응답 변환 실패 시 빈 리스트 반환
+            return new ArrayList<>();
+        }
     }
 }

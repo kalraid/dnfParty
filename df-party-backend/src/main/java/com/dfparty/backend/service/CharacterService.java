@@ -7,8 +7,10 @@ import com.dfparty.backend.service.DfoApiService;
 import com.dfparty.backend.service.DundamService;
 import com.dfparty.backend.service.CachingService;
 import com.dfparty.backend.service.DungeonClearService;
+import com.dfparty.backend.service.RealtimeEventService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class CharacterService {
 
@@ -38,6 +41,9 @@ public class CharacterService {
     
     @Autowired
     private DungeonClearService dungeonClearService;
+    
+    @Autowired
+    private RealtimeEventService realtimeEventService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -47,7 +53,7 @@ public class CharacterService {
     public Map<String, Object> getCompleteCharacterInfo(String serverId, String characterName) {
         try {
             // 1. DFO API에서 캐릭터 검색
-            Object searchResult = dfoApiService.searchCharacters(serverId, characterName, 1);
+            Object searchResult = dfoApiService.searchCharacters(serverId, characterName, null, null, true, 1, "match");
             if (searchResult == null) {
                 return createErrorResponse("캐릭터를 찾을 수 없습니다.");
             }
@@ -92,12 +98,24 @@ public class CharacterService {
     }
 
     /**
+     * ID 목록으로 캐릭터 조회
+     */
+    public List<Character> getCharactersByIds(List<String> characterIds) {
+        try {
+            return characterRepository.findAllByCharacterIdIn(characterIds);
+        } catch (Exception e) {
+            log.error("ID 목록으로 캐릭터 조회 실패", e);
+            return List.of();
+        }
+    }
+    
+    /**
      * 캐릭터 검색 (이름으로 검색)
      */
     public Map<String, Object> searchCharacters(String characterName, String serverId) {
         try {
             // 1. DFO API에서 캐릭터 검색
-            Object searchResult = dfoApiService.searchCharacters(serverId, characterName, 10);
+            Object searchResult = dfoApiService.searchCharacters(serverId, characterName, null, null, true, 10, "match");
             if (searchResult == null) {
                 return createErrorResponse("캐릭터 검색에 실패했습니다.");
             }
@@ -257,7 +275,7 @@ public class CharacterService {
             }
 
             // DFO API에서 타임라인 조회
-            Object timeline = dfoApiService.getCharacterTimeline(serverId, characterId, limit, startDate, endDate, null);
+            Object timeline = dfoApiService.getCharacterTimeline(serverId, characterId, limit, null, startDate, endDate, null);
             if (timeline != null) {
                 // 1분간 캐싱
                 cachingService.put(cacheKey, timeline, CachingService.CacheType.TIMELINE);
@@ -426,9 +444,27 @@ public class CharacterService {
         dto.put("dungeonClearNabel", character.getDungeonClearNabel());
         dto.put("dungeonClearVenus", character.getDungeonClearVenus());
         dto.put("dungeonClearFog", character.getDungeonClearFog());
+        dto.put("isFavorite", character.getIsFavorite());
+        dto.put("excludedDungeons", parseExcludedDungeons(character.getExcludedDungeons()));
         dto.put("createdAt", character.getCreatedAt());
         dto.put("updatedAt", character.getUpdatedAt());
         return dto;
+    }
+
+    /**
+     * 제외 던전 JSON 문자열을 List로 파싱
+     */
+    private List<String> parseExcludedDungeons(String excludedDungeonsJson) {
+        if (excludedDungeonsJson == null || excludedDungeonsJson.trim().isEmpty()) {
+            return List.of();
+        }
+        
+        try {
+            return objectMapper.readValue(excludedDungeonsJson, 
+                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     private Map<String, Object> createSuccessResponse(String message, Object data) {
@@ -446,6 +482,78 @@ public class CharacterService {
         response.put("success", false);
         response.put("message", message);
         return response;
+    }
+
+    /**
+     * 업둥이 캐릭터 설정/해제
+     */
+    public Map<String, Object> toggleFavorite(String serverId, String characterId, Boolean isFavorite) {
+        try {
+            Optional<Character> characterOpt = characterRepository.findByCharacterId(characterId);
+            if (characterOpt.isEmpty()) {
+                return createErrorResponse("캐릭터를 찾을 수 없습니다.");
+            }
+
+            Character character = characterOpt.get();
+            character.setIsFavorite(isFavorite);
+            characterRepository.save(character);
+
+            // 실시간 이벤트 전송
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("characterId", characterId);
+            eventData.put("serverId", serverId);
+            eventData.put("isFavorite", isFavorite);
+            eventData.put("characterName", character.getCharacterName());
+            realtimeEventService.notifyCharacterUpdated(characterId, "system", eventData);
+
+            return createSuccessResponse(
+                isFavorite ? "업둥이 캐릭터로 설정되었습니다." : "업둥이 설정이 해제되었습니다.",
+                convertToDto(character)
+            );
+
+        } catch (Exception e) {
+            return createErrorResponse("업둥이 설정 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 던전 제외 설정
+     */
+    public Map<String, Object> setDungeonExclusion(String serverId, String characterId, List<String> excludedDungeons) {
+        try {
+            Optional<Character> characterOpt = characterRepository.findByCharacterId(characterId);
+            if (characterOpt.isEmpty()) {
+                return createErrorResponse("캐릭터를 찾을 수 없습니다.");
+            }
+
+            Character character = characterOpt.get();
+            
+            // JSON 형태로 저장
+            try {
+                String excludedJson = objectMapper.writeValueAsString(excludedDungeons);
+                character.setExcludedDungeons(excludedJson);
+            } catch (Exception e) {
+                return createErrorResponse("제외 던전 정보 저장 중 오류가 발생했습니다.");
+            }
+
+            characterRepository.save(character);
+
+            // 실시간 이벤트 전송
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("characterId", characterId);
+            eventData.put("serverId", serverId);
+            eventData.put("excludedDungeons", excludedDungeons);
+            eventData.put("characterName", character.getCharacterName());
+            realtimeEventService.notifyCharacterUpdated(characterId, "system", eventData);
+
+            return createSuccessResponse(
+                "던전 제외 설정이 업데이트되었습니다.",
+                convertToDto(character)
+            );
+
+        } catch (Exception e) {
+            return createErrorResponse("던전 제외 설정 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 }
 

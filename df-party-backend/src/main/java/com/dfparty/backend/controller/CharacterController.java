@@ -204,4 +204,51 @@ public class CharacterController {
             return ResponseEntity.internalServerError().body(error);
         }
     }
+
+    /**
+     * 업둥이 캐릭터 설정/해제
+     */
+    @PatchMapping("/{serverId}/{characterId}/favorite")
+    public ResponseEntity<Map<String, Object>> toggleFavorite(
+            @PathVariable String serverId,
+            @PathVariable String characterId,
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            Boolean isFavorite = (Boolean) request.get("isFavorite");
+            Map<String, Object> result = characterService.toggleFavorite(serverId, characterId, isFavorite);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "업둥이 설정 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 던전 제외 설정
+     */
+    @PatchMapping("/{serverId}/{characterId}/exclude")
+    public ResponseEntity<Map<String, Object>> setDungeonExclusion(
+            @PathVariable String serverId,
+            @PathVariable String characterId,
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.List<String> excludedDungeons = (java.util.List<String>) request.get("excludedDungeons");
+            Map<String, Object> result = characterService.setDungeonExclusion(serverId, characterId, excludedDungeons);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "던전 제외 설정 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
 }

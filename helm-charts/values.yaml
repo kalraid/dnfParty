@@ -1,0 +1,105 @@
+# Global configuration
+global:
+  environment: production
+  domain: localhost
+  
+# Frontend configuration
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: dfo-party-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: false
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Backend configuration
+backend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: dfo-party-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: "kubernetes"
+    - name: DF_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: dfo-api-secret
+          key: api-key
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Nginx configuration
+nginx:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: nginx
+    tag: alpine
+    pullPolicy: IfNotPresent
+  service:
+    type: LoadBalancer
+    port: 80
+  ingress:
+    enabled: false
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Shared volume configuration
+sharedVolume:
+  enabled: true
+  size: 10Gi
+  storageClass: ""
+
+# Database configuration
+database:
+  enabled: false  # Using external database in production
+  type: postgresql
+  host: ""
+  port: 5432
+  name: "dfo_party"
+  username: ""
+  password: ""
+
+# Monitoring configuration
+monitoring:
+  enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+# Security configuration
+security:
+  enabled: true
+  networkPolicy:
+    enabled: true
+  podSecurityPolicy:
+    enabled: false

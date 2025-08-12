@@ -35,6 +35,27 @@
     <!-- 캐릭터 목록 -->
     <div class="characters-section" v-if="charactersFromDB.length > 0">
       <h3>DB에서 조회된 캐릭터 ({{ charactersFromDB.length }}개)</h3>
+      
+      <!-- 우클릭 컨텍스트 메뉴 -->
+      <div v-if="showContextMenu" class="context-menu" :style="contextMenuStyle" @click.stop>
+        <div class="context-menu-item" @click="setFavoriteCharacter">
+          <span v-if="selectedCharacter?.isFavorite">⭐ 업둥이 해제</span>
+          <span v-else>☆ 업둥이 설정</span>
+        </div>
+        <div class="context-menu-item" @click="excludeFromDungeon('nabel')">
+          <span v-if="isExcludedFromDungeon('nabel')">✅ 나벨 제외 해제</span>
+          <span v-else>❌ 나벨에서 제외</span>
+        </div>
+        <div class="context-menu-item" @click="excludeFromDungeon('venus')">
+          <span v-if="isExcludedFromDungeon('venus')">✅ 베누스 제외 해제</span>
+          <span v-else>❌ 베누스에서 제외</span>
+        </div>
+        <div class="context-menu-item" @click="excludeFromDungeon('fog')">
+          <span v-if="isExcludedFromDungeon('fog')">✅ 안개신 제외 해제</span>
+          <span v-else>❌ 안개신에서 제외</span>
+        </div>
+      </div>
+      
       <table class="characters-table">
         <thead>
           <tr>
@@ -50,7 +71,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="character in charactersFromDB" :key="character.characterId">
+          <tr v-for="character in charactersFromDB" :key="character.characterId" 
+              @contextmenu.prevent="showContextMenuForCharacter($event, character)"
+              @click="hideContextMenu">
             <td>{{ character.adventureName }}</td>
             <td>{{ character.characterName }}</td>
             <td>{{ character.serverId }}</td>
@@ -81,6 +104,9 @@
                 </button>
                 <button @click="checkDungeonClear(character)" class="dungeon-check-btn" :disabled="checkingDungeon">
                   🏰
+                </button>
+                <button @click="toggleFavorite(character)" class="favorite-btn" :class="{ 'is-favorite': character.isFavorite }">
+                  {{ character.isFavorite ? '⭐' : '☆' }}
                 </button>
                 <button @click="removeCharacterFromDB(character.characterId)" class="remove-btn">
                   ❌
@@ -133,6 +159,8 @@ interface CharacterFromDB {
   dungeonClearNabel?: boolean;
   dungeonClearVenus?: boolean;
   dungeonClearFog?: boolean;
+  isFavorite?: boolean;
+  excludedDungeons?: string[];
 }
 
 // 반응형 데이터
@@ -142,6 +170,11 @@ const selectedAdventures = ref<string[]>([]);
 const loading = ref(false);
 const refreshing = ref(false);
 const checkingDungeon = ref(false);
+
+// 컨텍스트 메뉴 관련
+const showContextMenu = ref(false);
+const contextMenuStyle = ref({ top: '0px', left: '0px' });
+const selectedCharacter = ref<CharacterFromDB | null>(null);
 
 // 사용 가능한 모험단 목록 (검색 기록에서 추출)
 const availableAdventures = computed(() => {
@@ -331,6 +364,111 @@ const checkDungeonClear = async (character: CharacterFromDB) => {
 const formatNumber = (num?: number): string => {
   if (num === undefined || num === null) return 'N/A';
   return num.toLocaleString();
+};
+
+// 컨텍스트 메뉴 관련 함수들
+const showContextMenuForCharacter = (event: MouseEvent, character: CharacterFromDB) => {
+  event.preventDefault();
+  selectedCharacter.value = character;
+  showContextMenu.value = true;
+  contextMenuStyle.value = {
+    top: `${event.clientY}px`,
+    left: `${event.clientX}px`
+  };
+};
+
+const hideContextMenu = () => {
+  showContextMenu.value = false;
+  selectedCharacter.value = null;
+};
+
+const setFavoriteCharacter = async () => {
+  if (!selectedCharacter.value) return;
+  
+  try {
+    const response = await fetch(`http://localhost:8080/api/characters/${selectedCharacter.value.serverId}/${selectedCharacter.value.characterId}/favorite`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        isFavorite: !selectedCharacter.value.isFavorite
+      })
+    });
+    
+    if (response.ok) {
+      const index = charactersFromDB.value.findIndex(c => c.characterId === selectedCharacter.value!.characterId);
+      if (index >= 0) {
+        charactersFromDB.value[index].isFavorite = !charactersFromDB.value[index].isFavorite;
+      }
+    }
+  } catch (error) {
+    console.error('업둥이 설정 실패:', error);
+  } finally {
+    hideContextMenu();
+  }
+};
+
+const excludeFromDungeon = async (dungeonType: string) => {
+  if (!selectedCharacter.value) return;
+  
+  try {
+    const currentExcluded = selectedCharacter.value.excludedDungeons || [];
+    const isCurrentlyExcluded = currentExcluded.includes(dungeonType);
+    
+    let newExcluded: string[];
+    if (isCurrentlyExcluded) {
+      newExcluded = currentExcluded.filter(d => d !== dungeonType);
+    } else {
+      newExcluded = [...currentExcluded, dungeonType];
+    }
+    
+    const response = await fetch(`http://localhost:8080/api/characters/${selectedCharacter.value.serverId}/${selectedCharacter.value.characterId}/exclude`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        excludedDungeons: newExcluded
+      })
+    });
+    
+    if (response.ok) {
+      const index = charactersFromDB.value.findIndex(c => c.characterId === selectedCharacter.value!.characterId);
+      if (index >= 0) {
+        charactersFromDB.value[index].excludedDungeons = newExcluded;
+      }
+    }
+  } catch (error) {
+    console.error('던전 제외 설정 실패:', error);
+  } finally {
+    hideContextMenu();
+  }
+};
+
+const isExcludedFromDungeon = (dungeonType: string): boolean => {
+  if (!selectedCharacter.value) return false;
+  return (selectedCharacter.value.excludedDungeons || []).includes(dungeonType);
+};
+
+const toggleFavorite = async (character: CharacterFromDB) => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/characters/${character.serverId}/${character.characterId}/favorite`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        isFavorite: !character.isFavorite
+      })
+    });
+    
+    if (response.ok) {
+      character.isFavorite = !character.isFavorite;
+    }
+  } catch (error) {
+    console.error('업둥이 설정 실패:', error);
+  }
 };
 
 // 외부에서 호출할 수 있도록 함수 노출
@@ -526,5 +664,71 @@ defineExpose({
   text-align: center;
   padding: 40px;
   color: #007bff;
+}
+
+/* 컨텍스트 메뉴 스타일 */
+.context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 200px;
+  padding: 8px 0;
+}
+
+.context-menu-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-item:hover {
+  background-color: #f8f9fa;
+}
+
+.context-menu-item:first-child {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.context-menu-item:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* 업둥이 버튼 스타일 */
+.favorite-btn {
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  background: #ffc107;
+  color: #212529;
+}
+
+.favorite-btn:hover {
+  background: #e0a800;
+}
+
+.favorite-btn.is-favorite {
+  background: #ffc107;
+  color: #212529;
+}
+
+/* 제외된 캐릭터 스타일 */
+.character-excluded {
+  opacity: 0.6;
+  background-color: #f8f9fa;
+}
+
+.character-excluded .character-name {
+  text-decoration: line-through;
+  color: #6c757d;
 }
 </style> 

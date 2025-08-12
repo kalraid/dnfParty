@@ -1,0 +1,27 @@
+🎉 DFO Party Management Application이 성공적으로 배포되었습니다!
+
+📱 접속 정보:
+   - 프론트엔드: http://{{ .Values.global.domain }}
+   - 백엔드 API: http://{{ .Values.global.domain }}/api
+   - Nginx 상태: http://{{ .Values.global.domain }}/nginx_status
+
+🔧 관리 명령어:
+   - 배포 상태 확인: kubectl get pods -n {{ .Release.Namespace }}
+   - 서비스 상태 확인: kubectl get services -n {{ .Release.Namespace }}
+   - 로그 확인: kubectl logs -f deployment/{{ include "dfo-party.fullname" . }}-frontend -n {{ .Release.Namespace }}
+   - Helm 업그레이드: helm upgrade {{ .Release.Name }} . -n {{ .Release.Namespace }}
+   - Helm 제거: helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+📊 모니터링:
+   - 헬스 체크: kubectl get endpoints -n {{ .Release.Namespace }}
+   - 리소스 사용량: kubectl top pods -n {{ .Release.Namespace }}
+
+🚀 다음 단계:
+   1. 브라우저에서 http://{{ .Values.global.domain }} 접속
+   2. DFO API 키 설정 확인
+   3. 애플리케이션 기능 테스트
+
+문제가 발생하면 로그를 확인하세요:
+   kubectl logs -f deployment/{{ include "dfo-party.fullname" . }}-frontend -n {{ .Release.Namespace }}
+   kubectl logs -f deployment/{{ include "dfo-party.fullname" . }}-backend -n {{ .Release.Namespace }}
+   kubectl logs -f deployment/{{ include "dfo-party.fullname" . }}-nginx -n {{ .Release.Namespace }}

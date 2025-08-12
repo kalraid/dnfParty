@@ -2,6 +2,7 @@ package com.dfparty.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,18 +14,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class DundamService {
 
     private static final String DUNDAM_BASE_URL = "https://dundam.xyz";
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-
-    public DundamService() {
-        this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
-    }
+    private final ThursdayFallbackService thursdayFallbackService;
 
     public Map<String, Object> getCharacterInfo(String serverId, String characterId) {
+        // 목요일 API 제한 체크
+        Map<String, Object> restriction = thursdayFallbackService.checkThursdayApiRestriction("Dundam 크롤링");
+        if (restriction != null) {
+            // 목요일 제한 시 Mock 데이터 반환
+            Map<String, Object> fallbackResult = getMockCharacterInfo(serverId, characterId);
+            fallbackResult.put("thursdayRestriction", true);
+            fallbackResult.put("message", "목요일에는 Dundam 크롤링이 제한되어 Mock 데이터를 제공합니다.");
+            return fallbackResult;
+        }
+        
         try {
             // Dundam.xyz API 호출 (실제 구현 시 웹 스크래핑 또는 API 연동)
             String url = String.format("%s/character?server=%s&key=%s", 

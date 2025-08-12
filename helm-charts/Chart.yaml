@@ -1,0 +1,29 @@
+apiVersion: v2
+name: dfo-party
+description: DFO Party Management Application
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - dfo
+  - party
+  - gaming
+home: https://github.com/kalraid/dnfParty
+sources:
+  - https://github.com/kalraid/dnfParty
+maintainers:
+  - name: DFO Party Team
+    email: team@dfoparty.com
+dependencies:
+  - name: frontend
+    version: 1.0.0
+    condition: frontend.enabled
+    repository: "file://charts/frontend"
+  - name: backend
+    version: 1.0.0
+    condition: backend.enabled
+    repository: "file://charts/backend"
+  - name: nginx
+    version: 1.0.0
+    condition: nginx.enabled
+    repository: "file://charts/nginx"

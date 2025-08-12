@@ -32,29 +32,85 @@
         <div class="rules-content">
           <div v-if="selectedDungeon === 'navel'" class="rule-item">
             <h4>나벨 던전</h4>
-            <ul>
-              <li><strong>일반 나벨:</strong> 전투력 30억 이상, 버프력 400만 이상, 명성 63,000 이상</li>
-              <li><strong>하드 나벨:</strong> 전투력 100억 이상, 버프력 500만 이상, 명성 63,000 이상</li>
-              <li><strong>최소 구성:</strong> 2인 이상 (버퍼 포함 권장)</li>
-            </ul>
+            <div class="rule-details">
+              <div class="requirement-section">
+                <h5>명성 요구사항</h5>
+                <div class="fame-requirement">
+                  <span class="requirement-label">최소 명성:</span>
+                  <span class="requirement-value fame-required">63,000</span>
+                  <span class="requirement-note">(모든 모드 공통)</span>
+                </div>
+              </div>
+              
+              <div class="requirement-section">
+                <h5>모드별 요구사항</h5>
+                <div class="mode-requirements">
+                  <div class="mode-requirement">
+                    <span class="mode-label">일반 나벨:</span>
+                    <span class="requirement-item">전투력 30억 이상</span>
+                    <span class="requirement-item">버프력 400만 이상</span>
+                  </div>
+                  <div class="mode-requirement">
+                    <span class="mode-label">하드 나벨:</span>
+                    <span class="requirement-item">전투력 100억 이상</span>
+                    <span class="requirement-item">버프력 500만 이상</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="requirement-section">
+                <h5>파티 구성</h5>
+                <div class="party-requirement">
+                  <span class="requirement-item">최소 2인 이상</span>
+                  <span class="requirement-item">버퍼 포함 권장</span>
+                  <span class="requirement-item">딜러 1명 + 버퍼 1명 이상</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div v-if="selectedDungeon === 'venus'" class="rule-item">
             <h4>베누스 던전</h4>
-            <ul>
-              <li><strong>명성 요구:</strong> 41,929 이상</li>
-              <li><strong>최소 구성:</strong> 2인 이상 (버퍼 포함 권장)</li>
-              <li><strong>파티 구성:</strong> 자유롭게 구성 가능</li>
-            </ul>
+            <div class="rule-details">
+              <div class="requirement-section">
+                <h5>명성 요구사항</h5>
+                <div class="fame-requirement">
+                  <span class="requirement-label">최소 명성:</span>
+                  <span class="requirement-value fame-required">41,929</span>
+                </div>
+              </div>
+              
+              <div class="requirement-section">
+                <h5>파티 구성</h5>
+                <div class="party-requirement">
+                  <span class="requirement-item">최소 2인 이상</span>
+                  <span class="requirement-item">버퍼 포함 권장</span>
+                  <span class="requirement-item">자유로운 구성 가능</span>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div v-if="selectedDungeon === 'fog'" class="rule-item">
             <h4>안개신 던전</h4>
-            <ul>
-              <li><strong>명성 요구:</strong> 32,253 이상</li>
-              <li><strong>최소 구성:</strong> 딜러 2명, 버퍼 1명</li>
-              <li><strong>파티 구성:</strong> 딜러와 버퍼 밸런스 중요</li>
-            </ul>
+            <div class="rule-details">
+              <div class="requirement-section">
+                <h5>명성 요구사항</h5>
+                <div class="fame-requirement">
+                  <span class="requirement-label">최소 명성:</span>
+                  <span class="requirement-value fame-required">32,253</span>
+                </div>
+              </div>
+              
+              <div class="requirement-section">
+                <h5>파티 구성</h5>
+                <div class="party-requirement">
+                  <span class="requirement-item">딜러 2명 이상</span>
+                  <span class="requirement-item">버퍼 1명 이상</span>
+                  <span class="requirement-item">딜러와 버퍼 밸런스 중요</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -63,6 +119,38 @@
     <!-- 모험단 선택 -->
     <div v-if="selectedDungeon" class="adventure-selection">
       <h2>모험단 선택</h2>
+      
+      <!-- 명성 기준 필터링 -->
+      <div class="fame-filter">
+        <h3>명성 기준 필터링</h3>
+        <div class="filter-options">
+          <label class="filter-option">
+            <input 
+              type="checkbox" 
+              v-model="applyFameFilter" 
+              @change="updateFilteredCharacters"
+            />
+            명성 기준 자동 필터링 적용
+          </label>
+          
+          <div v-if="applyFameFilter" class="fame-thresholds">
+            <div class="threshold-item">
+              <span class="dungeon-name">나벨:</span>
+              <span class="threshold-value">63,000</span>
+              <span class="threshold-note">(모든 모드)</span>
+            </div>
+            <div class="threshold-item">
+              <span class="dungeon-name">베누스:</span>
+              <span class="threshold-value">41,929</span>
+            </div>
+            <div class="threshold-item">
+              <span class="dungeon-name">안개신:</span>
+              <span class="threshold-value">32,253</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div class="adventure-list">
         <div 
           v-for="adventure in availableAdventures" 
@@ -72,7 +160,12 @@
           @click="toggleAdventure(adventure)"
         >
           <span class="adventure-name">{{ adventure }}</span>
-          <span class="character-count">{{ getAdventureCharacterCount(adventure) }}명</span>
+          <span class="character-count">
+            {{ getAdventureCharacterCount(adventure) }}명
+            <span v-if="applyFameFilter" class="filtered-count">
+              (필터링: {{ getFilteredCharacterCount(adventure) }}명)
+            </span>
+          </span>
         </div>
       </div>
     </div>
@@ -275,7 +368,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 
 // 반응형 데이터
@@ -285,6 +378,19 @@ const selectedAdventures = ref<string[]>([]);
 const partyMode = ref('auto');
 const minDamageCut = ref(100);
 const partySize = ref(4);
+const applyFameFilter = ref(false);
+const filteredCharacters = ref<Array<{
+  characterId: string;
+  serverId: string;
+  characterName: string;
+  adventureName: string;
+  fame: number;
+  buffPower?: number;
+  totalDamage?: number;
+  level?: number;
+  jobName?: string;
+  savedAt: string;
+}>>([]);
 const partyResult = ref<{
   members: Array<{
     characterId: string;
@@ -367,6 +473,43 @@ const toggleAdventure = (adventure: string) => {
 
 const getAdventureCharacterCount = (adventure: string): number => {
   return savedCharacters.value.filter(c => c.adventureName === adventure).length;
+};
+
+const getFilteredCharacterCount = (adventure: string): number => {
+  if (!applyFameFilter.value) return getAdventureCharacterCount(adventure);
+  return filteredCharacters.value.filter(c => c.adventureName === adventure).length;
+};
+
+const getDungeonFameThreshold = (): number => {
+  switch (selectedDungeon.value) {
+    case 'navel': return 63000;
+    case 'venus': return 41929;
+    case 'fog': return 32253;
+    default: return 0;
+  }
+};
+
+const updateFilteredCharacters = () => {
+  if (!applyFameFilter.value) {
+    filteredCharacters.value = savedCharacters.value;
+    return;
+  }
+  
+  const threshold = getDungeonFameThreshold();
+  filteredCharacters.value = savedCharacters.value.filter(c => c.fame >= threshold);
+};
+
+const getAvailableCharactersForSlot = (slotIndex: number) => {
+  const characters = applyFameFilter.value ? filteredCharacters.value : savedCharacters.value;
+  const selectedAdventureChars = characters.filter(c => 
+    selectedAdventures.value.includes(c.adventureName)
+  );
+  
+  // 이미 선택된 캐릭터는 제외
+  const usedCharacters = manualPartyMembers.value.filter(c => c !== undefined);
+  return selectedAdventureChars.filter(c => 
+    !usedCharacters.some(used => used?.characterId === c.characterId)
+  );
 };
 
 const getDungeonName = (dungeonId: string): string => {
@@ -626,6 +769,18 @@ onMounted(() => {
   loading.value = true;
   loadSavedCharacters();
   loading.value = false;
+});
+
+// 던전 변경 시 필터 업데이트
+watch(selectedDungeon, () => {
+  if (applyFameFilter.value) {
+    updateFilteredCharacters();
+  }
+});
+
+// 명성 필터 변경 시 필터 업데이트
+watch(applyFameFilter, () => {
+  updateFilteredCharacters();
 });
 </script>
 
@@ -1094,6 +1249,158 @@ h1 {
 
 .rule-item li strong {
   color: #333;
+}
+
+/* 명성 필터 스타일 */
+.fame-filter {
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #2196f3;
+}
+
+.fame-filter h3 {
+  color: #1976d2;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.filter-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #2196f3;
+}
+
+.fame-thresholds {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+}
+
+.threshold-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.dungeon-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.threshold-value {
+  color: #e91e63;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.threshold-note {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.filtered-count {
+  color: #2196f3;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* 던전 규칙 상세 스타일 */
+.rule-details {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.requirement-section {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid #28a745;
+}
+
+.requirement-section h5 {
+  color: #28a745;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+.fame-requirement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.requirement-label {
+  font-weight: bold;
+  color: #333;
+}
+
+.fame-required {
+  color: #e91e63;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.requirement-note {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.mode-requirements {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mode-requirement {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+}
+
+.mode-label {
+  font-weight: bold;
+  color: #333;
+  min-width: 80px;
+}
+
+.requirement-item {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.party-requirement {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 @media (max-width: 768px) {

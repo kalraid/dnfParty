@@ -1,104 +1,83 @@
 <template>
   <div class="character-search">
-    <h1>캐릭터 검색</h1>
+    <h2>캐릭터 검색</h2>
     
     <!-- 검색 폼 -->
     <div class="search-form">
       <div class="form-group">
         <label for="server">서버 선택:</label>
-        <select 
-          id="server" 
-          v-model="selectedServer" 
-          @change="onServerChange"
-          :disabled="loading"
-        >
+        <select id="server" v-model="selectedServer" required>
           <option value="">서버를 선택하세요</option>
-          <option value="all">전체</option>
-          <option 
-            v-for="server in servers" 
-            :key="server.serverId" 
-            :value="server.serverId"
-          >
+          <option value="all">전체 서버</option>
+          <option v-for="server in servers" :key="server.serverId" :value="server.serverId">
             {{ server.serverName }}
           </option>
         </select>
       </div>
-
+      
       <div class="form-group">
         <label for="characterName">캐릭터명:</label>
         <input 
           id="characterName" 
           v-model="characterName" 
           type="text" 
-          placeholder="캐릭터명을 입력하세요"
-          :disabled="loading"
-        />
+          placeholder="캐릭터명을 입력하세요" 
+          required
+        >
       </div>
-
-      <button 
-        @click="searchCharacters" 
-        :disabled="!canSearch || loading"
-        class="search-btn"
-      >
-        {{ loading ? '검색 중...' : '검색' }}
+      
+      <button @click="searchCharacters" :disabled="searching" class="search-btn">
+        {{ searching ? '검색 중...' : '검색' }}
       </button>
     </div>
 
     <!-- 검색 결과 -->
     <div v-if="searchResults.length > 0" class="search-results">
-      <h2>검색 결과</h2>
+      <h3>검색 결과 ({{ searchResults.length }}개)</h3>
       <div class="results-grid">
         <div 
           v-for="character in searchResults" 
-          :key="character.characterId"
+          :key="character.characterId" 
           class="character-card"
-          @click="selectCharacter(character)"
         >
-          <h3>{{ character.characterName }}</h3>
-          <p><strong>레벨:</strong> {{ character.level }}</p>
-          <p><strong>직업:</strong> {{ character.jobName }}</p>
-          <p><strong>전직:</strong> {{ character.jobGrowName }}</p>
-          <p><strong>모험단:</strong> {{ character.adventureName }}</p>
-          <p v-if="character.guildName"><strong>길드:</strong> {{ character.guildName }}</p>
+          <div class="character-info">
+            <h4>{{ character.characterName }}</h4>
+            <p><strong>서버:</strong> {{ getServerName(character.serverId) }}</p>
+            <p><strong>모험단:</strong> {{ character.adventureName || 'N/A' }}</p>
+            <p><strong>레벨:</strong> {{ character.level || 'N/A' }}</p>
+            <p><strong>직업:</strong> {{ character.jobName || 'N/A' }}</p>
+            <p><strong>명성:</strong> {{ formatNumber(character.fame) }}</p>
+          </div>
+          
+          <div class="character-stats" v-if="character.buffPower || character.totalDamage">
+            <h5>스펙 정보</h5>
+            <p><strong>버프력:</strong> {{ formatNumber(character.buffPower) }}</p>
+            <p><strong>총딜:</strong> {{ formatNumber(character.totalDamage) }}</p>
+          </div>
+          
+          <div class="character-actions">
+            <button @click="saveCharacterToDB(character)" class="save-btn">
+              DB에 저장
+            </button>
+            <button @click="addToSearchHistory(character)" class="history-btn">
+              검색 기록에 추가
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 선택된 캐릭터 정보 -->
-    <div v-if="selectedCharacterDetail" class="selected-character">
-      <h2>선택된 캐릭터 정보</h2>
-      <div class="character-detail">
-        <h3>{{ selectedCharacterDetail.characterName }}</h3>
-        <p><strong>레벨:</strong> {{ selectedCharacterDetail.level }}</p>
-        <p><strong>직업:</strong> {{ selectedCharacterDetail.jobName }}</p>
-        <p><strong>전직:</strong> {{ selectedCharacterDetail.jobGrowName }}</p>
-        <p><strong>모험단:</strong> {{ selectedCharacterDetail.adventureName }}</p>
-        <p><strong>명성:</strong> {{ selectedCharacterDetail.fame }}</p>
-        
-        <!-- dundam.xyz 정보 표시 -->
-        <div v-if="dundamInfo" class="dundam-info">
-          <h4>📊 던담 정보</h4>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-label">버프력:</span>
-              <span class="stat-value">{{ formatNumber(dundamInfo.buffPower) }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">총딜:</span>
-              <span class="stat-value">{{ formatNumber(dundamInfo.totalDamage) }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">업데이트:</span>
-              <span class="stat-value">{{ formatDate(dundamInfo.lastUpdated) }}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="action-buttons">
-          <button @click="updateDundamInfo" class="update-btn" :disabled="loading">
-            {{ loading ? '업데이트 중...' : '던담 정보 업데이트' }}
-          </button>
-          <button @click="saveCharacter" class="save-btn">캐릭터 저장</button>
+    <!-- 검색 기록 -->
+    <div v-if="searchHistory.length > 0" class="search-history">
+      <h3>최근 검색 기록</h3>
+      <div class="history-list">
+        <div v-for="record in searchHistory" :key="record.id" class="history-item">
+          <span class="server-name">{{ record.serverName }}</span>
+          <span class="adventure-name">{{ record.adventureName }}</span>
+          <span class="character-name">{{ record.characterName }}</span>
+          <span class="timestamp">{{ formatDate(record.timestamp) }}</span>
+          <button @click="loadCharacterFromHistory(record)" class="load-btn">불러오기</button>
+          <button @click="removeFromHistory(record.id)" class="remove-btn">삭제</button>
         </div>
       </div>
     </div>
@@ -107,175 +86,198 @@
     <div v-if="error" class="error-message">
       {{ error }}
     </div>
+
+    <!-- 성공 메시지 -->
+    <div v-if="successMessage" class="success-message">
+      {{ successMessage }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { dfApiService, type Server, type Character, type CharacterDetail } from '../services/dfApi';
-import { dundamService, type DundamCharacterInfo } from '../services/dundamService';
+import { ref, onMounted } from 'vue';
+import { dfApiService, type Server } from '../services/dfApi';
+
+// 검색 기록 인터페이스
+interface SearchRecord {
+  id: string;
+  serverId: string;
+  serverName: string;
+  adventureName: string;
+  characterName: string;
+  characterId: string;
+  timestamp: string;
+}
 
 // 반응형 데이터
-const servers = ref<Server[]>([]);
 const selectedServer = ref('');
 const characterName = ref('');
-const searchResults = ref<Character[]>([]);
-const selectedCharacterDetail = ref<CharacterDetail | null>(null);
-const dundamInfo = ref<DundamCharacterInfo | null>(null);
-const loading = ref(false);
+const servers = ref<Server[]>([]);
+const searchResults = ref<any[]>([]);
+const searchHistory = ref<SearchRecord[]>([]);
+const searching = ref(false);
 const error = ref('');
+const successMessage = ref('');
 
-// 계산된 속성
-const canSearch = computed(() => {
-  return selectedServer.value && characterName.value.trim().length > 0;
+// 컴포넌트 마운트 시 서버 목록과 검색 기록 로드
+onMounted(async () => {
+  await loadServers();
+  loadSearchHistory();
 });
 
-// 메서드들
+// 서버 목록 로드
 const loadServers = async () => {
   try {
-    loading.value = true;
-    error.value = '';
     const serverList = await dfApiService.getServers();
     servers.value = serverList;
   } catch (err) {
+    console.error('서버 목록 로드 실패:', err);
     error.value = '서버 목록을 불러오는데 실패했습니다.';
-    console.error(err);
-  } finally {
-    loading.value = false;
   }
 };
 
-const onServerChange = () => {
-  // 서버 변경 시 검색 결과 초기화
-  searchResults.value = [];
-  selectedCharacterDetail.value = null;
-  dundamInfo.value = null;
+// 검색 기록 로드 (Local Storage에서)
+const loadSearchHistory = () => {
+  try {
+    const saved = localStorage.getItem('df_search_history');
+    if (saved) {
+      searchHistory.value = JSON.parse(saved);
+    }
+  } catch (error) {
+    console.error('검색 기록 로드 실패:', error);
+    searchHistory.value = [];
+  }
 };
 
+// 검색 기록 저장 (Local Storage에)
+const saveSearchHistory = () => {
+  try {
+    localStorage.setItem('df_search_history', JSON.stringify(searchHistory.value));
+  } catch (error) {
+    console.error('검색 기록 저장 실패:', error);
+  }
+};
+
+// 캐릭터 검색
 const searchCharacters = async () => {
-  if (!canSearch.value) return;
-
-  try {
-    loading.value = true;
-    error.value = '';
-    
-    const results = await dfApiService.searchCharacters(
-      selectedServer.value,
-      characterName.value.trim(),
-      { limit: 20 }
-    );
-    
-    searchResults.value = results;
-    
-    if (results.length === 0) {
-      error.value = '검색 결과가 없습니다.';
-    }
-  } catch (err) {
-    error.value = '캐릭터 검색에 실패했습니다.';
-    console.error(err);
-  } finally {
-    loading.value = false;
+  if (!characterName.value.trim()) {
+    error.value = '캐릭터명을 입력해주세요.';
+    return;
   }
-};
 
-const selectCharacter = async (character: Character) => {
   try {
-    loading.value = true;
+    searching.value = true;
     error.value = '';
-    
-    // 던파 API에서 캐릭터 상세 정보 조회
-    const detail = await dfApiService.getCharacterDetail(
-      selectedServer.value,
-      character.characterId
-    );
-    
-    selectedCharacterDetail.value = detail;
-    
-    // dundam.xyz에서 추가 정보 조회
-    await updateDundamInfo();
-    
-  } catch (err) {
-    error.value = '캐릭터 상세 정보를 불러오는데 실패했습니다.';
-    console.error(err);
-  } finally {
-    loading.value = false;
-  }
-};
+    successMessage.value = '';
 
-const updateDundamInfo = async () => {
-  if (!selectedCharacterDetail.value) return;
-  
-  try {
-    loading.value = true;
-    error.value = '';
+    // 백엔드 API를 통한 통합 캐릭터 검색
+    const response = await fetch(`http://localhost:8080/api/characters/search?serverId=${selectedServer.value || 'all'}&characterName=${encodeURIComponent(characterName.value)}`);
     
-    const info = await dundamService.getCharacterInfo(
-      selectedServer.value,
-      selectedCharacterDetail.value.characterId
-    );
-    
-    if (info) {
-      dundamInfo.value = info;
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        searchResults.value = Array.isArray(data.characters) ? data.characters : [data.character];
+        successMessage.value = `${searchResults.value.length}개의 캐릭터를 찾았습니다.`;
+      } else {
+        error.value = data.message || '캐릭터 검색에 실패했습니다.';
+      }
     } else {
-      error.value = '던담 정보를 가져오는데 실패했습니다.';
+      error.value = '캐릭터 검색 중 오류가 발생했습니다.';
+    }
+
+  } catch (err) {
+    console.error('캐릭터 검색 실패:', err);
+    error.value = '캐릭터 검색 중 오류가 발생했습니다.';
+  } finally {
+    searching.value = false;
+  }
+};
+
+// 캐릭터를 DB에 저장
+const saveCharacterToDB = async (character: any) => {
+  try {
+    const response = await fetch('http://localhost:8080/api/characters', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(character)
+    });
+
+    if (response.ok) {
+      successMessage.value = `${character.characterName} 캐릭터가 DB에 저장되었습니다.`;
+      // 검색 기록에도 자동 추가
+      addToSearchHistory(character);
+    } else {
+      error.value = '캐릭터 저장에 실패했습니다.';
     }
   } catch (err) {
-    error.value = '던담 정보 업데이트에 실패했습니다.';
-    console.error(err);
-  } finally {
-    loading.value = false;
+    console.error('캐릭터 저장 실패:', err);
+    error.value = '캐릭터 저장 중 오류가 발생했습니다.';
   }
 };
 
-const saveCharacter = () => {
-  if (!selectedCharacterDetail.value) return;
-  
-  // 캐릭터 정보와 dundam 정보를 함께 저장
-  const characterData = {
-    serverId: selectedServer.value,
-    characterId: selectedCharacterDetail.value.characterId,
-    characterName: selectedCharacterDetail.value.characterName,
-    adventureName: selectedCharacterDetail.value.adventureName,
-    fame: selectedCharacterDetail.value.fame,
-    buffPower: dundamInfo.value?.buffPower,
-    totalDamage: dundamInfo.value?.totalDamage,
-    savedAt: new Date().toISOString()
+// 검색 기록에 추가
+const addToSearchHistory = (character: any) => {
+  const newRecord: SearchRecord = {
+    id: Date.now().toString(),
+    serverId: character.serverId,
+    serverName: getServerName(character.serverId),
+    adventureName: character.adventureName || 'N/A',
+    characterName: character.characterName,
+    characterId: character.characterId,
+    timestamp: new Date().toISOString()
   };
-  
-  // 기존 저장된 캐릭터들 가져오기
-  const savedCharacters = JSON.parse(
-    localStorage.getItem('df_characters') || '[]'
-  ) as Array<{
-    characterId: string;
-    serverId: string;
-    characterName: string;
-    adventureName: string;
-    fame: number;
-    buffPower?: number;
-    totalDamage?: number;
-    savedAt: string;
-  }>;
-  
-  // 중복 체크 및 추가
-  const existingIndex = savedCharacters.findIndex(
-    (c) => c.characterId === characterData.characterId
-  );
-  
+
+  // 중복 제거 (같은 캐릭터 ID가 있으면 업데이트)
+  const existingIndex = searchHistory.value.findIndex(r => r.characterId === character.characterId);
   if (existingIndex >= 0) {
-    savedCharacters[existingIndex] = characterData;
+    searchHistory.value[existingIndex] = newRecord;
   } else {
-    savedCharacters.push(characterData);
+    searchHistory.value.unshift(newRecord); // 맨 앞에 추가
   }
-  
-  // 로컬 스토리지에 저장
-  localStorage.setItem('df_characters', JSON.stringify(savedCharacters));
-  
-  alert('캐릭터가 저장되었습니다!');
+
+  // 최대 50개까지만 유지
+  if (searchHistory.value.length > 50) {
+    searchHistory.value = searchHistory.value.slice(0, 50);
+  }
+
+  saveSearchHistory();
+  successMessage.value = '검색 기록에 추가되었습니다.';
 };
 
-// 유틸리티 메서드
+// 검색 기록에서 캐릭터 불러오기
+const loadCharacterFromHistory = async (record: SearchRecord) => {
+  try {
+    // 백엔드 API에서 캐릭터 정보 조회
+    const response = await fetch(`http://localhost:8080/api/characters/${record.serverId}/${record.characterId}`);
+    if (response.ok) {
+      const characterData = await response.json();
+      // 검색 결과에 표시
+      searchResults.value = [characterData];
+      successMessage.value = '검색 기록에서 캐릭터를 불러왔습니다.';
+    }
+  } catch (error) {
+    console.error('캐릭터 정보 로드 실패:', error);
+    this.error = '캐릭터 정보를 불러오는데 실패했습니다.';
+  }
+};
+
+// 검색 기록에서 제거
+const removeFromHistory = (id: string) => {
+  searchHistory.value = searchHistory.value.filter(record => record.id !== id);
+  saveSearchHistory();
+  successMessage.value = '검색 기록에서 제거되었습니다.';
+};
+
+// 유틸리티 함수들
+const getServerName = (serverId: string): string => {
+  const server = servers.value.find(s => s.serverId === serverId);
+  return server?.serverName || serverId;
+};
+
 const formatNumber = (num?: number): string => {
-  if (!num) return 'N/A';
+  if (num === undefined || num === null) return 'N/A';
   if (num >= 100000000) {
     return (num / 100000000).toFixed(1) + '억';
   } else if (num >= 10000) {
@@ -284,15 +286,9 @@ const formatNumber = (num?: number): string => {
   return num.toLocaleString();
 };
 
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleString('ko-KR');
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('ko-KR');
 };
-
-// 컴포넌트 마운트 시 서버 목록 로드
-onMounted(() => {
-  loadServers();
-});
 </script>
 
 <style scoped>
@@ -302,14 +298,8 @@ onMounted(() => {
   padding: 20px;
 }
 
-h1 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 30px;
-}
-
 .search-form {
-  background: #f5f5f5;
+  background: #f8f9fa;
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 30px;
@@ -323,7 +313,7 @@ h1 {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
-  color: #555;
+  color: #333;
 }
 
 .form-group select,
@@ -351,7 +341,7 @@ h1 {
 }
 
 .search-btn:disabled {
-  background: #ccc;
+  background: #6c757d;
   cursor: not-allowed;
 }
 
@@ -363,133 +353,157 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .character-card {
   background: white;
-  border: 1px solid #ddd;
+  border: 1px solid #dee2e6;
   border-radius: 8px;
   padding: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.character-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
-}
-
-.character-card h3 {
+.character-info h4 {
   margin: 0 0 15px 0;
   color: #333;
+  font-size: 18px;
 }
 
-.character-card p {
+.character-info p {
   margin: 5px 0;
   color: #666;
 }
 
-.selected-character {
-  background: #e8f5e8;
-  padding: 20px;
-  border-radius: 8px;
-  margin-top: 20px;
+.character-stats {
+  margin: 15px 0;
+  padding: 15px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
 }
 
-.character-detail h3 {
-  margin: 0 0 15px 0;
+.character-stats h5 {
+  margin: 0 0 10px 0;
   color: #333;
 }
 
-.character-detail p {
-  margin: 5px 0;
-  color: #666;
-}
-
-.dundam-info {
-  background: #f0f8ff;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 20px 0;
-  border-left: 4px solid #007bff;
-}
-
-.dundam-info h4 {
-  margin: 0 0 15px 0;
-  color: #007bff;
-}
-
-.stats-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.stat-item:last-child {
-  border-bottom: none;
-}
-
-.stat-label {
-  font-weight: bold;
-  color: #555;
-}
-
-.stat-value {
-  color: #007bff;
-  font-weight: 600;
-}
-
-.action-buttons {
+.character-actions {
   display: flex;
   gap: 10px;
-  margin-top: 20px;
-  flex-wrap: wrap;
+  margin-top: 15px;
 }
 
-.update-btn {
-  background: #17a2b8;
-  color: white;
+.save-btn,
+.history-btn {
+  flex: 1;
+  padding: 8px 16px;
   border: none;
-  padding: 10px 20px;
   border-radius: 4px;
-  font-size: 16px;
   cursor: pointer;
-}
-
-.update-btn:hover:not(:disabled) {
-  background: #138496;
-}
-
-.update-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+  font-size: 14px;
 }
 
 .save-btn {
   background: #28a745;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
 }
 
 .save-btn:hover {
   background: #218838;
 }
 
+.history-btn {
+  background: #17a2b8;
+  color: white;
+}
+
+.history-btn:hover {
+  background: #138496;
+}
+
+.search-history {
+  background: #e9ecef;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.history-list {
+  margin-top: 15px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  border: 1px solid #dee2e6;
+}
+
+.server-name {
+  font-weight: bold;
+  color: #495057;
+  min-width: 80px;
+}
+
+.adventure-name {
+  color: #6c757d;
+  min-width: 120px;
+}
+
+.character-name {
+  color: #212529;
+  min-width: 120px;
+}
+
+.timestamp {
+  color: #6c757d;
+  font-size: 0.9rem;
+  min-width: 100px;
+}
+
+.load-btn,
+.remove-btn {
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.load-btn {
+  background: #007bff;
+  color: white;
+}
+
+.load-btn:hover {
+  background: #0056b3;
+}
+
+.remove-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.remove-btn:hover {
+  background: #c82333;
+}
+
 .error-message {
   background: #f8d7da;
   color: #721c24;
+  padding: 15px;
+  border-radius: 4px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.success-message {
+  background: #d4edda;
+  color: #155724;
   padding: 15px;
   border-radius: 4px;
   margin-top: 20px;
@@ -505,12 +519,14 @@ h1 {
     grid-template-columns: 1fr;
   }
   
-  .action-buttons {
+  .history-item {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
   
-  .action-buttons button {
-    width: 100%;
+  .character-actions {
+    flex-direction: column;
   }
 }
 </style> 

@@ -62,23 +62,51 @@ export const dundamService = {
   },
 
   // 버프력과 총딜 정보만 업데이트
-  async updateCharacterStats(
-    serverId: string,
-    characterId: string
-  ): Promise<{ buffPower?: number; totalDamage?: number } | null> {
+  async updateCharacterStats(serverId: string, characterId: string): Promise<{ buffPower?: number; totalDamage?: number } | null> {
     try {
-      const characterInfo = await this.getCharacterInfo(serverId, characterId);
-      if (characterInfo) {
-        return {
-          buffPower: characterInfo.buffPower,
-          totalDamage: characterInfo.totalDamage
-        };
+      // 실제 구현 시 백엔드 API 호출
+      const response = await axios.get(`http://localhost:8080/api/characters/${serverId}/${characterId}/update-stats`);
+      return response.data.dundamInfo;
+    } catch (error) {
+      console.error('캐릭터 스펙 업데이트 실패:', error);
+      return this.getMockCharacterInfo(serverId, characterId);
+    }
+  },
+
+  // 던전 클리어 현황 조회
+  async getDungeonClearInfo(serverId: string, characterId: string): Promise<{
+    nabel: boolean;
+    venus: boolean;
+    fog: boolean;
+  } | null> {
+    try {
+      // 백엔드 API 호출
+      const response = await axios.get(`http://localhost:8080/api/dungeon-clear/${serverId}/${characterId}`);
+      if (response.data.success) {
+        return response.data.clearStatus;
       }
       return null;
     } catch (error) {
-      console.error('캐릭터 스탯 업데이트 실패:', error);
-      return null;
+      console.error('던전 클리어 정보 조회 실패:', error);
+      // Mock 데이터 반환
+      return this.getMockDungeonClearInfo(serverId, characterId);
     }
+  },
+
+  // Mock 던전 클리어 정보
+  private getMockDungeonClearInfo(serverId: string, characterId: string): {
+    nabel: boolean;
+    venus: boolean;
+    fog: boolean;
+  } {
+    // 서버별로 다른 Mock 데이터 생성
+    const hash = characterId.charCodeAt(0) + serverId.charCodeAt(0);
+    
+    return {
+      nabel: (hash % 3) === 0,      // 33% 확률로 클리어
+      venus: (hash % 4) === 0,      // 25% 확률로 클리어
+      fog: (hash % 5) === 0         // 20% 확률로 클리어
+    };
   }
 };
 

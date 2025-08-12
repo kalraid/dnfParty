@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-// API 기본 설정
-const API_BASE_URL = 'https://api.neople.co.kr/df';
-const API_KEY = 'nJMykmaUtCURbOFEvieXPSzWgXmqePE2';
+// 백엔드 API 사용
+const API_BASE_URL = 'http://localhost:8080/api';
 
-// API 클라이언트 생성
 const dfApiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -13,95 +11,81 @@ const dfApiClient = axios.create({
   },
 });
 
-// API 응답 인터페이스
 export interface Server {
   serverId: string;
   serverName: string;
 }
 
 export interface Character {
+  serverId: string;
   characterId: string;
   characterName: string;
-  level: number;
   jobId: string;
   jobGrowId: string;
   jobName: string;
   jobGrowName: string;
+  level: number;
   adventureName: string;
-  guildId?: string;
-  guildName?: string;
-}
-
-export interface CharacterSearchResponse {
-  rows: Character[];
+  fame: number;
 }
 
 export interface CharacterDetail {
+  serverId: string;
   characterId: string;
   characterName: string;
-  level: number;
   jobId: string;
   jobGrowId: string;
   jobName: string;
   jobGrowName: string;
+  level: number;
   adventureName: string;
-  guildId?: string;
-  guildName?: string;
   fame: number;
-  // 추가 필드들...
+  status?: any;
+  equipment?: any[];
+  buffSkill?: any;
 }
 
-// API 메서드들
+export interface CharacterSearchResponse {
+  success: boolean;
+  character: CharacterDetail;
+  dundamInfo: {
+    buffPower: number;
+    totalDamage: number;
+    source: string;
+  };
+  message: string;
+}
+
 export const dfApiService = {
-  // 서버 목록 조회
   async getServers(): Promise<Server[]> {
     try {
-      const response = await dfApiClient.get(`/servers?apikey=${API_KEY}`);
-      return response.data.rows || [];
+      const response = await dfApiClient.get('/dfo/servers');
+      return response.data;
     } catch (error) {
       console.error('서버 목록 조회 실패:', error);
       throw error;
     }
   },
 
-  // 캐릭터 검색
-  async searchCharacters(
-    serverId: string,
-    characterName: string,
-    options: {
-      jobId?: string;
-      jobGrowId?: string;
-      isAllJobGrow?: boolean;
-      limit?: number;
-      wordType?: 'match' | 'full';
-    } = {}
-  ): Promise<Character[]> {
+  async searchCharacters(serverId: string, characterName: string, options: any = {}): Promise<Character[]> {
     try {
-      const params = new URLSearchParams({
-        characterName: encodeURIComponent(characterName),
-        apikey: API_KEY,
-        ...options,
+      const response = await dfApiClient.get('/dfo/characters/search', {
+        params: {
+          serverId,
+          characterName,
+          ...options
+        }
       });
-
-      const response = await dfApiClient.get(
-        `/servers/${serverId}/characters?${params.toString()}`
-      );
-      return response.data.rows || [];
+      return response.data;
     } catch (error) {
       console.error('캐릭터 검색 실패:', error);
       throw error;
     }
   },
 
-  // 캐릭터 상세 정보 조회
-  async getCharacterDetail(
-    serverId: string,
-    characterId: string
-  ): Promise<CharacterDetail> {
+  async getCharacterDetail(serverId: string, characterId: string): Promise<CharacterDetail> {
     try {
-      const response = await dfApiClient.get(
-        `/servers/${serverId}/characters/${characterId}?apikey=${API_KEY}`
-      );
+      const response = await dfApiClient.get(`/dfo/characters/${serverId}/${characterId}`);
       return response.data;
     } catch (error) {
       console.error('캐릭터 상세 정보 조회 실패:', error);
@@ -109,32 +93,44 @@ export const dfApiService = {
     }
   },
 
-  // 캐릭터 타임라인 조회
-  async getCharacterTimeline(
-    serverId: string,
-    characterId: string,
-    options: {
-      startDate?: string;
-      endDate?: string;
-      limit?: number;
-      code?: string;
-    } = {}
-  ) {
+  async getCharacterTimeline(serverId: string, characterId: string, options: any = {}) {
     try {
-      const params = new URLSearchParams({
-        apikey: API_KEY,
-        ...options,
+      const response = await dfApiClient.get(`/dfo/characters/${serverId}/${characterId}/timeline`, {
+        params: options
       });
-
-      const response = await dfApiClient.get(
-        `/servers/${serverId}/characters/${characterId}/timeline?${params.toString()}`
-      );
       return response.data;
     } catch (error) {
       console.error('캐릭터 타임라인 조회 실패:', error);
       throw error;
     }
   },
+
+  // 통합된 캐릭터 검색 (백엔드 API 사용)
+  async searchCharacterComplete(serverId: string, characterName: string): Promise<CharacterSearchResponse> {
+    try {
+      const response = await dfApiClient.get('/characters/search', {
+        params: {
+          serverId,
+          characterName
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('통합 캐릭터 검색 실패:', error);
+      throw error;
+    }
+  },
+
+  // 캐릭터 스펙 업데이트
+  async updateCharacterStats(serverId: string, characterId: string) {
+    try {
+      const response = await dfApiClient.post(`/characters/${serverId}/${characterId}/update-stats`);
+      return response.data;
+    } catch (error) {
+      console.error('캐릭터 스펙 업데이트 실패:', error);
+      throw error;
+    }
+  }
 };
 
 export default dfApiService; 

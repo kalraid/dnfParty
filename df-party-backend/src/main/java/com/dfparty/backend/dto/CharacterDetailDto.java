@@ -1,0 +1,77 @@
+package com.dfparty.backend.dto;
+
+import java.util.List;
+import java.util.Map;
+
+public class CharacterDetailDto {
+    private String serverId;
+    private String characterId;
+    private String characterName;
+    private String jobId;
+    private String jobGrowId;
+    private String jobName;
+    private String jobGrowName;
+    private int level;
+    private String adventureName;
+    private long fame;
+    private Map<String, Object> status;
+    private List<Map<String, Object>> equipment;
+    private Map<String, Object> buffSkill;
+
+    public CharacterDetailDto() {}
+
+    public CharacterDetailDto(String serverId, String characterId, String characterName, 
+                             String jobId, String jobGrowId, String jobName, String jobGrowName, 
+                             int level, String adventureName, long fame) {
+        this.serverId = serverId;
+        this.characterId = characterId;
+        this.characterName = characterName;
+        this.jobId = jobId;
+        this.jobGrowId = jobGrowId;
+        this.jobName = jobName;
+        this.jobGrowName = jobGrowName;
+        this.level = level;
+        this.adventureName = adventureName;
+        this.fame = fame;
+    }
+
+    // Getters and Setters
+    public String getServerId() { return serverId; }
+    public void setServerId(String serverId) { this.serverId = serverId; }
+
+    public String getCharacterId() { return characterId; }
+    public void setCharacterId(String characterId) { this.characterId = characterId; }
+
+    public String getCharacterName() { return characterName; }
+    public void setCharacterName(String characterName) { this.characterName = characterName; }
+
+    public String getJobId() { return jobId; }
+    public void setJobId(String jobId) { this.jobId = jobId; }
+
+    public String getJobGrowId() { return jobGrowId; }
+    public void setJobGrowId(String jobGrowId) { this.jobGrowId = jobGrowId; }
+
+    public String getJobName() { return jobName; }
+    public void setJobName(String jobName) { this.jobName = jobName; }
+
+    public String getJobGrowName() { return jobGrowName; }
+    public void setJobGrowName(String jobGrowName) { this.jobGrowName = jobGrowName; }
+
+    public int getLevel() { return level; }
+    public void setLevel(int level) { this.level = level; }
+
+    public String getAdventureName() { return adventureName; }
+    public void setAdventureName(String adventureName) { this.adventureName = adventureName; }
+
+    public long getFame() { return fame; }
+    public void setFame(long fame) { this.fame = fame; }
+
+    public Map<String, Object> getStatus() { return status; }
+    public void setStatus(Map<String, Object> status) { this.status = status; }
+
+    public List<Map<String, Object>> getEquipment() { return equipment; }
+    public void setEquipment(List<Map<String, Object>> equipment) { this.equipment = equipment; }
+
+    public Map<String, Object> getBuffSkill() { return buffSkill; }
+    public void setBuffSkill(Map<String, Object> buffSkill) { this.buffSkill = buffSkill; }
+}

@@ -25,6 +25,39 @@
           </label>
         </div>
       </div>
+      
+      <!-- 던전별 상세 규칙 표시 -->
+      <div v-if="selectedDungeon" class="dungeon-rules">
+        <h3>던전 요구사항</h3>
+        <div class="rules-content">
+          <div v-if="selectedDungeon === 'navel'" class="rule-item">
+            <h4>나벨 던전</h4>
+            <ul>
+              <li><strong>일반 나벨:</strong> 전투력 30억 이상, 버프력 400만 이상, 명성 63,000 이상</li>
+              <li><strong>하드 나벨:</strong> 전투력 100억 이상, 버프력 500만 이상, 명성 63,000 이상</li>
+              <li><strong>최소 구성:</strong> 2인 이상 (버퍼 포함 권장)</li>
+            </ul>
+          </div>
+          
+          <div v-if="selectedDungeon === 'venus'" class="rule-item">
+            <h4>베누스 던전</h4>
+            <ul>
+              <li><strong>명성 요구:</strong> 41,929 이상</li>
+              <li><strong>최소 구성:</strong> 2인 이상 (버퍼 포함 권장)</li>
+              <li><strong>파티 구성:</strong> 자유롭게 구성 가능</li>
+            </ul>
+          </div>
+          
+          <div v-if="selectedDungeon === 'fog'" class="rule-item">
+            <h4>안개신 던전</h4>
+            <ul>
+              <li><strong>명성 요구:</strong> 32,253 이상</li>
+              <li><strong>최소 구성:</strong> 딜러 2명, 버퍼 1명</li>
+              <li><strong>파티 구성:</strong> 딜러와 버퍼 밸런스 중요</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 모험단 선택 -->
@@ -76,12 +109,81 @@
             <option value="2">2인</option>
             <option value="3">3인</option>
             <option value="4">4인</option>
+            <option value="8">8인</option>
           </select>
         </div>
         
         <button @click="generateAutoParty" class="generate-btn" :disabled="generating">
           {{ generating ? '파티 생성 중...' : '자동 파티 생성' }}
         </button>
+      </div>
+
+      <!-- 수동 구성 옵션 -->
+      <div v-if="partyMode === 'manual'" class="manual-options">
+        <div class="option-group">
+          <label>파티 인원:</label>
+          <select v-model="partySize" @change="resetManualParty">
+            <option value="2">2인</option>
+            <option value="3">3인</option>
+            <option value="4">4인</option>
+            <option value="8">8인</option>
+          </select>
+        </div>
+        
+        <div class="manual-party-slots">
+          <h3>파티 슬롯 구성</h3>
+          <div class="party-slots">
+            <div 
+              v-for="index in partySize" 
+              :key="index" 
+              class="party-slot"
+              :class="{ filled: manualPartyMembers[index - 1] }"
+            >
+              <div class="slot-header">
+                <span class="slot-number">{{ index }}번 슬롯</span>
+                <span class="slot-role">{{ getSlotRole(index) }}</span>
+              </div>
+              
+              <div v-if="manualPartyMembers[index - 1]" class="selected-character">
+                <div class="character-info">
+                  <strong>{{ manualPartyMembers[index - 1]?.characterName }}</strong>
+                  <span class="adventure-name">{{ manualPartyMembers[index - 1]?.adventureName }}</span>
+                </div>
+                <div class="character-stats">
+                  <span class="damage">전투력: {{ formatNumber(manualPartyMembers[index - 1]?.totalDamage) }}</span>
+                  <span class="buff">버프력: {{ formatNumber(manualPartyMembers[index - 1]?.buffPower) }}</span>
+                </div>
+                <button @click="removeFromManualParty(index - 1)" class="remove-slot-btn">❌</button>
+              </div>
+              
+              <div v-else class="empty-slot">
+                <select 
+                  v-model="manualPartySelections[index - 1]" 
+                  @change="addToManualParty(index - 1)"
+                  class="character-select"
+                >
+                  <option value="">캐릭터 선택</option>
+                  <option 
+                    v-for="char in getAvailableCharactersForSlot(index)" 
+                    :key="char.characterId"
+                    :value="char.characterId"
+                  >
+                    {{ char.characterName }} ({{ char.adventureName }}) - {{ formatNumber(char.totalDamage) }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="manual-party-actions">
+            <button @click="generateManualParty" class="generate-btn" :disabled="!canGenerateManualParty">
+              수동 파티 생성
+            </button>
+            <button @click="resetManualParty" class="reset-btn">
+              초기화
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -90,25 +192,66 @@
       <h2>파티 구성 결과</h2>
       <div class="party-info">
         <p><strong>던전:</strong> {{ getDungeonName(selectedDungeon) }}</p>
-        <p><strong>파티 인원:</strong> {{ partyResult.members.length }}명</p>
+        <p><strong>파티 인원:</strong> {{ partyResult.memberCount }}명</p>
         <p><strong>총 전투력:</strong> {{ formatNumber(partyResult.totalDamage) }}</p>
-        <p><strong>버프력:</strong> {{ formatNumber(partyResult.buffPower) }}</p>
+        <p><strong>총 버프력:</strong> {{ formatNumber(partyResult.buffPower) }}</p>
+        <p><strong>파티 전투력:</strong> {{ formatNumber(partyResult.partyCombatPower) }}</p>
+      </div>
+      
+      <!-- 파티 효율성 분석 -->
+      <div class="party-efficiency">
+        <h3>파티 효율성 분석</h3>
+        <div class="efficiency-metrics">
+          <div class="metric-item">
+            <span class="metric-label">딜러 비율:</span>
+            <span class="metric-value">{{ getDealerRatio() }}%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">버퍼 비율:</span>
+            <span class="metric-value">{{ getBufferRatio() }}%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">평균 전투력:</span>
+            <span class="metric-value">{{ formatNumber(getAverageDamage()) }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">평균 버프력:</span>
+            <span class="metric-value">{{ formatNumber(getAverageBuffPower()) }}</span>
+          </div>
+        </div>
       </div>
       
       <div class="party-members">
         <h3>파티 멤버</h3>
-        <div class="member-list">
-          <div 
-            v-for="(member, index) in partyResult.members" 
-            :key="index"
-            class="member-card"
-          >
-            <h4>{{ member.characterName }}</h4>
-            <p><strong>모험단:</strong> {{ member.adventureName }}</p>
-            <p><strong>전투력:</strong> {{ formatNumber(member.totalDamage) }}</p>
-            <p><strong>버프력:</strong> {{ formatNumber(member.buffPower) }}</p>
-            <p><strong>역할:</strong> {{ member.role }}</p>
-          </div>
+        <div class="member-table">
+          <table>
+            <thead>
+              <tr>
+                <th>모험단</th>
+                <th>캐릭터명</th>
+                <th>역할</th>
+                <th>전투력</th>
+                <th>버프력</th>
+                <th>명성</th>
+                <th>기여도</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="member in partyResult.members" :key="member.characterId">
+                <td>{{ member.adventureName }}</td>
+                <td>{{ member.characterName }}</td>
+                <td>
+                  <span :class="getRoleClass(member)">
+                    {{ getRoleName(member) }}
+                  </span>
+                </td>
+                <td>{{ formatNumber(member.totalDamage) }}</td>
+                <td>{{ formatNumber(member.buffPower) }}</td>
+                <td>{{ member.fame?.toLocaleString() || 'N/A' }}</td>
+                <td>{{ getContributionPercentage(member) }}%</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -142,10 +285,39 @@ const selectedAdventures = ref<string[]>([]);
 const partyMode = ref('auto');
 const minDamageCut = ref(100);
 const partySize = ref(4);
-const partyResult = ref<any>(null);
+const partyResult = ref<{
+  members: Array<{
+    characterId: string;
+    serverId: string;
+    characterName: string;
+    totalDamage: number;
+    buffPower: number;
+    fame: number;
+    adventureName: string;
+  }>;
+  totalDamage: number;
+  buffPower: number;
+  partyCombatPower: number;
+  memberCount: number;
+} | null>(null);
 const loading = ref(false);
 const generating = ref(false);
 const error = ref('');
+
+// 수동 파티 구성 관련 데이터
+const manualPartySelections = ref<string[]>([]);
+const manualPartyMembers = ref<Array<{
+  characterId: string;
+  serverId: string;
+  characterName: string;
+  adventureName: string;
+  fame: number;
+  buffPower?: number;
+  totalDamage?: number;
+  level?: number;
+  jobName?: string;
+  savedAt: string;
+} | undefined>>([]);
 
 // 저장된 캐릭터 데이터 (실제로는 서비스에서 가져와야 함)
 const savedCharacters = ref<Array<{
@@ -165,6 +337,10 @@ const savedCharacters = ref<Array<{
 const availableAdventures = computed(() => {
   const adventures = new Set(savedCharacters.value.map(c => c.adventureName));
   return Array.from(adventures).sort();
+});
+
+const canGenerateManualParty = computed(() => {
+  return manualPartySelections.value.length === partySize.value && manualPartySelections.value.every(id => id !== '');
 });
 
 // 메서드들
@@ -222,21 +398,49 @@ const generateAutoParty = async () => {
       selectedAdventures.value.includes(c.adventureName)
     );
     
-    // 던전별 요구사항 체크
-    const validCharacters = filterCharactersByDungeon(availableCharacters);
-    
-    if (validCharacters.length < partySize.value) {
-      error.value = `파티 구성에 필요한 캐릭터가 부족합니다. (필요: ${partySize.value}명, 가능: ${validCharacters.length}명)`;
-      return;
+    // 백엔드 API 호출을 위한 데이터 준비
+    const requestData = {
+      dungeonType: selectedDungeon.value,
+      navelMode: navelMode.value,
+      partySize: partySize.value,
+      minDamageCut: minDamageCut.value * 100000000, // 억 단위를 실제 숫자로 변환
+      characters: availableCharacters.map(c => ({
+        characterId: c.characterId,
+        serverId: c.serverId,
+        characterName: c.characterName,
+        totalDamage: c.totalDamage || 0,
+        buffPower: c.buffPower || 0,
+        fame: c.fame || 0,
+        adventureName: c.adventureName
+      }))
+    };
+
+    // 백엔드 API 호출
+    const response = await fetch('http://localhost:8080/api/party/optimize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error('파티 최적화 API 호출에 실패했습니다.');
     }
+
+    const result = await response.json();
     
-    // 파티 구성 알고리즘 실행
-    const party = createParty(validCharacters);
-    
-    if (party) {
-      partyResult.value = party;
+    if (result.success) {
+      partyResult.value = {
+        members: result.party,
+        totalDamage: result.stats.totalDamage,
+        buffPower: result.stats.totalBuffPower,
+        partyCombatPower: result.stats.partyCombatPower,
+        memberCount: result.stats.memberCount
+      };
+      error.value = '';
     } else {
-      error.value = '파티 구성에 실패했습니다.';
+      error.value = result.message || '파티 구성에 실패했습니다.';
     }
     
   } catch (err) {
@@ -247,99 +451,174 @@ const generateAutoParty = async () => {
   }
 };
 
-const filterCharactersByDungeon = (characters: any[]): any[] => {
-  const minDamage = minDamageCut.value * 100000000; // 억 단위를 실제 숫자로 변환
-  
-  return characters.filter(c => {
-    // 기본 요구사항 체크
-    if (!c.totalDamage || c.totalDamage < minDamage) return false;
-    
-    // 던전별 특별 요구사항 체크
-    switch (selectedDungeon.value) {
-      case 'navel':
-        if (navelMode.value === 'hard') {
-          // 하드 나벨: 전투력 100억, 버프력 500만 이상
-          return c.totalDamage >= 10000000000 && (c.buffPower || 0) >= 5000000;
-        } else {
-          // 일반 나벨: 전투력 30억, 버프력 400만 이상
-          return c.totalDamage >= 3000000000 && (c.buffPower || 0) >= 4000000;
-        }
-      case 'venus':
-        // 베누스: 명성 41929 이상
-        return c.fame >= 41929;
-      case 'fog':
-        // 안개신: 명성 32253 이상
-        return c.fame >= 32253;
-      default:
-        return true;
+const addToManualParty = (slotIndex: number) => {
+  const selectedCharacterId = manualPartySelections.value[slotIndex];
+  if (selectedCharacterId) {
+    const character = savedCharacters.value.find(c => c.characterId === selectedCharacterId);
+    if (character) {
+      manualPartyMembers.value[slotIndex] = character;
+      manualPartySelections.value[slotIndex] = ''; // 선택 초기화
     }
-  });
+  }
 };
 
-const createParty = (characters: any[]): any => {
+const removeFromManualParty = (slotIndex: number) => {
+  manualPartyMembers.value[slotIndex] = undefined;
+  manualPartySelections.value[slotIndex] = '';
+};
+
+const resetManualParty = () => {
+  manualPartyMembers.value = Array(partySize.value).fill(undefined);
+  manualPartySelections.value = Array(partySize.value).fill('');
+};
+
+const generateManualParty = async () => {
   try {
-    // 버퍼와 딜러 분리
-    const buffers = characters.filter(c => (c.buffPower || 0) > (c.totalDamage || 0));
-    const dealers = characters.filter(c => (c.totalDamage || 0) >= (c.buffPower || 0));
-    
-    // 파티 구성 규칙에 따른 멤버 선택
-    let selectedMembers: any[] = [];
-    
-    if (partySize.value === 4) {
-      // 4인 파티: 버퍼 1명 + 딜러 3명
-      if (buffers.length > 0) {
-        selectedMembers.push(buffers[0]);
-      }
-      
-      const neededDealers = partySize.value - selectedMembers.length;
-      selectedMembers.push(...dealers.slice(0, neededDealers));
-      
-    } else if (partySize.value === 3) {
-      // 3인 파티: 버퍼 1명 + 딜러 2명
-      if (buffers.length > 0) {
-        selectedMembers.push(buffers[0]);
-      }
-      
-      const neededDealers = partySize.value - selectedMembers.length;
-      selectedMembers.push(...dealers.slice(0, neededDealers));
-      
-    } else if (partySize.value === 2) {
-      // 2인 파티: 버퍼 1명 + 딜러 1명
-      if (buffers.length > 0) {
-        selectedMembers.push(buffers[0]);
-      }
-      
-      const neededDealers = partySize.value - selectedMembers.length;
-      selectedMembers.push(...dealers.slice(0, neededDealers));
-    }
-    
-    if (selectedMembers.length < partySize.value) {
-      // 부족한 인원은 딜러로 채움
-      const remainingDealers = dealers.filter(d => !selectedMembers.includes(d));
-      selectedMembers.push(...remainingDealers.slice(0, partySize.value - selectedMembers.length));
-    }
-    
-    // 파티 정보 계산
-    const totalDamage = selectedMembers.reduce((sum, m) => sum + (m.totalDamage || 0), 0);
-    const buffPower = selectedMembers.reduce((sum, m) => sum + (m.buffPower || 0), 0);
-    
-    // 멤버별 역할 설정
-    const membersWithRoles = selectedMembers.map(member => ({
-      ...member,
-      role: (member.buffPower || 0) > (member.totalDamage || 0) ? '버퍼' : '딜러'
-    }));
-    
-    return {
-      members: membersWithRoles,
-      totalDamage,
-      buffPower,
-      effectiveDamage: totalDamage * (1 + buffPower / 1000000) // 버프력 적용
+    generating.value = true;
+    error.value = '';
+
+    // 수동으로 선택된 캐릭터들 필터링
+    const selectedCharacters = manualPartyMembers.value.filter(c => c !== undefined) as Array<{
+      characterId: string;
+      serverId: string;
+      characterName: string;
+      adventureName: string;
+      fame: number;
+      buffPower?: number;
+      totalDamage?: number;
+      level?: number;
+      jobName?: string;
+      savedAt: string;
+    }>;
+
+    // 백엔드 API 호출을 위한 데이터 준비
+    const requestData = {
+      dungeonType: selectedDungeon.value,
+      navelMode: navelMode.value,
+      partySize: partySize.value,
+      characters: selectedCharacters.map(c => ({
+        characterId: c.characterId,
+        serverId: c.serverId,
+        characterName: c.characterName,
+        totalDamage: c.totalDamage || 0,
+        buffPower: c.buffPower || 0,
+        fame: c.fame || 0,
+        adventureName: c.adventureName
+      }))
     };
+
+    // 백엔드 API 호출
+    const response = await fetch('http://localhost:8080/api/party/optimize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      throw new Error('파티 최적화 API 호출에 실패했습니다.');
+    }
+
+    const result = await response.json();
+    
+    if (result.success) {
+      partyResult.value = {
+        members: result.party,
+        totalDamage: result.stats.totalDamage,
+        buffPower: result.stats.totalBuffPower,
+        partyCombatPower: result.stats.partyCombatPower,
+        memberCount: result.stats.memberCount
+      };
+      error.value = '';
+    } else {
+      error.value = result.message || '파티 구성에 실패했습니다.';
+    }
     
   } catch (err) {
-    console.error('파티 생성 실패:', err);
-    return null;
+    error.value = '파티 생성에 실패했습니다.';
+    console.error(err);
+  } finally {
+    generating.value = false;
   }
+};
+
+const getAvailableCharactersForSlot = (slotIndex: number) => {
+  const selectedCharacterId = manualPartySelections.value[slotIndex];
+  if (selectedCharacterId) {
+    return savedCharacters.value.filter(c => c.characterId !== selectedCharacterId);
+  }
+  return savedCharacters.value.filter(c => 
+    selectedAdventures.value.includes(c.adventureName) && 
+    !manualPartyMembers.value.some(m => m?.characterId === c.characterId)
+  );
+};
+
+const getSlotRole = (slotIndex: number) => {
+  const member = manualPartyMembers.value[slotIndex];
+  if (!member) return '비어있음';
+  return (member.buffPower || 0) > (member.totalDamage || 0) ? '버퍼' : '딜러';
+};
+
+// 역할 관련 헬퍼 함수들
+const getRoleName = (member: { totalDamage?: number; buffPower?: number }): string => {
+  const totalDamage = member.totalDamage || 0;
+  const buffPower = member.buffPower || 0;
+  return buffPower > totalDamage ? '버퍼' : '딜러';
+};
+
+const getRoleClass = (member: { totalDamage?: number; buffPower?: number }): string => {
+  const totalDamage = member.totalDamage || 0;
+  const buffPower = member.buffPower || 0;
+  return buffPower > totalDamage ? 'role-buffer' : 'role-dealer';
+};
+
+// 파티 효율성 계산 함수들
+const getDealerRatio = () => {
+  if (!partyResult.value) return 0;
+  const totalMembers = partyResult.value.memberCount;
+  if (totalMembers === 0) return 0;
+  const dealers = partyResult.value.members.filter(m => getRoleName(m) === '딜러').length;
+  return ((dealers / totalMembers) * 100).toFixed(1);
+};
+
+const getBufferRatio = () => {
+  if (!partyResult.value) return 0;
+  const totalMembers = partyResult.value.memberCount;
+  if (totalMembers === 0) return 0;
+  const buffers = partyResult.value.members.filter(m => getRoleName(m) === '버퍼').length;
+  return ((buffers / totalMembers) * 100).toFixed(1);
+};
+
+const getAverageDamage = () => {
+  if (!partyResult.value) return 0;
+  const totalDamage = partyResult.value.totalDamage;
+  const memberCount = partyResult.value.memberCount;
+  if (memberCount === 0) return 0;
+  return totalDamage / memberCount;
+};
+
+const getAverageBuffPower = () => {
+  if (!partyResult.value) return 0;
+  const totalBuffPower = partyResult.value.buffPower;
+  const memberCount = partyResult.value.memberCount;
+  if (memberCount === 0) return 0;
+  return totalBuffPower / memberCount;
+};
+
+const getContributionPercentage = (member: { totalDamage?: number; buffPower?: number }) => {
+  if (!partyResult.value) return 0;
+  const totalDamage = partyResult.value.totalDamage;
+  const totalBuffPower = partyResult.value.buffPower;
+  const memberDamage = member.totalDamage || 0;
+  const memberBuffPower = member.buffPower || 0;
+
+  if (totalDamage === 0 && totalBuffPower === 0) return 0;
+
+  const damageContribution = (memberDamage / totalDamage) * 100;
+  const buffPowerContribution = (memberBuffPower / totalBuffPower) * 100;
+
+  return ((damageContribution + buffPowerContribution) / 2).toFixed(1);
 };
 
 // 컴포넌트 마운트 시 데이터 로드
@@ -461,7 +740,8 @@ h1 {
   cursor: pointer;
 }
 
-.auto-options {
+.auto-options,
+.manual-options {
   background: #f8f9fa;
   padding: 20px;
   border-radius: 6px;
@@ -505,6 +785,130 @@ h1 {
   cursor: not-allowed;
 }
 
+.manual-party-slots {
+  margin-top: 20px;
+}
+
+.party-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.party-slot {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.party-slot.filled {
+  background: #e8f5e8;
+  border-color: #28a745;
+}
+
+.slot-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slot-number {
+  font-weight: bold;
+  color: #333;
+}
+
+.slot-role {
+  background: #007bff;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.selected-character {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.character-info {
+  text-align: center;
+}
+
+.character-info strong {
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.character-info .adventure-name {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.character-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.remove-slot-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.remove-slot-btn:hover {
+  background: #c82333;
+}
+
+.empty-slot {
+  width: 100%;
+}
+
+.character-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.manual-party-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.reset-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  background: #5a6268;
+}
+
 .party-result {
   background: #e8f5e8;
   padding: 20px;
@@ -524,32 +928,89 @@ h1 {
   color: #333;
 }
 
+.party-efficiency {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.party-efficiency h3 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.efficiency-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.metric-label {
+  font-weight: bold;
+  color: #333;
+}
+
+.metric-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #28a745; /* 버프력 색상과 동일 */
+}
+
 .party-members h3 {
   color: #333;
   margin-bottom: 15px;
 }
 
-.member-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
+.member-table {
+  margin-top: 20px;
 }
 
-.member-card {
+.member-table table {
+  width: 100%;
+  border-collapse: collapse;
   background: white;
-  padding: 15px;
   border-radius: 6px;
-  border-left: 4px solid #007bff;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.member-card h4 {
-  margin: 0 0 10px 0;
+.member-table th,
+.member-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.member-table th {
+  background: #f8f9fa;
+  font-weight: bold;
   color: #333;
 }
 
-.member-card p {
-  margin: 5px 0;
-  color: #666;
+.member-table tr:hover {
+  background: #f8f9fa;
+}
+
+.role-buffer {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.role-dealer {
+  color: #007bff;
+  font-weight: bold;
 }
 
 .no-characters {
@@ -586,6 +1047,53 @@ h1 {
   border-radius: 4px;
   margin-top: 20px;
   text-align: center;
+}
+
+.dungeon-rules {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dungeon-rules h3 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.rules-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.rule-item {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.rule-item h4 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.rule-item ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rule-item li {
+  color: #555;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.rule-item li strong {
+  color: #333;
 }
 
 @media (max-width: 768px) {

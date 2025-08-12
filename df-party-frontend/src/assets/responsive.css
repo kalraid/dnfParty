@@ -1,0 +1,241 @@
+/* 고급 반응형 디자인 */
+
+/* 기본 브레이크포인트 */
+:root {
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-xxl: 1400px;
+}
+
+/* 컨테이너 */
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 576px) {
+  .container { max-width: 540px; }
+}
+
+@media (min-width: 768px) {
+  .container { max-width: 720px; }
+}
+
+@media (min-width: 992px) {
+  .container { max-width: 960px; }
+}
+
+@media (min-width: 1200px) {
+  .container { max-width: 1140px; }
+}
+
+@media (min-width: 1400px) {
+  .container { max-width: 1320px; }
+}
+
+/* 그리드 시스템 */
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+@media (min-width: 768px) {
+  .grid-md-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-md-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-md-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 992px) {
+  .grid-lg-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-lg-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-lg-6 { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* 플렉스 유틸리티 */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 1rem; }
+.gap-4 { gap: 1.5rem; }
+
+/* 반응형 숨김/표시 */
+.hidden { display: none; }
+.block { display: block; }
+
+@media (max-width: 575px) {
+  .hidden-xs { display: none; }
+  .block-xs { display: block; }
+}
+
+@media (max-width: 767px) {
+  .hidden-sm { display: none; }
+  .block-sm { display: block; }
+}
+
+@media (min-width: 768px) {
+  .hidden-md-up { display: none; }
+  .block-md-up { display: block; }
+}
+
+@media (max-width: 991px) {
+  .hidden-lg-down { display: none; }
+  .block-lg-down { display: block; }
+}
+
+/* 반응형 텍스트 */
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+
+@media (min-width: 768px) {
+  .text-md-lg { font-size: 1.125rem; }
+  .text-md-xl { font-size: 1.25rem; }
+  .text-md-2xl { font-size: 1.5rem; }
+}
+
+@media (min-width: 992px) {
+  .text-lg-xl { font-size: 1.25rem; }
+  .text-lg-2xl { font-size: 1.5rem; }
+  .text-lg-3xl { font-size: 1.875rem; }
+}
+
+/* 반응형 패딩/마진 */
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+.p-4 { padding: 1.5rem; }
+.p-5 { padding: 3rem; }
+
+.m-1 { margin: 0.25rem; }
+.m-2 { margin: 0.5rem; }
+.m-3 { margin: 1rem; }
+.m-4 { margin: 1.5rem; }
+.m-5 { margin: 3rem; }
+
+@media (min-width: 768px) {
+  .p-md-4 { padding: 1.5rem; }
+  .p-md-5 { padding: 3rem; }
+  .m-md-4 { margin: 1.5rem; }
+  .m-md-5 { margin: 3rem; }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 767px) {
+  .mobile-full { width: 100%; }
+  .mobile-stack { flex-direction: column; }
+  .mobile-center { text-align: center; }
+  
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border);
+    z-index: 1000;
+  }
+  
+  .mobile-content {
+    padding-bottom: 4rem;
+  }
+}
+
+/* 태블릿 최적화 */
+@media (min-width: 768px) and (max-width: 991px) {
+  .tablet-sidebar {
+    width: 250px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .tablet-main {
+    margin-left: 250px;
+  }
+}
+
+/* 데스크톱 최적화 */
+@media (min-width: 992px) {
+  .desktop-sidebar {
+    width: 300px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .desktop-main {
+    margin-left: 300px;
+  }
+  
+  .desktop-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+/* 대형 화면 최적화 */
+@media (min-width: 1400px) {
+  .xxl-container {
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+  
+  .xxl-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+}
+
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+  .smooth-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+/* 고대비 모드 */
+@media (prefers-contrast: high) {
+  .high-contrast {
+    border-width: 2px;
+    background-color: var(--color-background);
+    color: var(--color-text);
+  }
+}
+
+/* 다크 모드 자동 감지 */
+@media (prefers-color-scheme: dark) {
+  .auto-dark {
+    background-color: var(--color-background-dark);
+    color: var(--color-text-dark);
+  }
+}
+
+/* 인쇄 스타일 */
+@media print {
+  .no-print { display: none; }
+  .print-only { display: block; }
+  
+  .print-break { page-break-before: always; }
+  .print-avoid { page-break-inside: avoid; }
+}

@@ -12,7 +12,7 @@ RUN mkdir -p /app/shared-data && \
     chown -R appuser:appgroup /app
 
 # Copy mock server application
-COPY mock-server.jar app.jar
+COPY build/libs/df-party-mock-0.0.1-SNAPSHOT.jar app.jar
 
 # Switch to app user
 USER appuser

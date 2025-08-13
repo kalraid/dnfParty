@@ -1,6 +1,6 @@
 package com.dfparty.backend.service;
 
-import com.dfparty.backend.model.Character;
+import com.dfparty.backend.entity.Character;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -279,9 +279,9 @@ public class PartyRecommendationService {
         List<Character> updoongis = categorizedCharacters.get("updoongis");
         
         // 명성 순으로 정렬
-        dealers.sort((a, b) -> Integer.compare(b.getFame(), a.getFame()));
-        buffers.sort((a, b) -> Integer.compare(b.getFame(), a.getFame()));
-        updoongis.sort((a, b) -> Integer.compare(b.getFame(), a.getFame()));
+        dealers.sort((a, b) -> Long.compare(b.getFame() != null ? b.getFame() : 0L, a.getFame() != null ? a.getFame() : 0L));
+        buffers.sort((a, b) -> Long.compare(b.getFame() != null ? b.getFame() : 0L, a.getFame() != null ? a.getFame() : 0L));
+        updoongis.sort((a, b) -> Long.compare(b.getFame() != null ? b.getFame() : 0L, a.getFame() != null ? a.getFame() : 0L));
         
         Map<String, Object> party = new HashMap<>();
         List<Map<String, Object>> slots = new ArrayList<>();
@@ -538,7 +538,7 @@ public class PartyRecommendationService {
         // 평균 명성 계산
         double avgFame = categorizedCharacters.values().stream()
                 .flatMap(List::stream)
-                .mapToInt(Character::getFame)
+                .mapToLong(c -> c.getFame() != null ? c.getFame() : 0L)
                 .average()
                 .orElse(0.0);
         analysis.put("averageFame", avgFame);
@@ -605,7 +605,7 @@ public class PartyRecommendationService {
                 
                 if (aIsUpdoongi && !bIsUpdoongi) return -1;
                 if (!aIsUpdoongi && bIsUpdoongi) return 1;
-                return Integer.compare(b.getFame(), a.getFame());
+                return Long.compare(b.getFame() != null ? b.getFame() : 0L, a.getFame() != null ? a.getFame() : 0L);
             });
         }
         

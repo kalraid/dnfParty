@@ -1,0 +1,16 @@
+apiVersion: v2
+name: mariadb
+description: MariaDB Database for DFO Party Application
+type: application
+version: 1.0.0
+appVersion: "10.11.0"
+keywords:
+  - mariadb
+  - mysql
+  - database
+home: https://mariadb.org/
+sources:
+  - https://github.com/MariaDB/mariadb
+maintainers:
+  - name: DFO Party Team
+    email: team@dfoparty.com

@@ -25,6 +25,18 @@ service:
   type: LoadBalancer
   port: 80
 
+# Backend, Frontend, MariaDB 서비스 연결 설정
+upstream:
+  backend:
+    host: dfo-party-backend
+    port: 8080
+  frontend:
+    host: dfo-party-frontend
+    port: 80
+  mariadb:
+    host: dfo-party-mariadb
+    port: 3306
+
 ingress:
   enabled: false
   className: ""

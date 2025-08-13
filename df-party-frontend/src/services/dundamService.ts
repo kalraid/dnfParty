@@ -94,7 +94,7 @@ export const dundamService = {
   },
 
   // Mock 던전 클리어 정보
-  private getMockDungeonClearInfo(serverId: string, characterId: string): {
+  getMockDungeonClearInfo(serverId: string, characterId: string): {
     nabel: boolean;
     venus: boolean;
     fog: boolean;

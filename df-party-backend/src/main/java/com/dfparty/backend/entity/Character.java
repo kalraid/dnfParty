@@ -55,6 +55,18 @@ public class Character {
     @Column(name = "dungeon_clear_fog")
     private Boolean dungeonClearFog = false;
 
+    @Column(name = "dungeon_clear_azure")
+    private Boolean dungeonClearAzure = false;
+
+    @Column(name = "dungeon_clear_storm")
+    private Boolean dungeonClearStorm = false;
+
+    @Column(name = "dungeon_clear_nightmare")
+    private Boolean dungeonClearNightmare = false;
+
+    @Column(name = "dungeon_clear_temple")
+    private Boolean dungeonClearTemple = false;
+
     @Column(name = "last_dungeon_check")
     private LocalDateTime lastDungeonCheck;
 
@@ -125,6 +137,9 @@ public class Character {
     public String getJobGrowName() { return jobGrowName; }
     public void setJobGrowName(String jobGrowName) { this.jobGrowName = jobGrowName; }
 
+    // 직업명 반환 (getJob() 메서드 추가)
+    public String getJob() { return jobName; }
+
     public Integer getLevel() { return level; }
     public void setLevel(Integer level) { this.level = level; }
 
@@ -145,6 +160,18 @@ public class Character {
 
     public Boolean getDungeonClearFog() { return dungeonClearFog; }
     public void setDungeonClearFog(Boolean dungeonClearFog) { this.dungeonClearFog = dungeonClearFog; }
+
+    public Boolean getDungeonClearAzure() { return dungeonClearAzure; }
+    public void setDungeonClearAzure(Boolean dungeonClearAzure) { this.dungeonClearAzure = dungeonClearAzure; }
+
+    public Boolean getDungeonClearStorm() { return dungeonClearStorm; }
+    public void setDungeonClearStorm(Boolean dungeonClearStorm) { this.dungeonClearStorm = dungeonClearStorm; }
+
+    public Boolean getDungeonClearNightmare() { return dungeonClearNightmare; }
+    public void setDungeonClearNightmare(Boolean dungeonClearNightmare) { this.dungeonClearNightmare = dungeonClearNightmare; }
+
+    public Boolean getDungeonClearTemple() { return dungeonClearTemple; }
+    public void setDungeonClearTemple(Boolean dungeonClearTemple) { this.dungeonClearTemple = dungeonClearTemple; }
 
     public LocalDateTime getLastDungeonCheck() { return lastDungeonCheck; }
     public void setLastDungeonCheck(LocalDateTime lastDungeonCheck) { this.lastDungeonCheck = lastDungeonCheck; }
@@ -176,6 +203,14 @@ public class Character {
     public Boolean getIsFavorite() { return isFavorite; }
     public void setIsFavorite(Boolean isFavorite) { this.isFavorite = isFavorite; }
 
+    // 전투력 계산 메서드 (버프력 + 총딜의 합계)
+    public Long getCombatPower() {
+        if (buffPower == null && totalDamage == null) {
+            return 0L;
+        }
+        return (buffPower != null ? buffPower : 0L) + (totalDamage != null ? totalDamage : 0L);
+    }
+
     // 업데이트 시간 자동 설정
     @PreUpdate
     protected void onUpdate() {
@@ -183,10 +218,12 @@ public class Character {
     }
 
     // 던전 클리어 현황 업데이트
-    public void updateDungeonClearStatus(Boolean nabel, Boolean venus, Boolean fog) {
+    public void updateDungeonClearStatus(Boolean nabel, Boolean venus, Boolean fog, Boolean azure, Boolean storm) {
         this.dungeonClearNabel = nabel;
         this.dungeonClearVenus = venus;
         this.dungeonClearFog = fog;
+        this.dungeonClearAzure = azure;
+        this.dungeonClearStorm = storm;
         this.lastDungeonCheck = LocalDateTime.now();
     }
 

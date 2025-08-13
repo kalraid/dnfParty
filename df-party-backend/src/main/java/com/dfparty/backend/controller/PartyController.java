@@ -18,8 +18,8 @@ public class PartyController {
     @PostMapping("/optimize")
     public ResponseEntity<Map<String, Object>> optimizeParty(@RequestBody Map<String, Object> request) {
         try {
-            Map<String, Object> result = partyOptimizationService.optimizeParty(request);
-            return ResponseEntity.ok(result);
+            // TODO: PartyOptimizationService에 optimizeParty 메서드 구현 필요
+            return ResponseEntity.ok(Map.of("message", "파티 최적화 기능은 아직 구현되지 않았습니다."));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

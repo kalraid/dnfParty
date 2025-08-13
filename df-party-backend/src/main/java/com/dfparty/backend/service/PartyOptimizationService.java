@@ -1,7 +1,7 @@
 package com.dfparty.backend.service;
 
 import com.dfparty.backend.dto.CharacterDto;
-import com.dfparty.backend.model.Character;
+import com.dfparty.backend.entity.Character;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

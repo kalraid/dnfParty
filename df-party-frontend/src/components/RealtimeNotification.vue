@@ -112,7 +112,6 @@ const chatMessages = ref<ChatMessage[]>([])
 const showChat = ref(false)
 const chatInput = ref('')
 const currentUserId = ref('')
-const chatMessages = ref<ChatMessage[]>([])
 const chatMessagesRef = ref<HTMLElement>()
 
 const settings = ref<NotificationSettings>({

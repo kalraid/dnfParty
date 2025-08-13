@@ -45,12 +45,12 @@
             :class="{ 'dragging': draggedCharacter?.characterId === character.characterId }"
           >
             <div class="character-avatar">
-              <img :src="getJobImage(character.jobName)" :alt="character.jobName" class="job-icon">
+              <img :src="getJobImage(character.jobName || '')" :alt="character.jobName || 'Unknown'" class="job-icon">
             </div>
             <div class="character-info">
               <div class="character-name">{{ character.characterName }}</div>
-              <div class="character-role">{{ character.jobName }}</div>
-              <div class="character-fame">{{ formatNumber(character.fame) }}</div>
+              <div class="character-role">{{ character.jobName || 'Unknown' }}</div>
+              <div class="character-fame">{{ formatNumber(character.fame || 0) }}</div>
             </div>
             <div class="character-actions">
               <button @click="addToParty(character)" class="add-btn" title="파티에 추가">+</button>
@@ -93,12 +93,12 @@
               >
                 <div v-if="slot.character" class="slot-content">
                   <div class="character-avatar">
-                    <img :src="getJobImage(slot.character.jobName)" :alt="slot.character.jobName" class="job-icon">
+                    <img :src="getJobImage(slot.character.jobName || '')" :alt="slot.character.jobName || 'Unknown'" class="job-icon">
                   </div>
                   <div class="character-info">
                     <div class="character-name">{{ slot.character.characterName }}</div>
                     <div class="character-role">{{ slot.role }}</div>
-                    <div class="character-fame">{{ formatNumber(slot.character.fame) }}</div>
+                    <div class="character-fame">{{ formatNumber(slot.character.fame || 0) }}</div>
                   </div>
                   <div class="slot-actions">
                     <button @click.stop="removeFromSlot(slot, 'party1', index)" class="remove-btn" title="제거">×</button>
@@ -133,12 +133,12 @@
               >
                 <div v-if="slot.character" class="slot-content">
                   <div class="character-avatar">
-                    <img :src="getJobImage(slot.character.jobName)" :alt="slot.character.jobName" class="job-icon">
+                    <img :src="getJobImage(slot.character.jobName || '')" :alt="slot.character.jobName || 'Unknown'" class="job-icon">
                   </div>
                   <div class="character-info">
                     <div class="character-name">{{ slot.character.characterName }}</div>
                     <div class="character-role">{{ slot.role }}</div>
-                    <div class="character-fame">{{ formatNumber(slot.character.fame) }}</div>
+                    <div class="character-fame">{{ formatNumber(slot.character.fame || 0) }}</div>
                   </div>
                   <div class="slot-actions">
                     <button @click.stop="removeFromSlot(slot, 'party2', index)" class="remove-btn" title="제거">×</button>

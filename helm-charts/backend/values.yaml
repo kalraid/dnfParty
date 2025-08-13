@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: dfo-party-backend
+  repository: kimrie92/dfo-party-backend
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -35,6 +35,8 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
   tls: []
+
+
 
 env:
   - name: SPRING_PROFILES_ACTIVE

@@ -9,6 +9,13 @@ export const usePartyStore = defineStore('party', {
     error: null as string | null,
     selectedDungeon: '',
     selectedCharacters: [] as string[],
+    // 누락된 속성들 추가
+    recommendationResult: null as any,
+    dungeonSpecificRecommendations: null as any,
+    personalizedRecommendation: null as any,
+    recommendationConfig: null as any,
+    recommendationHistory: null as any,
+    recommendationStats: null as any,
   }),
 
   getters: {

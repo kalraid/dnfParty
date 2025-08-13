@@ -57,7 +57,7 @@ public interface SharedPartyRepository extends JpaRepository<SharedParty, Long> 
     List<SharedParty> findByIsActiveTrueOrderByViewCountDesc();
     
     /**
-     * 최근 공유 파티 조회
+     * 최근 공유 파티 조회 (중복 제거됨)
      */
-    List<SharedParty> findByIsActiveTrueOrderByCreatedAtDesc();
+    // List<SharedParty> findByIsActiveTrueOrderByCreatedAtDesc(); // 이미 위에 정의됨
 }

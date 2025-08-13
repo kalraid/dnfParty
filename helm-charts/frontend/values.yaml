@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: dfo-party-frontend
+  repository: kimrie92/dfo-party-frontend
   tag: latest
   pullPolicy: IfNotPresent
 

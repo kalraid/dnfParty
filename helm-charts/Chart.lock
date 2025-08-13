@@ -1,0 +1,15 @@
+dependencies:
+- name: frontend
+  repository: file://frontend
+  version: 1.0.0
+- name: backend
+  repository: file://backend
+  version: 1.0.0
+- name: nginx
+  repository: file://nginx
+  version: 1.0.0
+- name: mariadb
+  repository: file://mariadb
+  version: 1.0.0
+digest: sha256:9ffd09d11adc649a656b392b23907481d8f28a8047842c0bde9370ed8964c4b0
+generated: "2025-08-13T13:58:57.4489566+09:00"

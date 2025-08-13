@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS characters (
     dungeon_clear_nabel BOOLEAN DEFAULT FALSE,
     dungeon_clear_venus BOOLEAN DEFAULT FALSE,
     dungeon_clear_fog BOOLEAN DEFAULT FALSE,
+    dungeon_clear_azure BOOLEAN DEFAULT FALSE,
+    dungeon_clear_storm BOOLEAN DEFAULT FALSE,
+    dungeon_clear_nightmare BOOLEAN DEFAULT FALSE,
+    dungeon_clear_temple BOOLEAN DEFAULT FALSE,
     last_dungeon_check TIMESTAMP,
     
     -- 실시간 정보 (매번 새로 조회)
@@ -39,7 +43,7 @@ CREATE TABLE IF NOT EXISTS characters (
 CREATE TABLE IF NOT EXISTS adventures (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     adventure_name VARCHAR(255) NOT NULL UNIQUE,
-    server_id VARCHAR(100) NOT NULL,
+    server_id VARCHAR(100) NOT NULL UNIQUE,
     character_count INTEGER DEFAULT 0,
     total_fame BIGINT DEFAULT 0,
     average_level DOUBLE DEFAULT 0.0,

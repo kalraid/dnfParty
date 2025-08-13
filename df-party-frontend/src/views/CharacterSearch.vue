@@ -116,8 +116,8 @@ const servers = ref<Server[]>([]);
 const searchResults = ref<any[]>([]);
 const searchHistory = ref<SearchRecord[]>([]);
 const searching = ref(false);
-const error = ref('');
-const successMessage = ref('');
+const error = ref<string>('');
+const successMessage = ref<string>('');
 
 // 컴포넌트 마운트 시 서버 목록과 검색 기록 로드
 onMounted(async () => {
@@ -257,9 +257,9 @@ const loadCharacterFromHistory = async (record: SearchRecord) => {
       searchResults.value = [characterData];
       successMessage.value = '검색 기록에서 캐릭터를 불러왔습니다.';
     }
-  } catch (error) {
-    console.error('캐릭터 정보 로드 실패:', error);
-    this.error = '캐릭터 정보를 불러오는데 실패했습니다.';
+  } catch (err) {
+    console.error('캐릭터 정보 로드 실패:', err);
+    error.value = '캐릭터 정보를 불러오는데 실패했습니다.';
   }
 };
 

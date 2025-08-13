@@ -2,13 +2,35 @@
 global:
   environment: production
   domain: localhost
+  dfApiKey: "dfparty-api-key-2024"
   
+# Environment-specific overrides
+environments:
+  development:
+    backend:
+      env:
+        - name: DB_NAME
+          value: "dnfp_dev"
+        - name: SHOW_SQL
+          value: "true"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "development"
+  production:
+    backend:
+      env:
+        - name: DB_NAME
+          value: "dnfp_prod"
+        - name: SHOW_SQL
+          value: "false"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+
 # Frontend configuration
 frontend:
   enabled: true
   replicaCount: 2
   image:
-    repository: dfo-party-frontend
+    repository: kimrie92/dfo-party-frontend
     tag: latest
     pullPolicy: IfNotPresent
   service:
@@ -29,7 +51,7 @@ backend:
   enabled: true
   replicaCount: 2
   image:
-    repository: dfo-party-backend
+    repository: kimrie92/dfo-party-backend
     tag: latest
     pullPolicy: IfNotPresent
   service:
@@ -43,6 +65,46 @@ backend:
         secretKeyRef:
           name: dfo-api-secret
           key: api-key
+    # Database Configuration - Root 계정으로 접속
+    - name: DB_HOST
+      value: "dfo-party-mariadb"
+    - name: DB_PORT
+      value: "3306"
+    - name: DB_NAME
+      value: "dnfp"
+    - name: DB_USERNAME
+      value: "root"
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: "mariadb-secret"
+          key: mariadb-root-password
+    - name: SHOW_SQL
+      value: "false"
+  # Init Container - 실제 MySQL 연결 확인
+  initContainers:
+    - name: wait-for-mariadb
+      image: mysql:8.0
+      command: 
+        - sh
+        - -c
+        - |
+          echo "Waiting for MariaDB to be ready..."
+          until mysql -h dfo-party-mariadb -P 3306 -u root -p'dfparty-root-password' -e "SELECT 1;" > /dev/null 2>&1; do
+            echo "MariaDB not ready yet, waiting..."
+            sleep 5
+          done
+          echo "MariaDB is ready!"
+      env:
+        - name: MYSQL_PWD
+          value: "dfparty-root-password"
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi
   resources:
     limits:
       cpu: 1000m
@@ -78,15 +140,53 @@ sharedVolume:
   size: 10Gi
   storageClass: ""
 
-# Database configuration
+# Database Configuration (Global)
 database:
-  enabled: false  # Using external database in production
-  type: postgresql
-  host: ""
-  port: 5432
-  name: "dfo_party"
-  username: ""
-  password: ""
+  host: "dfo-party-mariadb"
+  port: "3306"
+  name: "dnfp"
+  username: "dfparty"
+  password: "dfparty-password"
+  rootPassword: "dfparty-root-password"
+
+# MariaDB configuration
+mariadb:
+  enabled: true
+  # MariaDB 서브차트의 values.yaml에서 설정 관리
+
+# Node Exporter configuration
+nodeExporter:
+  enabled: true
+  service:
+    port: 9100
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+# NodePort Service configuration
+nodePortService:
+  enabled: true
+  ports:
+    http:
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+    https:
+      port: 443
+      targetPort: 443
+      nodePort: 30443
+    backendApi:
+      port: 8080
+      targetPort: 8080
+      nodePort: 30081
+    mariadb:
+      port: 3306
+      targetPort: 3306
+      nodePort: 30306
 
 # Monitoring configuration
 monitoring:

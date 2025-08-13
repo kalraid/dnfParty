@@ -18,12 +18,16 @@ dependencies:
   - name: frontend
     version: 1.0.0
     condition: frontend.enabled
-    repository: "file://charts/frontend"
+    repository: "file://frontend"
   - name: backend
     version: 1.0.0
     condition: backend.enabled
-    repository: "file://charts/backend"
+    repository: "file://backend"
   - name: nginx
     version: 1.0.0
     condition: nginx.enabled
-    repository: "file://charts/nginx"
+    repository: "file://nginx"
+  - name: mariadb
+    version: 1.0.0
+    condition: mariadb.enabled
+    repository: "file://mariadb"

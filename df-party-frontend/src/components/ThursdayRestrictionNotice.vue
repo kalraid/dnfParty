@@ -5,14 +5,14 @@
       <span class="notice-title">목요일 API 제한 안내</span>
     </div>
     <div class="notice-content">
-      <p>{{ restrictionInfo.message }}</p>
+      <p>{{ restrictionInfo?.message }}</p>
       <p class="restriction-time">
-        <strong>제한 시간:</strong> {{ restrictionInfo.restrictedTimeRange }}
+        <strong>제한 시간:</strong> {{ restrictionInfo?.restrictedTime }}
       </p>
       <p class="reset-time">
-        <strong>던전 초기화:</strong> {{ restrictionInfo.resetTime }}
+        <strong>던전 초기화:</strong> {{ restrictionStatus?.resetTime || '확인 중...' }}
       </p>
-      <p class="reason">{{ restrictionInfo.reason }}</p>
+      <p class="reason">{{ restrictionInfo?.reason }}</p>
     </div>
     <div class="notice-actions">
       <button @click="checkStatus" class="status-btn">상태 확인</button>

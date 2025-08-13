@@ -686,17 +686,6 @@ const generateManualParty = async () => {
   }
 };
 
-const getAvailableCharactersForSlot = (slotIndex: number) => {
-  const selectedCharacterId = manualPartySelections.value[slotIndex];
-  if (selectedCharacterId) {
-    return savedCharacters.value.filter(c => c.characterId !== selectedCharacterId);
-  }
-  return savedCharacters.value.filter(c => 
-    selectedAdventures.value.includes(c.adventureName) && 
-    !manualPartyMembers.value.some(m => m?.characterId === c.characterId)
-  );
-};
-
 const getSlotRole = (slotIndex: number) => {
   const member = manualPartyMembers.value[slotIndex];
   if (!member) return '비어있음';

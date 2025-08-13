@@ -1,0 +1,41 @@
+{{- if .Values.nodePortService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dfo-party.fullname" . }}-nodeport
+  labels:
+    {{- include "dfo-party.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+    {{- if .Values.nodePortService.ports.http }}
+    - name: http
+      port: {{ .Values.nodePortService.ports.http.port }}
+      targetPort: {{ .Values.nodePortService.ports.http.targetPort }}
+      nodePort: {{ .Values.nodePortService.ports.http.nodePort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.nodePortService.ports.https }}
+    - name: https
+      port: {{ .Values.nodePortService.ports.https.port }}
+      targetPort: {{ .Values.nodePortService.ports.https.targetPort }}
+      nodePort: {{ .Values.nodePortService.ports.https.nodePort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.nodePortService.ports.backendApi }}
+    - name: backend-api
+      port: {{ .Values.nodePortService.ports.backendApi.port }}
+      targetPort: {{ .Values.nodePortService.ports.backendApi.targetPort }}
+      nodePort: {{ .Values.nodePortService.ports.backendApi.nodePort }}
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.nodePortService.ports.mariadb }}
+    - name: mariadb
+      port: {{ .Values.nodePortService.ports.mariadb.port }}
+      targetPort: {{ .Values.nodePortService.ports.mariadb.targetPort }}
+      nodePort: {{ .Values.nodePortService.ports.mariadb.nodePort }}
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "dfo-party.selectorLabels" . | nindent 4 }}
+{{- end }}

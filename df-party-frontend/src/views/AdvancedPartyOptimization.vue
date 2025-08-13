@@ -107,17 +107,17 @@
             :class="{ 
               'selected': isCharacterSelected(character.characterId),
               'favorite': character.isFavorite,
-              'dealer': character.job.includes('딜러'),
-              'buffer': character.job.includes('버퍼')
+              'dealer': character.job?.includes('딜러') || false,
+              'buffer': character.job?.includes('버퍼') || false
             }"
             @click="toggleCharacterSelection(character.characterId)"
           >
             <div class="character-info">
               <div class="character-name">{{ character.characterName }}</div>
-              <div class="character-job">{{ character.job }}</div>
+              <div class="character-job">{{ character.job || 'Unknown' }}</div>
               <div class="character-stats">
-                <span class="fame">명성: {{ character.fame.toLocaleString() }}</span>
-                <span class="combat-power">전투력: {{ character.combatPower.toLocaleString() }}</span>
+                <span class="fame">명성: {{ character.fame?.toLocaleString() || 'N/A' }}</span>
+                <span class="combat-power">전투력: {{ character.combatPower?.toLocaleString() || 'N/A' }}</span>
               </div>
             </div>
             <div class="selection-indicator">
@@ -269,7 +269,7 @@
               class="strategy-score"
               :class="{ 'best': comparisonResult.bestStrategy === key }"
             >
-              <div class="strategy-name">{{ getStrategyInfo(key).name }}</div>
+              <div class="strategy-name">{{ getStrategyInfo(String(key)).name }}</div>
               <div class="score-value">{{ formatScore(strategy.score) }}</div>
               <div class="score-rank">{{ strategy.rank }}위</div>
             </div>
@@ -372,12 +372,12 @@ const filteredCharacters = computed(() => {
     }
     
     // 딜러 필터
-    if (showDealers.value && !char.job.includes('딜러')) {
+    if (showDealers.value && !char.job?.includes('딜러')) {
       return false
     }
     
     // 버퍼 필터
-    if (showBuffers.value && !char.job.includes('버퍼')) {
+    if (showBuffers.value && !char.job?.includes('버퍼')) {
       return false
     }
     
@@ -385,7 +385,7 @@ const filteredCharacters = computed(() => {
   })
   
   // 명성 순으로 정렬
-  return filtered.sort((a, b) => b.fame - a.fame)
+  return filtered.sort((a, b) => (b.fame || 0) - (a.fame || 0))
 })
 
 const canExecuteOptimization = computed(() => {

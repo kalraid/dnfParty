@@ -1,6 +1,6 @@
 package com.dfparty.backend.controller;
 
-import com.dfparty.backend.model.Character;
+import com.dfparty.backend.entity.Character;
 import com.dfparty.backend.service.CharacterService;
 import com.dfparty.backend.service.EightPersonPartyService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 @RestController
@@ -142,8 +143,10 @@ public class EightPersonPartyController {
         log.info("8인 파티 구성 검증 요청");
         
         try {
-            Map<String, Object> party1 = (List<Map<String, Object>>) request.get("party1");
-            Map<String, Object> party2 = (List<Map<String, Object>>) request.get("party2");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> party1 = (Map<String, Object>) request.get("party1");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> party2 = (Map<String, Object>) request.get("party2");
             String dungeonName = (String) request.get("dungeonName");
             
             if (party1 == null || party2 == null) {

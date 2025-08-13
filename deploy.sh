@@ -1,16 +1,24 @@
 #!/bin/bash
 
-# DFO Party Management Application Deployment Script
+# DFO Party Management Application Docker Image Build & Push Script
 set -e
 
-echo "🚀 DFO Party Management Application 배포 시작..."
+echo "🚀 DFO Party Management Application Docker 이미지 빌드 및 푸시 시작..."
+
+# dfo 네임스페이스가 없으면 생성
+echo "📁 dfo 네임스페이스가 없으면 생성 중..."
+kubectl create namespace dfo --dry-run=client -o yaml | kubectl apply -f -
+echo "✅ dfo 네임스페이스 준비 완료"
 
 # 환경 변수 확인
 if [ -z "$DF_API_KEY" ]; then
     echo "⚠️  DF_API_KEY 환경 변수가 설정되지 않았습니다."
     echo "   export DF_API_KEY=your_api_key_here"
+    echo "   또는 시스템 환경변수에 설정하세요."
     exit 1
 fi
+
+echo "✅ DF_API_KEY 환경변수 확인됨"
 
 # Docker 이미지 빌드
 echo "📦 Docker 이미지 빌드 중..."
@@ -18,47 +26,39 @@ echo "📦 Docker 이미지 빌드 중..."
 # 프론트엔드 빌드
 echo "🔨 프론트엔드 빌드 중..."
 cd df-party-frontend
-docker build -t dfo-party-frontend:latest .
+docker build -t kimrie92/dfo-party-frontend:latest .
 cd ..
 
 # 백엔드 빌드
 echo "🔨 백엔드 빌드 중..."
 cd df-party-backend
-docker build -t dfo-party-backend:latest .
+docker build -t kimrie92/dfo-party-backend:latest .
 cd ..
 
 # Mock 백엔드 빌드
 echo "🔨 Mock 백엔드 빌드 중..."
 cd df-party-mock
 ./gradlew build -x test
-docker build -t dfo-party-mock:latest .
+docker build -t kimrie92/dfo-party-mock:latest .
 cd ..
 
 echo "✅ 모든 이미지 빌드 완료!"
 
-# Docker Compose로 서비스 시작
-echo "🐳 Docker Compose로 서비스 시작 중..."
-docker-compose up -d
+# Docker 이미지 푸시
+echo "📤 Docker 이미지 푸시 중..."
 
-# 서비스 상태 확인
-echo "📊 서비스 상태 확인 중..."
-sleep 10
+echo "📤 프론트엔드 이미지 푸시 중..."
+docker push kimrie92/dfo-party-frontend:latest
 
-# 헬스 체크
-echo "🏥 헬스 체크 중..."
-curl -f http://localhost/health || echo "❌ Nginx 헬스 체크 실패"
-curl -f http://localhost:8080/actuator/health || echo "❌ 백엔드 헬스 체크 실패"
-curl -f http://localhost:8081/health || echo "❌ Mock 백엔드 헬스 체크 실패"
+echo "📤 백엔드 이미지 푸시 중..."
+docker push kimrie92/dfo-party-backend:latest
 
-echo "🎉 배포 완료!"
+echo "📤 Mock 백엔드 이미지 푸시 중..."
+docker push kimrie92/dfo-party-mock:latest
+
+echo "✅ 모든 이미지 푸시 완료!"
+
+echo "🎉 배포 준비 완료!"
 echo ""
-echo "📱 접속 정보:"
-echo "   - 프론트엔드: http://localhost"
-echo "   - 백엔드 API: http://localhost/api"
-echo "   - Mock API: http://localhost/mock"
-echo "   - Nginx 상태: http://localhost/nginx_status"
-echo ""
-echo "🔧 관리 명령어:"
-echo "   - 서비스 중지: docker-compose down"
-echo "   - 로그 확인: docker-compose logs -f"
-echo "   - 서비스 재시작: docker-compose restart"
+echo "📱 다음 단계:"
+echo "   - Helm 배포: ./deploy-helm.sh"

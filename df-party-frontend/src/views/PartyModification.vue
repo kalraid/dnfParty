@@ -170,13 +170,13 @@
             @click="selectCharacter(character)"
           >
             <div class="character-avatar">
-              <img :src="getJobImage(character.jobName)" :alt="character.jobName" class="job-icon">
+              <img :src="getJobImage(character.jobName || '')" :alt="character.jobName || 'Unknown'" class="job-icon">
             </div>
             <div class="character-details">
               <div class="character-name">{{ character.characterName }}</div>
-              <div class="character-job">{{ character.jobName }}</div>
+              <div class="character-job">{{ character.jobName || 'Unknown' }}</div>
               <div class="character-stats">
-                <span class="fame">명성: {{ formatNumber(character.fame) }}</span>
+                <span class="fame">명성: {{ formatNumber(character.fame || 0) }}</span>
                 <span v-if="character.totalDamage" class="damage">전투력: {{ formatNumber(character.totalDamage) }}</span>
                 <span v-if="character.buffPower" class="buff">버프력: {{ formatNumber(character.buffPower) }}</span>
               </div>

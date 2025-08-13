@@ -1,6 +1,6 @@
 package com.dfparty.backend.controller;
 
-import com.dfparty.backend.model.Character;
+import com.dfparty.backend.entity.Character;
 import com.dfparty.backend.service.CharacterService;
 import com.dfparty.backend.service.PartyRecommendationService;
 import lombok.RequiredArgsConstructor;

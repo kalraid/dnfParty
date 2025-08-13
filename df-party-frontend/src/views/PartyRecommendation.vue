@@ -383,7 +383,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineComponent } from 'vue'
 import { useCharacterStore } from '@/stores/character'
 import { usePartyStore } from '@/stores/party'
 import type { Character, Server, PartyRecommendationRequest, PersonalizedRecommendationRequest } from '@/types'

@@ -53,9 +53,15 @@ public class CharacterController {
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
+            // 서버 로그에 상세한 에러 정보 기록
+            System.err.println("=== CharacterController 에러 ===");
+            System.err.println("Error: " + e.getMessage());
+            System.err.println("Stack Trace: " + e.getStackTrace()[0]);
+            System.err.println("=============================");
+            
             Map<String, Object> error = Map.of(
                 "success", false,
-                "message", "캐릭터 검색 중 오류가 발생했습니다: " + e.getMessage()
+                "message", "캐릭터 검색에 실패했습니다."
             );
             return ResponseEntity.internalServerError().body(error);
         }

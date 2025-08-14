@@ -31,38 +31,111 @@
       </button>
     </div>
 
-    <!-- 검색 결과 -->
+    <!-- 검색 결과 카드 -->
     <div v-if="searchResults.length > 0" class="search-results">
       <h3>검색 결과 ({{ searchResults.length }}개)</h3>
       <div class="results-grid">
         <div 
           v-for="character in searchResults" 
           :key="character.characterId" 
-          class="character-card"
+          class="dundam-character-card"
+          :class="{ 'selected': selectedCharacter?.characterId === character.characterId }"
+          @click="selectCharacter(character)"
         >
+          <div class="character-avatar">
+            <div class="avatar-image">
+              <!-- 캐릭터 이미지 자리 (향후 DFO API에서 이미지 URL 가져올 수 있음) -->
+              <div class="avatar-placeholder">
+                {{ character.characterName.charAt(0) }}
+              </div>
+            </div>
+            <div class="level-badge">{{ character.level || 0 }}</div>
+          </div>
+          
           <div class="character-info">
-            <h4>{{ character.characterName }}</h4>
-            <p><strong>서버:</strong> {{ getServerName(character.serverId) }}</p>
-            <p><strong>모험단:</strong> {{ character.adventureName || 'N/A' }}</p>
-            <p><strong>레벨:</strong> {{ character.level || 'N/A' }}</p>
-            <p><strong>직업:</strong> {{ character.jobName || 'N/A' }}</p>
-            <p><strong>명성:</strong> {{ formatNumber(character.fame) }}</p>
+            <div class="character-name">{{ character.characterName }}</div>
+            <div class="adventure-name">{{ character.adventureName || 'N/A' }}</div>
+            
+            <div class="stats-info">
+              <div class="stat-item buff-power">
+                <span class="stat-label">버프력</span>
+                <span class="stat-value">{{ formatNumber(character.buffPower || 0) }}</span>
+              </div>
+            </div>
+            
+            <div class="meta-info">
+              <div class="server-info">
+                <span class="server-name">{{ getServerName(character.serverId) }}</span>
+              </div>
+              <div class="fame-info">
+                <span class="fame-icon">👑</span>
+                <span class="fame-value">{{ formatNumber(character.fame || 0) }}</span>
+              </div>
+            </div>
+            
+            <div class="job-info">
+              <span class="job-name">{{ character.jobGrowName || character.jobName || 'N/A' }}</span>
+            </div>
           </div>
-          
-          <div class="character-stats" v-if="character.buffPower || character.totalDamage">
-            <h5>스펙 정보</h5>
-            <p><strong>버프력:</strong> {{ formatNumber(character.buffPower) }}</p>
-            <p><strong>총딜:</strong> {{ formatNumber(character.totalDamage) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 선택된 캐릭터 상세 정보 -->
+    <div v-if="selectedCharacter" class="character-detail">
+      <div class="detail-header">
+        <h3>{{ selectedCharacter.characterName }} 상세 정보</h3>
+        <button @click="closeDetail" class="close-btn">×</button>
+      </div>
+      
+      <div class="detail-content">
+        <div class="detail-section">
+          <h4>기본 정보</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">서버:</span>
+              <span class="value">{{ getServerName(selectedCharacter.serverId) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">모험단:</span>
+              <span class="value">{{ selectedCharacter.adventureName || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">레벨:</span>
+              <span class="value">{{ selectedCharacter.level || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">직업:</span>
+              <span class="value">{{ selectedCharacter.jobName || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">명성:</span>
+              <span class="value">{{ formatNumber(selectedCharacter.fame) }}</span>
+            </div>
           </div>
-          
-          <div class="character-actions">
-            <button @click="saveCharacterToDB(character)" class="save-btn">
-              DB에 저장
-            </button>
-            <button @click="addToSearchHistory(character)" class="history-btn">
-              검색 기록에 추가
-            </button>
+        </div>
+        
+        <div class="detail-section" v-if="selectedCharacter.buffPower || selectedCharacter.totalDamage">
+          <h4>스펙 정보</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">버프력:</span>
+              <span class="value">{{ formatNumber(selectedCharacter.buffPower) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">총딜:</span>
+              <span class="value">{{ formatNumber(selectedCharacter.totalDamage) }}</span>
+            </div>
           </div>
+        </div>
+        
+        <div class="detail-actions">
+          <button @click="saveCharacterToDB(selectedCharacter)" class="save-btn">
+            DB에 저장
+          </button>
+          <button @click="addToSearchHistory(selectedCharacter)" class="history-btn">
+            검색 기록에 추가
+          </button>
         </div>
       </div>
     </div>
@@ -114,6 +187,7 @@ const selectedServer = ref('');
 const characterName = ref('');
 const servers = ref<Server[]>([]);
 const searchResults = ref<any[]>([]);
+const selectedCharacter = ref<any>(null);
 const searchHistory = ref<SearchRecord[]>([]);
 const searching = ref(false);
 const error = ref<string>('');
@@ -158,6 +232,23 @@ const saveSearchHistory = () => {
   }
 };
 
+// 캐릭터 선택
+const selectCharacter = (character: any) => {
+  selectedCharacter.value = character;
+  // 상세 정보를 아래로 스크롤
+  setTimeout(() => {
+    const detailElement = document.querySelector('.character-detail');
+    if (detailElement) {
+      detailElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+};
+
+// 상세 정보 닫기
+const closeDetail = () => {
+  selectedCharacter.value = null;
+};
+
 // 캐릭터 검색
 const searchCharacters = async () => {
   if (!characterName.value.trim()) {
@@ -165,10 +256,11 @@ const searchCharacters = async () => {
     return;
   }
 
-  try {
-    searching.value = true;
-    error.value = '';
-    successMessage.value = '';
+      try {
+      searching.value = true;
+      error.value = '';
+      successMessage.value = '';
+      selectedCharacter.value = null; // 검색 시 선택된 캐릭터 초기화
 
     // 백엔드 API를 통한 통합 캐릭터 검색
     const response = await fetch(`http://localhost:8080/api/characters/search?serverId=${selectedServer.value || 'all'}&characterName=${encodeURIComponent(characterName.value)}`);
@@ -178,9 +270,10 @@ const searchCharacters = async () => {
       if (data.success) {
         searchResults.value = Array.isArray(data.characters) ? data.characters : [data.character];
         successMessage.value = `${searchResults.value.length}개의 캐릭터를 찾았습니다.`;
-      } else {
-        error.value = data.message || '캐릭터 검색에 실패했습니다.';
-      }
+          } else {
+      // 백엔드에서 반환한 에러 메시지 사용
+      error.value = data.message || '캐릭터 검색에 실패했습니다.';
+    }
     } else {
       error.value = '캐릭터 검색 중 오류가 발생했습니다.';
     }
@@ -356,12 +449,270 @@ const formatDate = (dateString: string): string => {
   margin-top: 15px;
 }
 
-.character-card {
+/* 던담 스타일 캐릭터 카드 */
+.dundam-character-card {
+  display: flex;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.dundam-character-card:hover {
+  border-color: #4a90e2;
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+  transform: translateY(-2px);
+}
+
+.dundam-character-card.selected {
+  border-color: #4a90e2;
+  background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
+  box-shadow: 0 4px 20px rgba(74, 144, 226, 0.25);
+}
+
+.character-avatar {
+  position: relative;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.avatar-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.level-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #ff6b35;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 12px;
+  border: 2px solid white;
+  min-width: 24px;
+  text-align: center;
+}
+
+.character-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.adventure-name {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.stats-info {
+  display: flex;
+  gap: 16px;
+  margin: 4px 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #95a5a6;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #e67e22;
+}
+
+.buff-power .stat-value {
+  color: #e74c3c;
+}
+
+.meta-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.server-info {
+  display: flex;
+  align-items: center;
+}
+
+.server-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3498db;
+  background: #ecf0f1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.fame-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fame-icon {
+  font-size: 14px;
+}
+
+.fame-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #f39c12;
+}
+
+.job-info {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.job-name {
+  font-size: 13px;
+  color: #27ae60;
+  font-weight: 500;
+  background: rgba(39, 174, 96, 0.1);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.character-detail {
   background: white;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border-radius: 12px;
+  margin-top: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.detail-header {
+  background: #f8f9fa;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.detail-content {
+  padding: 20px;
+}
+
+.detail-section {
+  margin-bottom: 25px;
+}
+
+.detail-section h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 8px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.info-item .label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.info-item .value {
+  color: #212529;
+  font-weight: 500;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
 }
 
 .character-info h4 {

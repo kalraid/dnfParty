@@ -29,6 +29,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-integration'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
+    // HTML 파싱을 위한 Jsoup 추가
+    implementation 'org.jsoup:jsoup:1.17.2'
+    
     // 자동 반영을 위한 DevTools 추가
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     

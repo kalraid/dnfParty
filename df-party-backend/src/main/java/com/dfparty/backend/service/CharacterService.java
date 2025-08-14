@@ -4,6 +4,7 @@ import com.dfparty.backend.entity.Character;
 import com.dfparty.backend.repository.CharacterRepository;
 import com.dfparty.backend.repository.AdventureRepository;
 import com.dfparty.backend.service.DfoApiService;
+import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.service.DundamService;
 import com.dfparty.backend.service.CachingService;
 import com.dfparty.backend.service.DungeonClearService;
@@ -13,6 +14,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -114,21 +121,32 @@ public class CharacterService {
      */
     public Map<String, Object> searchCharacters(String characterName, String serverId) {
         try {
+            log.info("=== CharacterService.searchCharacters 시작 ===");
+            log.info("characterName: {}, serverId: {}", characterName, serverId);
+            
             // 1. DFO API에서 캐릭터 검색
             Object searchResult = dfoApiService.searchCharacters(serverId, characterName, null, null, true, 10, "match");
+            log.info("DFO API 검색 결과 타입: {}", searchResult != null ? searchResult.getClass().getSimpleName() : "null");
+            
             if (searchResult == null) {
+                log.warn("DFO API 검색 결과가 null입니다.");
                 return createErrorResponse("캐릭터 검색에 실패했습니다.");
             }
 
             // 2. 검색 결과 파싱
             List<Map<String, Object>> characters = parseSearchResults(searchResult);
+            log.info("파싱된 캐릭터 수: {}", characters.size());
+            
             if (characters.isEmpty()) {
+                log.warn("파싱 결과 캐릭터가 없습니다.");
                 return createErrorResponse("검색 조건에 맞는 캐릭터가 없습니다.");
             }
 
-            // 3. 각 캐릭터에 대해 DB 정보 확인 및 Dundam 정보 추가
+            // 3. 각 캐릭터에 대해 DB 정보 확인 및 추가 정보 조회
             for (Map<String, Object> character : characters) {
                 String charId = (String) character.get("characterId");
+                String serverIdChar = (String) character.get("serverId");
+                
                 if (charId != null) {
                     // DB에서 기존 정보 확인
                     Optional<Character> existingChar = characterRepository.findByCharacterId(charId);
@@ -139,14 +157,101 @@ public class CharacterService {
                         character.put("dungeonClearNabel", dbChar.getDungeonClearNabel());
                         character.put("dungeonClearVenus", dbChar.getDungeonClearVenus());
                         character.put("dungeonClearFog", dbChar.getDungeonClearFog());
+                        
+                        // DB에 모험단 정보가 있으면 사용
+                        if (dbChar.getAdventureName() != null && !dbChar.getAdventureName().trim().isEmpty()) {
+                            character.put("adventureName", dbChar.getAdventureName());
+                        }
+                    }
+                    
+                    // 모험단 정보가 없거나 "N/A"이면 DFO API에서 상세 정보 조회
+                    String currentAdventureName = (String) character.get("adventureName");
+                    if (currentAdventureName == null || currentAdventureName.trim().isEmpty() || "N/A".equals(currentAdventureName)) {
+                        try {
+                            log.debug("DFO API에서 캐릭터 상세 정보 조회 시작: characterId={}", charId);
+                            Object characterDetail = dfoApiService.getCharacterDetail(serverIdChar, charId);
+                            if (characterDetail != null) {
+                                // characterDetail에서 모험단 정보 추출
+                                String adventureName = extractAdventureNameFromDetail(characterDetail);
+                                if (adventureName != null && !adventureName.trim().isEmpty()) {
+                                    character.put("adventureName", adventureName);
+                                    log.info("모험단 정보 업데이트: characterId={}, adventureName={}", charId, adventureName);
+                                } else {
+                                    character.put("adventureName", "N/A");
+                                }
+                            } else {
+                                character.put("adventureName", "N/A");
+                            }
+                        } catch (Exception e) {
+                            log.warn("캐릭터 상세 정보 조회 실패: characterId={}, error={}", charId, e.getMessage());
+                            character.put("adventureName", "N/A");
+                        }
+                    }
+                    
+                    // 던담에서 버프력/전투력 정보 조회 (DB에 없거나 0인 경우)
+                    Long currentBuffPower = (Long) character.get("buffPower");
+                    Long currentTotalDamage = (Long) character.get("totalDamage");
+                    
+                    if ((currentBuffPower == null || currentBuffPower == 0L) || 
+                        (currentTotalDamage == null || currentTotalDamage == 0L)) {
+                        try {
+                            log.info("던담에서 버프력/전투력 조회 시작: characterId={}", charId);
+                            Map<String, Object> dundamInfo = dundamService.getCharacterInfo(serverIdChar, charId);
+                            
+                            if (dundamInfo != null && Boolean.TRUE.equals(dundamInfo.get("success"))) {
+                                Long buffPower = (Long) dundamInfo.get("buffPower");
+                                Long totalDamage = (Long) dundamInfo.get("totalDamage");
+                                
+                                if (buffPower != null && buffPower > 0) {
+                                    character.put("buffPower", buffPower);
+                                    log.info("던담에서 버프력 업데이트: characterId={}, buffPower={}", charId, buffPower);
+                                }
+                                
+                                if (totalDamage != null && totalDamage > 0) {
+                                    character.put("totalDamage", totalDamage);
+                                    log.info("던담에서 전투력 업데이트: characterId={}, totalDamage={}", charId, totalDamage);
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.warn("던담 정보 조회 실패: characterId={}, error={}", charId, e.getMessage());
+                        }
                     }
                 }
             }
 
-            return createSuccessResponse("캐릭터 검색이 완료되었습니다.", Map.of("characters", characters));
+            // 강제로 필드 추가 (테스트용)
+            for (Map<String, Object> character : characters) {
+                if (!character.containsKey("buffPower")) {
+                    character.put("buffPower", 0L);
+                }
+                if (!character.containsKey("totalDamage")) {
+                    character.put("totalDamage", 0L);
+                }
+                if (!character.containsKey("adventureName") || "".equals(character.get("adventureName"))) {
+                    character.put("adventureName", "N/A");
+                }
+                if (!character.containsKey("dungeonClearNabel")) {
+                    character.put("dungeonClearNabel", false);
+                }
+                if (!character.containsKey("dungeonClearVenus")) {
+                    character.put("dungeonClearVenus", false);
+                }
+                if (!character.containsKey("dungeonClearFog")) {
+                    character.put("dungeonClearFog", false);
+                }
+            }
+            
+            Map<String, Object> responseData = Map.of("characters", characters);
+            log.info("성공 응답 생성: characters 수 = {}", characters.size());
+            return createSuccessResponse("캐릭터 검색이 완료되었습니다.", responseData);
 
         } catch (Exception e) {
-            return createErrorResponse("캐릭터 검색 중 오류가 발생했습니다: " + e.getMessage());
+            // 서버 로그에 상세한 에러 정보 기록
+            log.error("캐릭터 검색 실패 - 상세 정보:", e);
+            log.error("검색 파라미터 - characterName: {}, serverId: {}", characterName, serverId);
+            
+            // 클라이언트에는 사용자 친화적인 메시지 반환
+            return createErrorResponse("캐릭터 검색에 실패했습니다.");
         }
     }
 
@@ -362,10 +467,103 @@ public class CharacterService {
         return null;
     }
 
+    private String extractAdventureNameFromDetail(Object characterDetail) {
+        try {
+            if (characterDetail instanceof JsonNode) {
+                JsonNode root = (JsonNode) characterDetail;
+                String adventureName = root.path("adventureName").asText();
+                if (adventureName != null && !adventureName.trim().isEmpty() && !"null".equals(adventureName)) {
+                    return adventureName;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("모험단 정보 추출 실패: {}", e.getMessage());
+        }
+        return null;
+    }
+
     private List<Map<String, Object>> parseSearchResults(Object searchResult) {
-        // DFO API 검색 결과를 파싱하여 캐릭터 목록 반환
-        // 실제 구현에서는 JSON 파싱 로직 필요
-        return List.of(); // 임시 반환
+        try {
+            List<Map<String, Object>> characters = new ArrayList<>();
+            
+            if (searchResult instanceof List) {
+                // 이미 List<CharacterDto> 형태로 반환된 경우
+                @SuppressWarnings("unchecked")
+                List<CharacterDto> characterDtos = (List<CharacterDto>) searchResult;
+                
+                for (CharacterDto dto : characterDtos) {
+                    Map<String, Object> character = new HashMap<>();
+                    character.put("characterId", dto.getCharacterId());
+                    character.put("characterName", dto.getCharacterName());
+                    character.put("serverId", dto.getServerId());
+                    character.put("jobId", dto.getJobId());
+                    character.put("jobGrowId", dto.getJobGrowId());
+                    character.put("jobName", dto.getJobName());
+                    character.put("jobGrowName", dto.getJobGrowName());
+                    character.put("level", dto.getLevel());
+                    character.put("adventureName", dto.getAdventureName() != null ? dto.getAdventureName() : "N/A");
+                    character.put("fame", dto.getFame());
+                    
+                    // 기본값 설정 (DB에서 조회되지 않은 경우)
+                    character.put("buffPower", 0L);
+                    character.put("totalDamage", 0L);
+                    character.put("dungeonClearNabel", false);
+                    character.put("dungeonClearVenus", false);
+                    character.put("dungeonClearFog", false);
+                    
+                    characters.add(character);
+                }
+            } else if (searchResult instanceof JsonNode) {
+                // JsonNode 형태로 반환된 경우
+                JsonNode root = (JsonNode) searchResult;
+                JsonNode rows = root.path("rows");
+                
+                if (rows.isArray()) {
+                    for (JsonNode row : rows) {
+                        Map<String, Object> character = new HashMap<>();
+                        character.put("characterId", row.path("characterId").asText());
+                        character.put("characterName", row.path("characterName").asText());
+                        character.put("serverId", row.path("serverId").asText());
+                        character.put("jobId", row.path("jobId").asText());
+                        character.put("jobGrowId", row.path("jobGrowId").asText());
+                        character.put("jobName", row.path("jobName").asText());
+                        character.put("jobGrowName", row.path("jobGrowName").asText());
+                        character.put("level", row.path("level").asInt());
+                        
+                        // adventureName이 없거나 빈 값인 경우 처리
+                        String adventureName = row.path("adventureName").asText();
+                        if (adventureName == null || adventureName.trim().isEmpty()) {
+                            adventureName = "N/A";
+                        }
+                        character.put("adventureName", adventureName);
+                        character.put("fame", row.path("fame").asLong());
+                        
+                        // 기본값 설정 (DB에서 조회되지 않은 경우)
+                        character.put("buffPower", 0L);
+                        character.put("totalDamage", 0L);
+                        character.put("dungeonClearNabel", false);
+                        character.put("dungeonClearVenus", false);
+                        character.put("dungeonClearFog", false);
+                        
+                        characters.add(character);
+                    }
+                }
+            }
+            
+            log.info("검색 결과 파싱 완료: {}개 캐릭터", characters.size());
+            
+            // 디버깅: 첫 번째 캐릭터 정보 출력
+            if (!characters.isEmpty()) {
+                Map<String, Object> firstChar = characters.get(0);
+                log.info("첫 번째 캐릭터 정보: {}", firstChar);
+            }
+            
+            return characters;
+            
+        } catch (Exception e) {
+            log.error("검색 결과 파싱 실패", e);
+            return List.of();
+        }
     }
 
     private Character createCharacterFromDfoApi(Object characterDetail, String serverId) {
@@ -472,7 +670,11 @@ public class CharacterService {
         response.put("success", true);
         response.put("message", message);
         if (data != null) {
-            response.putAll((Map<String, Object>) data);
+            if (data instanceof Map) {
+                response.putAll((Map<String, Object>) data);
+            } else {
+                response.put("data", data);
+            }
         }
         return response;
     }

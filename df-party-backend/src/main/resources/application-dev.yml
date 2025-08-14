@@ -30,3 +30,11 @@ logging:
 app:
   mock:
     enabled: true  # 개발환경에서는 Mock 활성화
+
+# Development DFO API settings
+df:
+  api:
+    base-url: https://api.neople.co.kr/df
+    key: ${DF_API_KEY:your_dfo_api_key_here}
+    rate-limit: 100
+    rate-limit-window: 60000

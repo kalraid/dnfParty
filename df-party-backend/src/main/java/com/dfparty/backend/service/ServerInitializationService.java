@@ -29,11 +29,27 @@ public class ServerInitializationService {
 
     /**
      * 애플리케이션 시작 시 서버 목록 초기화
+     * DB에 서버가 없을 때만 DFO API 호출
      */
     @EventListener(ApplicationReadyEvent.class)
     public void initializeServersOnStartup() {
         if (!isInitialized) {
-            initializeServers();
+            // DB에서 서버 목록 확인
+            List<Adventure> existingServers = adventureRepository.findAll();
+            
+            if (existingServers.isEmpty()) {
+                System.out.println("DB에 서버 정보가 없습니다. DFO API에서 서버 목록을 가져옵니다.");
+                initializeServers();
+            } else {
+                System.out.println("DB에 서버 정보가 " + existingServers.size() + "개 있습니다. API 호출을 건너뜁니다.");
+                // 기존 서버 정보를 캐시에 로드
+                Object serverList = convertToServerList(existingServers);
+                cachingService.put(
+                    CachingService.getServerListKey(), 
+                    serverList, 
+                    CachingService.CacheType.SERVER_LIST
+                );
+            }
             isInitialized = true;
         }
     }

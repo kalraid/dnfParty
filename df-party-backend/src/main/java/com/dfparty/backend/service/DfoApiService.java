@@ -20,16 +20,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
 public class DfoApiService {
 
-    @Value("${df.api.base-url:https://api.neople.co.kr}")
+    @Value("${df.api.base-url:https://api.neople.co.kr/df}")
     private String baseUrl;
 
     @Value("${df.api.key:}")
     private String apiKey;
+
+    @PostConstruct
+    public void logApiKey() {
+        if (apiKey != null && !apiKey.isEmpty()) {
+            // API 키의 첫 8자리만 로그에 출력 (보안상)
+            String maskedKey = apiKey.length() > 8 ? apiKey.substring(0, 8) + "..." : apiKey;
+            System.out.println("=== DFO API Key Loaded ===");
+            System.out.println("API Key: " + maskedKey);
+            System.out.println("Base URL: " + baseUrl);
+            System.out.println("Mock Mode: " + mockConfig.isEnabled());
+            System.out.println("==========================");
+        } else {
+            System.err.println("=== WARNING: DFO API Key is not set! ===");
+            System.err.println("Please check your config.env file or environment variables");
+            System.err.println("==========================================");
+        }
+    }
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -99,46 +117,74 @@ public class DfoApiService {
     public List<CharacterDto> searchCharacters(String serverId, String characterName, 
                                             String jobId, String jobGrowId, 
                                             boolean isAllJobGrow, int limit, String wordType) throws Exception {
-        UriComponentsBuilder builder = UriComponentsBuilder
-                .fromHttpUrl(baseUrl + "/servers/" + serverId + "/characters")
-                .queryParam("characterName", characterName)
-                .queryParam("isAllJobGrow", isAllJobGrow)
-                .queryParam("limit", limit)
-                .queryParam("wordType", wordType)
-                .queryParam("apikey", apiKey);
+        try {
+            UriComponentsBuilder builder = UriComponentsBuilder
+                    .fromHttpUrl(baseUrl + "/servers/" + serverId + "/characters")
+                    .queryParam("characterName", characterName)
+                    .queryParam("isAllJobGrow", isAllJobGrow)
+                    .queryParam("limit", limit)
+                    .queryParam("wordType", wordType)
+                    .queryParam("apikey", apiKey);
 
-        if (jobId != null && !jobId.isEmpty()) {
-            builder.queryParam("jobId", jobId);
-        }
-        if (jobGrowId != null && !jobGrowId.isEmpty()) {
-            builder.queryParam("jobGrowId", jobGrowId);
-        }
-
-        String url = builder.build().toUriString();
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        JsonNode root = objectMapper.readTree(response.getBody());
-        JsonNode rows = root.path("rows");
-
-        List<CharacterDto> characters = new ArrayList<>();
-        if (rows.isArray()) {
-            for (JsonNode row : rows) {
-                CharacterDto character = new CharacterDto(
-                    serverId,
-                    row.path("characterId").asText(),
-                    row.path("characterName").asText(),
-                    row.path("jobId").asText(),
-                    row.path("jobGrowId").asText(),
-                    row.path("jobName").asText(),
-                    row.path("jobGrowName").asText(),
-                    row.path("level").asInt(),
-                    row.path("adventureName").asText(),
-                    row.path("fame").asLong()
-                );
-                characters.add(character);
+            if (jobId != null && !jobId.isEmpty()) {
+                builder.queryParam("jobId", jobId);
             }
-        }
+            if (jobGrowId != null && !jobGrowId.isEmpty()) {
+                builder.queryParam("jobGrowId", jobGrowId);
+            }
 
-        return characters;
+            String url = builder.build().toUriString();
+            System.out.println("=== DFO API 호출 ===");
+            System.out.println("URL: " + url);
+            System.out.println("Server ID: " + serverId);
+            System.out.println("Character Name: " + characterName);
+            System.out.println("==================");
+
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            
+            System.out.println("=== DFO API 응답 ===");
+            System.out.println("Status: " + response.getStatusCode());
+            System.out.println("Body: " + response.getBody());
+            System.out.println("===================");
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode rows = root.path("rows");
+
+            List<CharacterDto> characters = new ArrayList<>();
+            if (rows.isArray()) {
+                for (JsonNode row : rows) {
+                    CharacterDto character = new CharacterDto(
+                        serverId,
+                        row.path("characterId").asText(),
+                        row.path("characterName").asText(),
+                        row.path("jobId").asText(),
+                        row.path("jobGrowId").asText(),
+                        row.path("jobName").asText(),
+                        row.path("jobGrowName").asText(),
+                        row.path("level").asInt(),
+                        row.path("adventureName").asText(),
+                        row.path("fame").asLong()
+                    );
+                    characters.add(character);
+                }
+            }
+
+            System.out.println("=== 검색 결과 ===");
+            System.out.println("캐릭터 수: " + characters.size());
+            System.out.println("================");
+
+            return characters;
+            
+        } catch (Exception e) {
+            System.err.println("=== DFO API 검색 에러 ===");
+            System.err.println("Error: " + e.getMessage());
+            System.err.println("Error Type: " + e.getClass().getSimpleName());
+            System.err.println("Stack Trace: " + e.getStackTrace()[0]);
+            System.err.println("Full Stack Trace:");
+            e.printStackTrace();
+            System.err.println("=======================");
+            throw e;
+        }
     }
 
     public CharacterDetailDto getCharacterDetail(String serverId, String characterId) throws Exception {

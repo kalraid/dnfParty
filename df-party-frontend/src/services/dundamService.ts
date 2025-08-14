@@ -3,6 +3,9 @@ import axios from 'axios';
 // dundam.xyz API 설정
 const DUNDAM_BASE_URL = 'https://dundam.xyz';
 
+// 백엔드 API URL (환경변수에서 가져오기)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
 // dundam.xyz 응답 인터페이스
 export interface DundamCharacterInfo {
   characterName: string;
@@ -65,7 +68,7 @@ export const dundamService = {
   async updateCharacterStats(serverId: string, characterId: string): Promise<{ buffPower?: number; totalDamage?: number } | null> {
     try {
       // 실제 구현 시 백엔드 API 호출
-      const response = await axios.get(`http://localhost:8080/api/characters/${serverId}/${characterId}/update-stats`);
+      const response = await axios.get(`${API_BASE_URL}/characters/${serverId}/${characterId}/update-stats`);
       return response.data.dundamInfo;
     } catch (error) {
       console.error('캐릭터 스펙 업데이트 실패:', error);
@@ -81,7 +84,7 @@ export const dundamService = {
   } | null> {
     try {
       // 백엔드 API 호출
-      const response = await axios.get(`http://localhost:8080/api/dungeon-clear/${serverId}/${characterId}`);
+      const response = await axios.get(`${API_BASE_URL}/dungeon-clear/${serverId}/${characterId}`);
       if (response.data.success) {
         return response.data.clearStatus;
       }

@@ -9,7 +9,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/party")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class PartyController {
 
     @Autowired
@@ -18,8 +18,9 @@ public class PartyController {
     @PostMapping("/optimize")
     public ResponseEntity<Map<String, Object>> optimizeParty(@RequestBody Map<String, Object> request) {
         try {
-            // TODO: PartyOptimizationService에 optimizeParty 메서드 구현 필요
-            return ResponseEntity.ok(Map.of("message", "파티 최적화 기능은 아직 구현되지 않았습니다."));
+            
+            Map<String, Object> result = partyOptimizationService.optimizeParty(request);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

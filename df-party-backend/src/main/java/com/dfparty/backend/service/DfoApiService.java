@@ -25,10 +25,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DfoApiService {
 
-    @Value("${df.api.base-url}")
+    @Value("${df.api.base-url:https://api.neople.co.kr}")
     private String baseUrl;
 
-    @Value("${df.api.key}")
+    @Value("${df.api.key:}")
     private String apiKey;
 
     private final RestTemplate restTemplate;

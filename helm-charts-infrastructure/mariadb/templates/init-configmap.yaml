@@ -161,6 +161,17 @@ data:
     VALUES ('테스트모험단', 'cain', 0, 0, 0.0, true)
     ON DUPLICATE KEY UPDATE adventure_name = adventure_name;
     
+    -- 기존 ENUM 컬럼을 VARCHAR로 업데이트 (스키마 마이그레이션)
+    -- mock_api_data 테이블이 이미 존재하는 경우 api_type 컬럼 타입 변경
+    SET @sql = (SELECT IF(
+        (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dnfp' AND TABLE_NAME = 'mock_api_data') > 0,
+        'ALTER TABLE mock_api_data MODIFY COLUMN api_type VARCHAR(255) NOT NULL;',
+        'SELECT "Table does not exist yet" as message;'
+    ));
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    
     -- 운영용 데이터베이스에도 동일한 스키마 적용
     USE dnfp_prod;
     

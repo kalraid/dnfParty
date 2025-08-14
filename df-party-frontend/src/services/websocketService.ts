@@ -2,6 +2,9 @@ import { ref, onUnmounted } from 'vue'
 import SockJS from 'sockjs-client'
 import { Stomp } from '@stomp/stompjs'
 
+// API URL (환경변수에서 가져오기)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
 export interface RealtimeEvent {
   id: string
   type: 'CHARACTER_UPDATED' | 'CHARACTER_DELETED' | 'PARTY_CREATED' | 'PARTY_UPDATED' | 'PARTY_DELETED' | 'PARTY_OPTIMIZED' | 'RECOMMENDATION_GENERATED' | 'USER_JOINED' | 'USER_LEFT' | 'SYSTEM_NOTIFICATION'
@@ -38,7 +41,7 @@ class WebSocketService {
         return
       }
 
-      const socket = new SockJS('http://localhost:8080/ws')
+      const socket = new SockJS(`${API_BASE_URL}/ws`)
       this.stompClient = Stomp.over(socket)
       
       // STOMP 디버그 비활성화

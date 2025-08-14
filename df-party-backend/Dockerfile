@@ -3,27 +3,40 @@ FROM eclipse-temurin:17-jdk-alpine AS build-stage
 
 WORKDIR /app
 
-# Copy gradle files
-COPY gradlew ./
+# Install build tools for faster builds
+RUN apk add --no-cache --virtual .build-deps \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# Copy gradle files first (for better layer caching)
 COPY gradle/ gradle/
+COPY gradlew ./
 COPY build.gradle ./
 
-# Make gradlew executable
+# Make gradlew executable and set permissions
 RUN chmod +x ./gradlew
 
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
+# Download dependencies only (separate from source build)
+# This layer will be cached unless build.gradle changes
+RUN ./gradlew dependencies --no-daemon --parallel
 
-# Copy source code
+# Copy source code (this layer changes frequently)
 COPY src/ src/
 
-# Build the application
-RUN ./gradlew build -x test --no-daemon
+# Build with optimizations
+RUN ./gradlew build -x test --no-daemon --parallel --build-cache \
+    && ls -la build/libs/
 
 # Production stage
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    wget \
+    && rm -rf /var/cache/apk/*
 
 # Create app user
 RUN addgroup -g 1001 -S appgroup && \

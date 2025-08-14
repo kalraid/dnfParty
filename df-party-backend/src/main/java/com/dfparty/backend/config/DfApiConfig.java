@@ -8,16 +8,16 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class DfApiConfig {
 
-    @Value("${df.api.base-url}")
+    @Value("${df.api.base-url:https://api.neople.co.kr}")
     private String baseUrl;
 
-    @Value("${df.api.key}")
+    @Value("${df.api.key:}")
     private String apiKey;
 
-    @Value("${df.api.rate-limit}")
+    @Value("${df.api.rate-limit:100}")
     private int rateLimit;
 
-    @Value("${df.api.rate-limit-window}")
+    @Value("${df.api.rate-limit-window:3600000}")
     private long rateLimitWindow;
 
     @Bean

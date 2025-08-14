@@ -1,0 +1,71 @@
+# Infrastructure values for DFO Party
+# This chart manages MariaDB and Nginx which are stable components
+
+# Global settings
+global:
+  environment: production
+  domain: localhost
+
+# MariaDB Configuration
+mariadb:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: mariadb
+    tag: "10.11"
+    pullPolicy: IfNotPresent
+  
+  auth:
+    rootPassword: "dfparty-root-password"
+    database: "dnfp"
+    username: "dfparty"
+    password: "dfparty-password"
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: ""
+  
+  service:
+    type: ClusterIP
+    port: 3306
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+# Nginx Configuration
+nginx:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: LoadBalancer
+    port: 80
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /health
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # Upstream configuration for routing
+  upstream:
+    mariadb:
+      host: df-party-infrastructure-mariadb
+      port: 3306

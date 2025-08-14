@@ -143,10 +143,8 @@ public class EightPersonPartyController {
         log.info("8인 파티 구성 검증 요청");
         
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> party1 = (Map<String, Object>) request.get("party1");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> party2 = (Map<String, Object>) request.get("party2");
+            List<Map<String, Object>> party1 = (List<Map<String, Object>>) request.get("party1");
+            List<Map<String, Object>> party2 = (List<Map<String, Object>>) request.get("party2");
             String dungeonName = (String) request.get("dungeonName");
             
             if (party1 == null || party2 == null) {
@@ -282,13 +280,13 @@ public class EightPersonPartyController {
         return optimization;
     }
     
-    private Map<String, Object> validateEightPersonPartyComposition(Map<String, Object> party1, Map<String, Object> party2, String dungeonName) {
+    private Map<String, Object> validateEightPersonPartyComposition(List<Map<String, Object>> party1, List<Map<String, Object>> party2, String dungeonName) {
         Map<String, Object> validation = new HashMap<>();
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         
-        List<Map<String, Object>> slots1 = (List<Map<String, Object>>) party1.get("slots");
-        List<Map<String, Object>> slots2 = (List<Map<String, Object>>) party2.get("slots");
+        List<Map<String, Object>> slots1 = party1;
+        List<Map<String, Object>> slots2 = party2;
         
         // 1. 빈 슬롯 체크
         long emptySlots1 = slots1.stream()

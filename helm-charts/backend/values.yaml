@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: kimrie92/dfo-party-backend
@@ -46,6 +46,53 @@ env:
       secretKeyRef:
         name: dfo-api-secret
         key: api-key
+  - name: DF_API_BASE_URL
+    value: "https://api.neople.co.kr"
+  - name: DF_API_RATE_LIMIT
+    value: "100"
+  - name: DF_API_RATE_LIMIT_WINDOW
+    value: "3600000"
+  # Database Configuration - Root 계정으로 접속
+  - name: DB_HOST
+    value: "df-party-mariadb"
+  - name: DB_PORT
+    value: "3306"
+  - name: DB_NAME
+    value: "dnfp"
+  - name: DB_USERNAME
+    value: "root"
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: "mariadb-secret"
+        key: mariadb-root-password
+  - name: SHOW_SQL
+    value: "false"
+
+# Init Container - 실제 MySQL 연결 확인
+initContainers:
+  - name: wait-for-mariadb
+    image: mysql:8.0
+    command:
+      - sh
+      - -c
+      - |
+        echo "Waiting for MariaDB to be ready..."
+        until mysql -h df-party-mariadb -P 3306 -u root -p'dfparty-root-password' -e "SELECT 1;" > /dev/null 2>&1; do
+          echo "MariaDB not ready yet, waiting..."
+          sleep 5
+        done
+        echo "MariaDB is ready!"
+    env:
+      - name: MYSQL_PWD
+        value: "dfparty-root-password"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
 
 resources:
   limits:
@@ -54,6 +101,25 @@ resources:
   requests:
     cpu: 500m
     memory: 512Mi
+
+# Health Check 설정 - HTTP probe로 변경
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 1
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
 
 autoscaling:
   enabled: false
@@ -67,3 +133,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+

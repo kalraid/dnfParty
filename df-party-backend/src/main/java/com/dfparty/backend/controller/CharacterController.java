@@ -10,7 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/characters")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class CharacterController {
 
     @Autowired
@@ -205,9 +205,6 @@ public class CharacterController {
         }
     }
 
-    /**
-     * 업둥이 캐릭터 설정/해제
-     */
     @PatchMapping("/{serverId}/{characterId}/favorite")
     public ResponseEntity<Map<String, Object>> toggleFavorite(
             @PathVariable String serverId,
@@ -222,15 +219,12 @@ public class CharacterController {
         } catch (Exception e) {
             Map<String, Object> error = Map.of(
                 "success", false,
-                "message", "업둥이 설정 중 오류가 발생했습니다: " + e.getMessage()
+                "message", "에러  " + e.getMessage()
             );
             return ResponseEntity.internalServerError().body(error);
         }
     }
 
-    /**
-     * 던전 제외 설정
-     */
     @PatchMapping("/{serverId}/{characterId}/exclude")
     public ResponseEntity<Map<String, Object>> setDungeonExclusion(
             @PathVariable String serverId,
@@ -246,7 +240,7 @@ public class CharacterController {
         } catch (Exception e) {
             Map<String, Object> error = Map.of(
                 "success", false,
-                "message", "던전 제외 설정 중 오류가 발생했습니다: " + e.getMessage()
+                "message", "에러: " + e.getMessage()
             );
             return ResponseEntity.internalServerError().body(error);
         }

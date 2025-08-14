@@ -27,6 +27,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-integration'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
     // 자동 반영을 위한 DevTools 추가
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

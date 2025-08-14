@@ -1,13 +1,15 @@
 apiVersion: v2
-name: dfo-party
-description: DFO Party Management Application
+name: dfo-party-application
+description: DFO Party Application (Backend + Frontend)
 type: application
 version: 1.0.0
 appVersion: "1.0.0"
 keywords:
   - dfo
   - party
-  - gaming
+  - application
+  - backend
+  - frontend
 home: https://github.com/kalraid/dnfParty
 sources:
   - https://github.com/kalraid/dnfParty
@@ -23,11 +25,3 @@ dependencies:
     version: 1.0.0
     condition: backend.enabled
     repository: "file://backend"
-  - name: nginx
-    version: 1.0.0
-    condition: nginx.enabled
-    repository: "file://nginx"
-  - name: mariadb
-    version: 1.0.0
-    condition: mariadb.enabled
-    repository: "file://mariadb"

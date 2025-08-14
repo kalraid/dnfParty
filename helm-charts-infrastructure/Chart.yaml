@@ -1,0 +1,27 @@
+apiVersion: v2
+name: dfo-party-infrastructure
+description: DFO Party Infrastructure (MariaDB + Nginx)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - dfo
+  - party
+  - infrastructure
+  - mariadb
+  - nginx
+home: https://github.com/kalraid/dnfParty
+sources:
+  - https://github.com/kalraid/dnfParty
+maintainers:
+  - name: DFO Party Team
+    email: team@dfoparty.com
+dependencies:
+  - name: nginx
+    version: 1.0.0
+    condition: nginx.enabled
+    repository: "file://nginx"
+  - name: mariadb
+    version: 1.0.0
+    condition: mariadb.enabled
+    repository: "file://mariadb"

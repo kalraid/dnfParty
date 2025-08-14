@@ -1,0 +1,9 @@
+dependencies:
+- name: nginx
+  repository: file://nginx
+  version: 1.0.0
+- name: mariadb
+  repository: file://mariadb
+  version: 1.0.0
+digest: sha256:77fd33875f54acfdbe09d2c8f6136a63a0a28c611eee69c644c24ed4dcc79861
+generated: "2025-08-14T14:36:06.3735463+09:00"

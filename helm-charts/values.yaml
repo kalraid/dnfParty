@@ -1,110 +1,25 @@
-# Global configuration
+# Application values for DFO Party
+# This chart manages Backend and Frontend which are frequently updated
+
+# Global settings
 global:
   environment: production
   domain: localhost
-  dfApiKey: "dfparty-api-key-2024"
-  
-# Environment-specific overrides
-environments:
-  development:
-    backend:
-      env:
-        - name: DB_NAME
-          value: "dnfp_dev"
-        - name: SHOW_SQL
-          value: "true"
-        - name: SPRING_PROFILES_ACTIVE
-          value: "development"
-  production:
-    backend:
-      env:
-        - name: DB_NAME
-          value: "dnfp_prod"
-        - name: SHOW_SQL
-          value: "false"
-        - name: SPRING_PROFILES_ACTIVE
-          value: "production"
 
-# Frontend configuration
-frontend:
-  enabled: true
-  replicaCount: 2
-  image:
-    repository: kimrie92/dfo-party-frontend
-    tag: latest
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 80
-  ingress:
-    enabled: false
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-
-# Backend configuration
+# Backend Configuration
 backend:
   enabled: true
-  replicaCount: 2
+  replicaCount: 1
+  
   image:
     repository: kimrie92/dfo-party-backend
-    tag: latest
-    pullPolicy: IfNotPresent
+    tag: "latest"
+    pullPolicy: Always
+  
   service:
     type: ClusterIP
     port: 8080
-  env:
-    - name: SPRING_PROFILES_ACTIVE
-      value: "kubernetes"
-    - name: DF_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: dfo-api-secret
-          key: api-key
-    # Database Configuration - Root 계정으로 접속
-    - name: DB_HOST
-      value: "dfo-party-mariadb"
-    - name: DB_PORT
-      value: "3306"
-    - name: DB_NAME
-      value: "dnfp"
-    - name: DB_USERNAME
-      value: "root"
-    - name: DB_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: "mariadb-secret"
-          key: mariadb-root-password
-    - name: SHOW_SQL
-      value: "false"
-  # Init Container - 실제 MySQL 연결 확인
-  initContainers:
-    - name: wait-for-mariadb
-      image: mysql:8.0
-      command: 
-        - sh
-        - -c
-        - |
-          echo "Waiting for MariaDB to be ready..."
-          until mysql -h dfo-party-mariadb -P 3306 -u root -p'dfparty-root-password' -e "SELECT 1;" > /dev/null 2>&1; do
-            echo "MariaDB not ready yet, waiting..."
-            sleep 5
-          done
-          echo "MariaDB is ready!"
-      env:
-        - name: MYSQL_PWD
-          value: "dfparty-root-password"
-      resources:
-        limits:
-          cpu: 100m
-          memory: 128Mi
-        requests:
-          cpu: 50m
-          memory: 64Mi
+  
   resources:
     limits:
       cpu: 1000m
@@ -112,20 +27,68 @@ backend:
     requests:
       cpu: 500m
       memory: 512Mi
+  
+  # Health check configuration
+  livenessProbe:
+    httpGet:
+      path: /actuator/health
+      port: 8080
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /actuator/health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  # Environment variables
+  env:
+    - name: DB_HOST
 
-# Nginx configuration
-nginx:
+      value: "df-party-infrastructure-mariadb"
+    - name: DB_PORT
+      value: "3306"
+    - name: DB_NAME
+      value: "dnfp"
+    - name: DB_USERNAME
+      value: "root"
+    - name: DB_PASSWORD
+      value: "dfparty-root-password"
+    - name: SHOW_SQL
+      value: "false"
+    - name: DF_API_BASE_URL
+      value: "https://api.neople.co.kr/df"
+    - name: DF_API_RATE_LIMIT
+      value: "100"
+    - name: DF_API_RATE_LIMIT_WINDOW
+      value: "60000"
+  
+  # Init container for waiting MariaDB
+  initContainers:
+    - name: wait-for-mariadb
+      image: busybox:1.35
+      command: ['sh', '-c', 'until nc -z df-party-infrastructure-mariadb 3306; do echo waiting for mariadb; sleep 2; done;']
+
+# Frontend Configuration
+frontend:
   enabled: true
   replicaCount: 1
+  
   image:
-    repository: nginx
-    tag: alpine
-    pullPolicy: IfNotPresent
+    repository: kimrie92/dfo-party-frontend
+    tag: "latest"
+    pullPolicy: Always
+  
   service:
-    type: LoadBalancer
+    type: ClusterIP
     port: 80
-  ingress:
-    enabled: false
+  
   resources:
     limits:
       cpu: 500m
@@ -133,73 +96,3 @@ nginx:
     requests:
       cpu: 250m
       memory: 256Mi
-
-# Shared volume configuration
-sharedVolume:
-  enabled: true
-  size: 10Gi
-  storageClass: ""
-
-# Database Configuration (Global)
-database:
-  host: "dfo-party-mariadb"
-  port: "3306"
-  name: "dnfp"
-  username: "dfparty"
-  password: "dfparty-password"
-  rootPassword: "dfparty-root-password"
-
-# MariaDB configuration
-mariadb:
-  enabled: true
-  # MariaDB 서브차트의 values.yaml에서 설정 관리
-
-# Node Exporter configuration
-nodeExporter:
-  enabled: true
-  service:
-    port: 9100
-  resources:
-    limits:
-      cpu: 200m
-      memory: 100Mi
-    requests:
-      cpu: 100m
-      memory: 50Mi
-
-# NodePort Service configuration
-nodePortService:
-  enabled: true
-  ports:
-    http:
-      port: 80
-      targetPort: 80
-      nodePort: 30080
-    https:
-      port: 443
-      targetPort: 443
-      nodePort: 30443
-    backendApi:
-      port: 8080
-      targetPort: 8080
-      nodePort: 30081
-    mariadb:
-      port: 3306
-      targetPort: 3306
-      nodePort: 30306
-
-# Monitoring configuration
-monitoring:
-  enabled: false
-  prometheus:
-    enabled: false
-  grafana:
-    enabled: false
-
-# Security configuration
-security:
-  enabled: true
-  networkPolicy:
-    enabled: true
-  podSecurityPolicy:
-    enabled: false

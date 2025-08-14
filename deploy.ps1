@@ -35,23 +35,27 @@ if (-not $env:DF_API_KEY) {
 
 Write-Host "DF_API_KEY loaded: $($env:DF_API_KEY.Substring(0, [Math]::Min(8, $env:DF_API_KEY.Length)))..." -ForegroundColor Green
 
-# Docker image build
-Write-Host "Building Docker images..." -ForegroundColor Cyan
+# Enable Docker BuildKit for faster builds
+$env:DOCKER_BUILDKIT = "1"
+$env:COMPOSE_DOCKER_CLI_BUILD = "1"
 
-# Frontend build
+# Docker image build with optimizations
+Write-Host "Building Docker images with BuildKit optimizations..." -ForegroundColor Cyan
+
+# Frontend build with optimizations
 Write-Host "Building frontend..." -ForegroundColor Yellow
 Set-Location df-party-frontend
-docker build -t kimrie92/dfo-party-frontend:latest .
+docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from kimrie92/dfo-party-frontend:latest -t kimrie92/dfo-party-frontend:latest .
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Frontend build failed" -ForegroundColor Red
     exit 1
 }
 Set-Location ..
 
-# Backend build
+# Backend build with optimizations
 Write-Host "Building backend..." -ForegroundColor Yellow
 Set-Location df-party-backend
-docker build -t kimrie92/dfo-party-backend:latest .
+docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from kimrie92/dfo-party-backend:latest -t kimrie92/dfo-party-backend:latest .
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Backend build failed" -ForegroundColor Red
     exit 1

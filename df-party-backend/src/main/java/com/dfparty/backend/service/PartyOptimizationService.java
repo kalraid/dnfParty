@@ -2,6 +2,7 @@ package com.dfparty.backend.service;
 
 import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.entity.Character;
+import com.dfparty.backend.repository.CharacterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,32 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PartyOptimizationService {
+    
+    private final CharacterService characterService;
+    private final CharacterRepository characterRepository;
+    
+    /**
+     * 파티 최적화 메인 메서드
+     */
+    public Map<String, Object> optimizeParty(Map<String, Object> request) {
+        try {
+            String optimizationType = (String) request.getOrDefault("type", "balanced");
+            Integer partySize = (Integer) request.getOrDefault("partySize", 4);
+            
+            List<Character> availableCharacters = characterRepository.findByIsExcludedFalse();
+            
+            switch (optimizationType) {
+                case "updoongi":
+                    return createUpdoongiPriorityParty(availableCharacters, partySize);
+                case "balanced":
+                default:
+                    return createBalancedParty(availableCharacters, partySize);
+            }
+        } catch (Exception e) {
+            log.error("파티 최적화 중 오류 발생", e);
+            return Map.of("error", "파티 최적화 실패: " + e.getMessage());
+        }
+    }
     
     /**
      * 업둥이 우선 파티 구성

@@ -1,9 +1,15 @@
--- DFO Party Management Application Database Schema
+-- DFO Party Management Application Database Initialization Script
+-- 이 스크립트는 기존 데이터를 백업하고 새로운 스키마를 적용합니다.
 
--- 기존 테이블 삭제
+-- 1. 기존 테이블 백업 (선택사항)
+-- CREATE TABLE characters_backup AS SELECT * FROM characters;
+-- CREATE TABLE adventures_backup AS SELECT * FROM adventures;
+
+-- 2. 기존 테이블 삭제
 DROP TABLE IF EXISTS characters;
+DROP TABLE IF EXISTS adventures;
 
--- 모험단 테이블 생성
+-- 3. 모험단 테이블 생성
 CREATE TABLE IF NOT EXISTS adventures (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     adventure_name VARCHAR(255) NOT NULL UNIQUE,
@@ -11,7 +17,7 @@ CREATE TABLE IF NOT EXISTS adventures (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 캐릭터 테이블 생성 (모험단 참조)
+-- 4. 캐릭터 테이블 생성 (모험단 참조)
 CREATE TABLE IF NOT EXISTS characters (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     character_id VARCHAR(255) NOT NULL UNIQUE,
@@ -88,9 +94,14 @@ CREATE TABLE IF NOT EXISTS characters (
     INDEX idx_adventure_name (adventure_id)
 );
 
--- 초기 데이터 삽입
+-- 5. 초기 모험단 데이터 삽입
 INSERT INTO adventures (adventure_name) VALUES 
 ('앙갚음사적단'),
 ('기타모험단1'),
 ('기타모험단2')
 ON DUPLICATE KEY UPDATE adventure_name = VALUES(adventure_name);
+
+-- 6. 성공 메시지 출력
+SELECT 'Database schema updated successfully!' as status;
+SELECT COUNT(*) as adventure_count FROM adventures;
+SELECT COUNT(*) as character_count FROM characters;

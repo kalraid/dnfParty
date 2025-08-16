@@ -1,9 +1,12 @@
 package com.dfparty.backend.service;
 
 import com.dfparty.backend.entity.Adventure;
+import com.dfparty.backend.entity.Server;
 import com.dfparty.backend.repository.AdventureRepository;
+import com.dfparty.backend.repository.ServerRepository;
 import com.dfparty.backend.service.DfoApiService;
 import com.dfparty.backend.service.CachingService;
+import com.dfparty.backend.dto.ServerDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -23,6 +26,9 @@ public class ServerInitializationService {
     private AdventureRepository adventureRepository;
     
     @Autowired
+    private ServerRepository serverRepository;
+    
+    @Autowired
     private CachingService cachingService;
 
     private boolean isInitialized = false;
@@ -34,8 +40,10 @@ public class ServerInitializationService {
     @EventListener(ApplicationReadyEvent.class)
     public void initializeServersOnStartup() {
         if (!isInitialized) {
+            System.out.println("=== 서버 초기화 시작 ===");
+            
             // DB에서 서버 목록 확인
-            List<Adventure> existingServers = adventureRepository.findAll();
+            List<Server> existingServers = serverRepository.findAll();
             
             if (existingServers.isEmpty()) {
                 System.out.println("DB에 서버 정보가 없습니다. DFO API에서 서버 목록을 가져옵니다.");
@@ -43,14 +51,14 @@ public class ServerInitializationService {
             } else {
                 System.out.println("DB에 서버 정보가 " + existingServers.size() + "개 있습니다. API 호출을 건너뜁니다.");
                 // 기존 서버 정보를 캐시에 로드
-                Object serverList = convertToServerList(existingServers);
                 cachingService.put(
                     CachingService.getServerListKey(), 
-                    serverList, 
+                    existingServers, 
                     CachingService.CacheType.SERVER_LIST
                 );
             }
             isInitialized = true;
+            System.out.println("=== 서버 초기화 완료 ===");
         }
     }
 
@@ -59,26 +67,33 @@ public class ServerInitializationService {
      */
     public boolean initializeServers() {
         try {
-            // DFO API에서 서버 목록 조회
-            Object serverList = dfoApiService.getServers();
+            System.out.println("DFO API에서 서버 목록 조회 시작...");
             
-            if (serverList != null) {
-                // 서버 목록을 DB에 저장
-                saveServersToDatabase(serverList);
+            // DFO API에서 서버 목록 조회
+            List<ServerDto> serverList = dfoApiService.getServers();
+            
+            if (serverList != null && !serverList.isEmpty()) {
+                System.out.println("DFO API에서 " + serverList.size() + "개 서버 정보 수신");
                 
-                // 캐시에 저장 (무제한)
+                // 서버 목록을 DB에 저장
+                saveServersToDB(serverList);
+                
+                // 캐시에 저장
                 cachingService.put(
                     CachingService.getServerListKey(), 
                     serverList, 
                     CachingService.CacheType.SERVER_LIST
                 );
                 
-                System.out.println("서버 목록 초기화 완료");
+                System.out.println("서버 목록 초기화 완료: " + serverList.size() + "개 서버");
                 return true;
+            } else {
+                System.err.println("DFO API에서 서버 목록을 가져올 수 없습니다.");
             }
             
         } catch (Exception e) {
             System.err.println("서버 목록 초기화 실패: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return false;
@@ -87,31 +102,37 @@ public class ServerInitializationService {
     /**
      * 서버 목록을 데이터베이스에 저장
      */
-    private void saveServersToDatabase(Object serverList) {
+    private void saveServersToDB(List<ServerDto> serverList) {
         try {
-            // DFO API 응답을 파싱하여 서버 정보 추출
-            // 실제 구현에서는 JSON 파싱 로직 필요
-            List<Map<String, Object>> servers = parseServerList(serverList);
+            System.out.println("서버 정보 DB 저장 시작...");
             
-            for (Map<String, Object> server : servers) {
-                String serverId = (String) server.get("serverId");
-                String serverName = (String) server.get("serverName");
+            for (ServerDto serverDto : serverList) {
+                String serverId = serverDto.getServerId();
+                String serverName = serverDto.getServerName();
                 
                 if (serverId != null && serverName != null) {
                     // 이미 존재하는지 확인
-                    List<Adventure> existingServers = adventureRepository.findByServerId(serverId);
-                    
-                    if (existingServers.isEmpty()) {
-                        // 새 서버 정보 생성
-                        Adventure newServer = new Adventure(serverName, serverId);
-                        adventureRepository.save(newServer);
-                        System.out.println("새 서버 추가: " + serverName + " (" + serverId + ")");
+                    if (serverRepository.findByServerId(serverId).isEmpty()) {
+                        // 새로운 서버 생성 및 저장
+                        Server server = Server.builder()
+                            .serverId(serverId)
+                            .serverName(serverName)
+                            .isActive(true)
+                            .build();
+                        
+                        serverRepository.save(server);
+                        System.out.println("서버 저장 완료: " + serverName + " (" + serverId + ")");
+                    } else {
+                        System.out.println("서버 이미 존재: " + serverName + " (" + serverId + ")");
                     }
                 }
             }
             
+            System.out.println("서버 정보 DB 저장 완료");
+            
         } catch (Exception e) {
             System.err.println("서버 정보 DB 저장 실패: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -121,7 +142,7 @@ public class ServerInitializationService {
      */
     private List<Map<String, Object>> parseServerList(Object serverList) {
         // TODO: 실제 DFO API 응답 구조에 맞게 JSON 파싱 구현
-        // 현재는 Mock 데이터 반환
+        // 기본 서버 목록 반환
         return List.of(
             Map.of("serverId", "cain", "serverName", "카인"),
             Map.of("serverId", "siroco", "serverName", "시로코"),
@@ -134,7 +155,7 @@ public class ServerInitializationService {
     }
 
     /**
-     * 서버 목록 조회 (캐시 또는 DB에서)
+     * 서버 목록 조회 (캐시에서만)
      */
     public Object getServerList() {
         // 먼저 캐시에서 확인
@@ -143,20 +164,7 @@ public class ServerInitializationService {
             return cachedServers;
         }
         
-        // 캐시에 없으면 DB에서 조회
-        List<Adventure> servers = adventureRepository.findAll();
-        if (!servers.isEmpty()) {
-            // DB 데이터를 캐시에 저장
-            Object serverList = convertToServerList(servers);
-            cachingService.put(
-                CachingService.getServerListKey(), 
-                serverList, 
-                CachingService.CacheType.SERVER_LIST
-            );
-            return serverList;
-        }
-        
-        // DB에도 없으면 초기화 실행
+        // 캐시에 없으면 초기화 실행하여 캐시에 저장
         if (initializeServers()) {
             return cachingService.get(CachingService.getServerListKey());
         }
@@ -168,13 +176,17 @@ public class ServerInitializationService {
      * DB 엔티티를 서버 목록 형태로 변환
      */
     private Object convertToServerList(List<Adventure> adventures) {
-        // TODO: 실제 DFO API 응답 형태로 변환
-        return adventures.stream()
-            .map(adventure -> Map.of(
-                "serverId", adventure.getServerId(),
-                "serverName", adventure.getAdventureName()
-            ))
-            .toList();
+        // 새로운 스키마에서는 모험단 정보를 서버 정보로 변환하지 않음
+        // 서버 정보는 별도로 관리
+        return List.of(
+            Map.of("serverId", "cain", "serverName", "카인"),
+            Map.of("serverId", "siroco", "serverName", "시로코"),
+            Map.of("serverId", "prey", "serverName", "프레이"),
+            Map.of("serverId", "casillas", "serverName", "카시야스"),
+            Map.of("serverId", "hilder", "serverName", "힐더"),
+            Map.of("serverId", "anton", "serverName", "안톤"),
+            Map.of("serverId", "bakal", "serverName", "바칼")
+        );
     }
 
     /**

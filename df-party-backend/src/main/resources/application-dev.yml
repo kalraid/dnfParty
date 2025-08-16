@@ -26,10 +26,7 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-# Development mock settings
-app:
-  mock:
-    enabled: true  # 개발환경에서는 Mock 활성화
+
 
 # Development DFO API settings
 df:
@@ -38,3 +35,13 @@ df:
     key: ${DF_API_KEY:your_dfo_api_key_here}
     rate-limit: 100
     rate-limit-window: 60000
+
+# Development Dundam settings (기본값: false)
+dundam:
+  scheduler:
+    enabled: false  # 개발환경에서도 기본적으로 던담 동기화 비활성화
+  crawling:
+    enabled: false  # 개발환경에서도 기본적으로 던담 크롤링 비활성화
+  sync:
+    interval: 60000
+    batch-size: 1

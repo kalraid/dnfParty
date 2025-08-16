@@ -18,11 +18,15 @@ public class PartyController {
     @PostMapping("/optimize")
     public ResponseEntity<Map<String, Object>> optimizeParty(@RequestBody Map<String, Object> request) {
         try {
-            
-            Map<String, Object> result = partyOptimizationService.optimizeParty(request);
+            // 프론트엔드 호환 메서드 사용
+            Map<String, Object> result = partyOptimizationService.optimizePartyForFrontend(request);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "파티 최적화 중 서버 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
         }
     }
 }

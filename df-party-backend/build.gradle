@@ -32,6 +32,13 @@ dependencies {
     // HTML 파싱을 위한 Jsoup 추가
     implementation 'org.jsoup:jsoup:1.17.2'
     
+    // Selenium WebDriver for JavaScript rendering
+    implementation 'org.seleniumhq.selenium:selenium-java:4.18.1'
+    implementation 'io.github.bonigarcia:webdrivermanager:5.7.0'
+    
+    // Playwright for faster JavaScript rendering (alternative)
+    implementation 'com.microsoft.playwright:playwright:1.40.0'
+    
     // 자동 반영을 위한 DevTools 추가
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     

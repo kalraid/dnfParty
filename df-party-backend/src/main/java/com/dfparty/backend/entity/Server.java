@@ -10,19 +10,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "adventures")
+@Table(name = "servers")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Adventure {
+public class Server {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "server_id", nullable = false)
+    private String serverId;
     
-    @Column(name = "adventure_name", unique = true, nullable = false)
-    private String adventureName;
+    @Column(name = "server_name", nullable = false)
+    private String serverName;
+    
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -31,7 +35,7 @@ public class Adventure {
     private LocalDateTime updatedAt;
     
     // 양방향 관계 설정 (선택사항)
-    @OneToMany(mappedBy = "adventure", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "server", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Character> characters;
     
     @PrePersist
@@ -44,6 +48,4 @@ public class Adventure {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
-    // 기본 생성자만 유지
 }

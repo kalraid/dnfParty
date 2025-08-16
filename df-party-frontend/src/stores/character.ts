@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia'
 import type { Character, Server } from '@/types'
 
+interface SearchRecord {
+  id: string;
+  serverId: string;
+  serverName: string;
+  adventureName: string;
+  characterName: string;
+  characterId: string;
+  timestamp: string;
+}
+
 export const useCharacterStore = defineStore('character', {
   state: () => ({
     characters: [] as Character[],
@@ -9,6 +19,8 @@ export const useCharacterStore = defineStore('character', {
     searchQuery: '',
     loading: false,
     error: null as string | null,
+    searchHistory: [] as SearchRecord[],
+    adventures: new Map<string, Character[]>(), // 모험단별 캐릭터 그룹
   }),
 
   getters: {
@@ -35,6 +47,41 @@ export const useCharacterStore = defineStore('character', {
 
     highFameCharacters: (state) => {
       return (minFame: number) => state.characters.filter(c => (c.fame || 0) >= minFame)
+    },
+
+    // 모험단별 그룹화
+    charactersByAdventure: (state) => {
+      const grouped = new Map<string, Character[]>();
+      state.characters.forEach(character => {
+        const adventureName = character.adventureName || 'N/A';
+        if (!grouped.has(adventureName)) {
+          grouped.set(adventureName, []);
+        }
+        grouped.get(adventureName)!.push(character);
+      });
+      return grouped;
+    },
+
+    // 모험단 목록
+    adventureNames: (state) => {
+      const names = new Set<string>();
+      state.characters.forEach(character => {
+        if (character.adventureName && character.adventureName !== 'N/A') {
+          names.add(character.adventureName);
+        }
+      });
+      return Array.from(names).sort();
+    },
+
+    // 검색 기록에서 모험단 목록
+    adventureNamesFromHistory: (state) => {
+      const names = new Set<string>();
+      state.searchHistory.forEach(record => {
+        if (record.adventureName && record.adventureName !== 'N/A') {
+          names.add(record.adventureName);
+        }
+      });
+      return Array.from(names).sort();
     },
   },
 
@@ -173,6 +220,76 @@ export const useCharacterStore = defineStore('character', {
     clearCharacters() {
       this.characters = []
       this.selectedServer = ''
+    },
+
+    // 검색 기록 관리
+    loadSearchHistory() {
+      try {
+        const saved = localStorage.getItem('df_search_history');
+        if (saved) {
+          this.searchHistory = JSON.parse(saved);
+        }
+      } catch (error) {
+        console.error('검색 기록 로드 실패:', error);
+        this.searchHistory = [];
+      }
+    },
+
+    saveSearchHistory() {
+      try {
+        localStorage.setItem('df_search_history', JSON.stringify(this.searchHistory));
+      } catch (error) {
+        console.error('검색 기록 저장 실패:', error);
+      }
+    },
+
+    addToSearchHistory(characters: Character | Character[]) {
+      const charactersArray = Array.isArray(characters) ? characters : [characters];
+      let addedCount = 0;
+
+      charactersArray.forEach(character => {
+        const newRecord: SearchRecord = {
+          id: `${character.characterId}_${Date.now()}`,
+          serverId: character.serverId,
+          serverName: this.servers.find(s => s.serverId === character.serverId)?.serverName || character.serverId,
+          adventureName: character.adventureName || 'N/A',
+          characterName: character.characterName,
+          characterId: character.characterId,
+          timestamp: new Date().toISOString()
+        };
+
+        // 중복 제거 (같은 캐릭터 ID가 있으면 업데이트)
+        const existingIndex = this.searchHistory.findIndex(r => r.characterId === character.characterId);
+        if (existingIndex >= 0) {
+          this.searchHistory[existingIndex] = newRecord;
+        } else {
+          this.searchHistory.unshift(newRecord); // 맨 앞에 추가
+          addedCount++;
+        }
+      });
+
+      // 최대 50개까지만 유지
+      if (this.searchHistory.length > 50) {
+        this.searchHistory = this.searchHistory.slice(0, 50);
+      }
+
+      this.saveSearchHistory();
+      return addedCount;
+    },
+
+    removeFromSearchHistory(id: string) {
+      const index = this.searchHistory.findIndex(r => r.id === id);
+      if (index >= 0) {
+        this.searchHistory.splice(index, 1);
+        this.saveSearchHistory();
+        return true;
+      }
+      return false;
+    },
+
+    clearSearchHistory() {
+      this.searchHistory = [];
+      this.saveSearchHistory();
     },
   },
 })

@@ -47,7 +47,7 @@ spring:
 spring:
   config:
     activate:
-      on-profile: development
+      on-profile: dev
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:dfparty}
@@ -109,14 +109,15 @@ logging:
 
 # DFO API Configuration (기본값 - 프로필별 설정으로 오버라이드됨)
 
-# Mock Configuration
-app:
-  mock:
-    enabled: true  # Mock 모드 활성화/비활성화
-    server-url: http://localhost:8081  # Mock 서버 URL
-    auto-save: true  # API 호출 시 응답 자동 저장
-    data-path: ./mock-data  # Mock 데이터 저장 경로
-    api-types:
-      dfo: true  # DFO API Mock 사용 여부
-      dundam: true  # Dundam API Mock 사용 여부
+
+
+# Dundam Configuration
+dundam:
+  scheduler:
+    enabled: false  # 던담 스케줄러 동기화 활성화/비활성화 (기본값: false)
+  crawling:
+    enabled: false  # 던담 크롤링 기능 활성화/비활성화 (기본값: false)
+  sync:
+    interval: 60000  # 동기화 간격 (밀리초, 기본값: 1분)
+    batch-size: 1    # 배치 크기 (기본값: 1개씩)
 

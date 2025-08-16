@@ -97,6 +97,31 @@ public class PartyOptimizationController {
     }
     
     /**
+     * 파티 최적화 메인 엔드포인트
+     * type: "balanced", "updoongi", "nabel"
+     * dungeonType: "nabel", "venus", "fog" (nabel 타입일 때)
+     * difficulty: "normal", "hard" (nabel 타입일 때)
+     */
+    @PostMapping("/optimize")
+    public ResponseEntity<Map<String, Object>> optimizeParty(@RequestBody Map<String, Object> request) {
+        log.info("파티 최적화 요청: {}", request);
+        
+        try {
+            Map<String, Object> result = partyOptimizationService.optimizeParty(request);
+            
+            if (result.containsKey("error")) {
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("파티 최적화 실패", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "파티 최적화에 실패했습니다."));
+        }
+    }
+    
+    /**
      * 파티 구성 분석
      */
     @PostMapping("/analyze")

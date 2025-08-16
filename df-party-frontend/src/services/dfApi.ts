@@ -56,6 +56,26 @@ export interface CharacterSearchResponse {
   message: string;
 }
 
+export interface CompleteCharacterInfo {
+  success: boolean;
+  data: {
+    character: CharacterDetail;
+    dungeonClearInfo: {
+      success: boolean;
+      clearStatus: {
+        nabel: boolean;
+        venus: boolean;
+        fog: boolean;
+        twilight: boolean;
+      };
+      source: string;
+    };
+    dataSource: string;
+    lastUpdated: string;
+  };
+  message: string;
+}
+
 export const dfApiService = {
   async getServers(): Promise<Server[]> {
     try {
@@ -83,7 +103,7 @@ export const dfApiService = {
     }
   },
 
-  async getCharacterDetail(serverId: string, characterId: string): Promise<CharacterDetail> {
+  async getCharacterDetail(serverId: string, characterId: string): Promise<{success: boolean, data: CharacterDetail, message: string}> {
     try {
       const response = await dfApiClient.get(`/dfo/characters/${serverId}/${characterId}`);
       return response.data;
@@ -101,6 +121,24 @@ export const dfApiService = {
       return response.data;
     } catch (error) {
       console.error('캐릭터 타임라인 조회 실패:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 통합 캐릭터 정보 조회 (DFO API + DB + 타임라인)
+   * 1. DFO API 캐릭터 조회 (캐릭터 ID 획득)
+   * 2. 캐릭터 상세조회 (모험단 확인)
+   * 3. 전투력 DB 조회 (있으면 반환)
+   * 4. 타임라인 API 조회 (던전 클리어 여부 확인)
+   * 5. 통합 response 반환
+   */
+  async getCompleteCharacterInfo(serverId: string, characterName: string): Promise<CompleteCharacterInfo> {
+    try {
+      const response = await dfApiClient.get(`/characters/${serverId}/${characterName}/complete`);
+      return response.data;
+    } catch (error) {
+      console.error('통합 캐릭터 정보 조회 실패:', error);
       throw error;
     }
   },
@@ -130,7 +168,32 @@ export const dfApiService = {
       console.error('캐릭터 스펙 업데이트 실패:', error);
       throw error;
     }
+  },
+
+  // 캐릭터 스탯 수동 업데이트 (CharacterDetail.vue에서 사용)
+  async updateCharacterStatsManual(updateData: any) {
+    try {
+      const response = await dfApiClient.put('/characters/stats', updateData);
+      return response.data;
+    } catch (error) {
+      console.error('캐릭터 스탯 수동 업데이트 실패:', error);
+      throw error;
+    }
+  },
+
+  // 캐릭터 즐겨찾기 업데이트 (CharacterDetail.vue에서 사용)
+  async updateCharacterFavorites(updateData: any) {
+    try {
+      const response = await dfApiClient.put('/characters/favorites', updateData);
+      return response.data;
+    } catch (error) {
+      console.error('캐릭터 즐겨찾기 업데이트 실패:', error);
+      throw error;
+    }
   }
 };
 
-export default dfApiService; 
+export default dfApiService;
+
+// dfApi라는 이름으로도 export (CharacterDetail.vue에서 사용)
+export const dfApi = dfApiService; 

@@ -36,8 +36,8 @@ export const dundamService = {
       // 백엔드에서 처리하는 것이 좋습니다
       console.log('dundam.xyz URL:', url);
       
-      // 임시로 더미 데이터 반환 (실제 구현 시 제거)
-      return this.getMockCharacterInfo(serverId, characterId);
+      // 실제 API 호출 구현 필요
+      throw new Error('dundam.xyz API 구현이 필요합니다');
       
     } catch (error) {
       console.error('dundam.xyz에서 캐릭터 정보 조회 실패:', error);
@@ -45,24 +45,7 @@ export const dundamService = {
     }
   },
 
-  // 더미 데이터 생성 (개발용, 실제 구현 시 제거)
-  getMockCharacterInfo(serverId: string, characterId: string): DundamCharacterInfo {
-    // 랜덤한 버프력과 총딜 생성 (실제로는 API에서 가져와야 함)
-    const buffPower = Math.floor(Math.random() * 1000000) + 100000; // 10만 ~ 110만
-    const totalDamage = Math.floor(Math.random() * 10000000000) + 1000000000; // 10억 ~ 110억
-    
-    return {
-      characterName: '테스트캐릭터',
-      serverId,
-      characterId,
-      buffPower,
-      totalDamage,
-      fame: Math.floor(Math.random() * 100000) + 10000,
-      level: Math.floor(Math.random() * 20) + 100,
-      jobName: '버퍼',
-      lastUpdated: new Date().toISOString()
-    };
-  },
+
 
   // 버프력과 총딜 정보만 업데이트
   async updateCharacterStats(serverId: string, characterId: string): Promise<{ buffPower?: number; totalDamage?: number } | null> {
@@ -72,7 +55,7 @@ export const dundamService = {
       return response.data.dundamInfo;
     } catch (error) {
       console.error('캐릭터 스펙 업데이트 실패:', error);
-      return this.getMockCharacterInfo(serverId, characterId);
+      return null;
     }
   },
 
@@ -91,26 +74,11 @@ export const dundamService = {
       return null;
     } catch (error) {
       console.error('던전 클리어 정보 조회 실패:', error);
-      // Mock 데이터 반환
-      return this.getMockDungeonClearInfo(serverId, characterId);
+      return null;
     }
   },
 
-  // Mock 던전 클리어 정보
-  getMockDungeonClearInfo(serverId: string, characterId: string): {
-    nabel: boolean;
-    venus: boolean;
-    fog: boolean;
-  } {
-    // 서버별로 다른 Mock 데이터 생성
-    const hash = characterId.charCodeAt(0) + serverId.charCodeAt(0);
-    
-    return {
-      nabel: (hash % 3) === 0,      // 33% 확률로 클리어
-      venus: (hash % 4) === 0,      // 25% 확률로 클리어
-      fog: (hash % 5) === 0         // 20% 확률로 클리어
-    };
-  }
+
 };
 
 export default dundamService; 

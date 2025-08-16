@@ -5,10 +5,9 @@
     <!-- 검색 폼 -->
     <div class="search-form">
       <div class="form-group">
-        <label for="server">서버 선택:</label>
-        <select id="server" v-model="selectedServer" required>
+        <label for="searchMode">서버:</label>
+        <select id="searchMode" v-model="searchMode" @change="onSearchModeChange" required>
           <option value="">서버를 선택하세요</option>
-          <option value="all">전체 서버</option>
           <option v-for="server in servers" :key="server.serverId" :value="server.serverId">
             {{ server.serverName }}
           </option>
@@ -18,64 +17,221 @@
       <div class="form-group">
         <label for="characterName">캐릭터명:</label>
         <input 
-          id="characterName" 
-          v-model="characterName" 
+          id="characterName"
+          v-model="searchQuery" 
           type="text" 
           placeholder="캐릭터명을 입력하세요" 
           required
         >
       </div>
       
-      <button @click="searchCharacters" :disabled="searching" class="search-btn">
+      <button @click="searchCharacters" :disabled="isSearchDisabled" class="search-btn">
         {{ searching ? '검색 중...' : '검색' }}
       </button>
+      
+      <!-- 던담 동기화 버튼 -->
+      <div class="dundam-sync-controls" v-if="selectedAdventure">
+                  <button @click="syncAdventureFromDundam" class="dundam-sync-button" :disabled="isSyncing">
+            {{ isSyncing ? '🔄 동기화 중...' : '🔄 던담 동기화 (셀레니움)' }}
+          </button>
+        <span class="sync-status" v-if="syncStatus">{{ syncStatus }}</span>
+      </div>
     </div>
+
+
 
     <!-- 검색 결과 카드 -->
     <div v-if="searchResults.length > 0" class="search-results">
-      <h3>검색 결과 ({{ searchResults.length }}개)</h3>
+      <h3>{{ searchMode === 'adventure' ? '모험단 캐릭터' : '검색 결과' }} ({{ searchResults.length }}개)</h3>
       <div class="results-grid">
         <div 
           v-for="character in searchResults" 
           :key="character.characterId" 
           class="dundam-character-card"
           :class="{ 'selected': selectedCharacter?.characterId === character.characterId }"
-          @click="selectCharacter(character)"
+          @click="goToCharacterDetail(character)"
+          @contextmenu.prevent="showContextMenuForCharacter($event, character)"
         >
           <div class="character-avatar">
             <div class="avatar-image">
-              <!-- 캐릭터 이미지 자리 (향후 DFO API에서 이미지 URL 가져올 수 있음) -->
-              <div class="avatar-placeholder">
+              <!-- DFO API에서 가져온 캐릭터 이미지 또는 기본 플레이스홀더 -->
+              <img 
+                v-if="character.avatarImageUrl || character.characterImageUrl" 
+                :src="character.avatarImageUrl || character.characterImageUrl"
+                :alt="character.characterName"
+                class="character-img"
+                @error="handleImageError"
+              />
+              <div v-else class="avatar-placeholder">
                 {{ character.characterName.charAt(0) }}
               </div>
             </div>
-            <div class="level-badge">{{ character.level || 0 }}</div>
           </div>
           
           <div class="character-info">
-            <div class="character-name">{{ character.characterName }}</div>
-            <div class="adventure-name">{{ character.adventureName || 'N/A' }}</div>
+            <!-- 서버 - 레벨 - 이름 순서로 표시 -->
+            <div class="character-header">
+              <span class="server-name">{{ getServerName(character.serverId) }}</span>
+              <span class="level-display">Lv.{{ character.level || 0 }}</span>
+              <span class="character-name">{{ character.characterName }}</span>
+            </div>
             
-            <div class="stats-info">
-              <div class="stat-item buff-power">
-                <span class="stat-label">버프력</span>
-                <span class="stat-value">{{ formatNumber(character.buffPower || 0) }}</span>
+            <!-- 모험단 정보 개선 -->
+            <div class="adventure-name">
+              {{ character.adventureName && character.adventureName !== 'N/A' ? character.adventureName : '모험단 정보 없음' }}
+            </div>
+            
+            <!-- 던전 클리어 상태 - "남은 숙제" 타이틀 추가, 상태 반전 -->
+            <div class="dungeon-clear-section">
+              <h4 class="dungeon-title">남은 숙제</h4>
+              <div class="dungeon-clear-status">
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearNabel }">
+                  <span class="dungeon-icon">🌟</span>
+                  <span class="dungeon-name">나벨</span>
+                  <span class="clear-status">{{ character.dungeonClearNabel ? 'X' : 'O' }}</span>
+                </div>
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearVenus }">
+                  <span class="dungeon-icon">⚡</span>
+                  <span class="dungeon-name">베누스</span>
+                  <span class="clear-status">{{ character.dungeonClearVenus ? 'X' : 'O' }}</span>
+                </div>
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearFog }">
+                  <span class="dungeon-icon">🌫️</span>
+                  <span class="dungeon-name">안개신</span>
+                  <span class="clear-status">{{ character.dungeonClearFog ? 'X' : 'O' }}</span>
+                </div>
               </div>
             </div>
             
-            <div class="meta-info">
-              <div class="server-info">
-                <span class="server-name">{{ getServerName(character.serverId) }}</span>
+            <!-- 명성 정보를 버프력 위로 이동 -->
+            <div class="fame-section">
+              <span class="fame-label">명성:</span>
+              <span class="fame-value">{{ formatNumber(character.fame || 0) }}</span>
+            </div>
+            
+            <!-- 직업에 따른 스탯 표시 개선 -->
+            <div class="stats-info">
+              <!-- 버퍼인 경우 버프력만 표시 -->
+              <div v-if="isBuffer(character)" class="stat-item buff-power">
+                <span class="stat-label">버프력</span>
+                <span class="stat-value">{{ formatNumber(character.buffPower || 0) }}</span>
+                <button @click.stop="showManualInput(character, 'buffPower')" class="edit-btn">✏️</button>
               </div>
-              <div class="fame-info">
-                <span class="fame-icon">👑</span>
-                <span class="fame-value">{{ formatNumber(character.fame || 0) }}</span>
+              
+              <!-- 딜러인 경우 총딜만 표시 -->
+              <div v-if="isDealer(character)" class="stat-item total-damage">
+                <span class="stat-label">총딜</span>
+                <span class="stat-value">{{ formatNumber(character.totalDamage || 0) }}</span>
+                <button @click.stop="showManualInput(character, 'totalDamage')" class="edit-btn">✏️</button>
               </div>
             </div>
             
             <div class="job-info">
-              <span class="job-name">{{ character.jobGrowName || character.jobName || 'N/A' }}</span>
+                              <span class="job-name">{{ formatJobName(character.jobGrowName || character.jobName || '') }}</span>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 수동 입력 모달 -->
+    <div v-if="showManualInputModal" class="manual-input-modal" @click.stop>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ manualInputCharacter?.characterName }} - 수동 입력</h3>
+          <button @click="hideManualInput" class="modal-close">×</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="input-group">
+            <label>버프력:</label>
+            <input 
+              v-model="manualInputData.buffPower" 
+              type="number" 
+              placeholder="버프력 입력"
+              class="manual-input"
+            >
+          </div>
+          
+          <div class="input-group">
+            <label>총딜:</label>
+            <input 
+              v-model="manualInputData.totalDamage" 
+              type="number" 
+              placeholder="총딜 입력"
+              class="manual-input"
+            >
+          </div>
+          
+
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="saveManualInput" class="save-btn">저장</button>
+          <button @click="hideManualInput" class="cancel-btn">취소</button>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- 우클릭 컨텍스트 메뉴 -->
+    <div v-if="showContextMenu" class="context-menu" :style="contextMenuStyle" @click.stop>
+      <div class="context-header">
+        <span class="context-character-name">{{ contextCharacter?.characterName }}</span>
+        <button @click="hideContextMenu" class="context-close">×</button>
+      </div>
+      
+      <div class="context-section">
+        <h4>던전별 업둥이 설정</h4>
+        <div class="dungeon-favorites">
+          <div class="favorite-item">
+            <label>
+              <input 
+                type="checkbox" 
+                :checked="dungeonFavorites.nabel"
+                @change="toggleDungeonFavorite('nabel', $event)"
+              />
+              <span class="dungeon-icon">🌟</span>
+              <span class="dungeon-name">나벨 업둥이</span>
+            </label>
+          </div>
+          
+          <div class="favorite-item">
+            <label>
+              <input 
+                type="checkbox" 
+                :checked="dungeonFavorites.venus"
+                @change="toggleDungeonFavorite('venus', $event)"
+              />
+              <span class="dungeon-icon">⚡</span>
+              <span class="dungeon-name">베누스 업둥이</span>
+            </label>
+          </div>
+          
+          <div class="favorite-item">
+            <label>
+              <input 
+                type="checkbox" 
+                :checked="dungeonFavorites.fog"
+                @change="toggleDungeonFavorite('fog', $event)"
+              />
+              <span class="dungeon-icon">🌫️</span>
+              <span class="dungeon-name">안개신 업둥이</span>
+            </label>
+          </div>
+          
+          <div class="favorite-item">
+            <label>
+              <input 
+                type="checkbox" 
+                :checked="dungeonFavorites.twilight"
+                @change="toggleDungeonFavorite('twilight', $event)"
+              />
+              <span class="dungeon-icon">🌅</span>
+              <span class="dungeon-name">황혼전 업둥이</span>
+              <span class="coming-soon">(개발중)</span>
+            </label>
           </div>
         </div>
       </div>
@@ -133,27 +289,12 @@
           <button @click="saveCharacterToDB(selectedCharacter)" class="save-btn">
             DB에 저장
           </button>
-          <button @click="addToSearchHistory(selectedCharacter)" class="history-btn">
-            검색 기록에 추가
-          </button>
+
         </div>
       </div>
     </div>
 
-    <!-- 검색 기록 -->
-    <div v-if="searchHistory.length > 0" class="search-history">
-      <h3>최근 검색 기록</h3>
-      <div class="history-list">
-        <div v-for="record in searchHistory" :key="record.id" class="history-item">
-          <span class="server-name">{{ record.serverName }}</span>
-          <span class="adventure-name">{{ record.adventureName }}</span>
-          <span class="character-name">{{ record.characterName }}</span>
-          <span class="timestamp">{{ formatDate(record.timestamp) }}</span>
-          <button @click="loadCharacterFromHistory(record)" class="load-btn">불러오기</button>
-          <button @click="removeFromHistory(record.id)" class="remove-btn">삭제</button>
-        </div>
-      </div>
-    </div>
+
 
     <!-- 에러 메시지 -->
     <div v-if="error" class="error-message">
@@ -165,39 +306,141 @@
       {{ successMessage }}
     </div>
   </div>
+
+  <!-- Neople API 링크 -->
+  <div class="neople-api-footer">
+    <p>Powered by <a href="https://developers.neople.co.kr/" target="_blank" rel="noopener noreferrer">NeoPle OpenAPI</a></p>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { dfApiService, type Server } from '../services/dfApi';
 
-// 검색 기록 인터페이스
-interface SearchRecord {
-  id: string;
-  serverId: string;
-  serverName: string;
-  adventureName: string;
-  characterName: string;
-  characterId: string;
-  timestamp: string;
-}
+const router = useRouter()
 
 // 반응형 데이터
 const selectedServer = ref('');
-const characterName = ref('');
+const searchMode = ref(''); // serverId (전체 서버 옵션 제거)
+const searchQuery = ref(''); // 통합 검색어 (모험단명 또는 캐릭터명)
 const servers = ref<Server[]>([]);
 const searchResults = ref<any[]>([]);
 const selectedCharacter = ref<any>(null);
-const searchHistory = ref<SearchRecord[]>([]);
+
 const searching = ref(false);
 const error = ref<string>('');
 const successMessage = ref<string>('');
 
-// 컴포넌트 마운트 시 서버 목록과 검색 기록 로드
-onMounted(async () => {
-  await loadServers();
-  loadSearchHistory();
+
+
+// 컨텍스트 메뉴 관련
+const showContextMenu = ref(false);
+const contextCharacter = ref<any>(null);
+const contextMenuStyle = ref({});
+const dungeonFavorites = ref({
+  nabel: false,
+  venus: false,
+  fog: false,
+  twilight: false
 });
+
+// 수동 입력 관련
+const showManualInputModal = ref(false);
+const manualInputCharacter = ref<any>(null);
+const manualInputData = ref({
+  buffPower: null as number | null,
+  totalDamage: null as number | null
+});
+
+// 동기화 상태 관련
+const syncStatus = ref({
+  schedulerEnabled: false,
+  isRunning: false,
+  totalCharacters: 0,
+  currentIndex: 0,
+  lastFullSync: null as string | null,
+  nextSyncIn: '1분 후',
+  syncInterval: 60000
+});
+
+// 던담 동기화 관련
+const isSyncing = ref(false);
+const syncStatusMessage = ref('');
+const selectedAdventure = ref<string | null>(null);
+
+// 컴포넌트 마운트 시 서버 목록 로드
+onMounted(async () => {
+  // 저장된 검색 상태 복원
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('restore') === 'true') {
+    const savedState = localStorage.getItem('characterSearchState')
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState)
+        searchQuery.value = state.searchQuery || ''
+        selectedServer.value = state.selectedServer || ''
+        searchResults.value = state.searchResults || []
+        selectedCharacter.value = state.selectedCharacter || null
+        
+        // 복원 후 저장된 상태 삭제
+        localStorage.removeItem('characterSearchState')
+      } catch (error) {
+        console.error('저장된 상태 복원 실패:', error)
+      }
+    }
+  }
+  
+  // 서버 목록 로드
+  await loadServers()
+})
+
+// 검색 버튼 비활성화 상태
+const isSearchDisabled = computed(() => {
+  return searching.value || !searchMode.value || searchMode.value === '';
+});
+
+// 던담 동기화 메서드
+const syncAdventureFromDundam = async () => {
+  if (!selectedAdventure.value) {
+    error.value = '동기화할 모험단이 선택되지 않았습니다.';
+    return;
+  }
+  
+  try {
+    isSyncing.value = true;
+    syncStatusMessage.value = '던담에서 모험단 정보를 동기화하고 있습니다...';
+    error.value = '';
+    
+    const response = await fetch(`http://localhost:8080/api/dundam-sync/adventure/${encodeURIComponent(selectedAdventure.value)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      successMessage.value = result.message;
+      syncStatusMessage.value = `동기화 완료: ${result.successCount}개 성공, ${result.failCount}개 실패`;
+      
+      // 검색 결과 새로고침
+      if (searchResults.value.length > 0) {
+        await searchCharacters();
+      }
+    } else {
+      error.value = result.message || '던담 동기화에 실패했습니다.';
+      syncStatusMessage.value = '동기화 실패';
+    }
+  } catch (err) {
+    console.error('던담 동기화 실패:', err);
+    error.value = '던담 동기화 중 오류가 발생했습니다.';
+    syncStatusMessage.value = '동기화 오류';
+  } finally {
+    isSyncing.value = false;
+  }
+};
 
 // 서버 목록 로드
 const loadServers = async () => {
@@ -210,27 +453,7 @@ const loadServers = async () => {
   }
 };
 
-// 검색 기록 로드 (Local Storage에서)
-const loadSearchHistory = () => {
-  try {
-    const saved = localStorage.getItem('df_search_history');
-    if (saved) {
-      searchHistory.value = JSON.parse(saved);
-    }
-  } catch (error) {
-    console.error('검색 기록 로드 실패:', error);
-    searchHistory.value = [];
-  }
-};
 
-// 검색 기록 저장 (Local Storage에)
-const saveSearchHistory = () => {
-  try {
-    localStorage.setItem('df_search_history', JSON.stringify(searchHistory.value));
-  } catch (error) {
-    console.error('검색 기록 저장 실패:', error);
-  }
-};
 
 // 캐릭터 선택
 const selectCharacter = (character: any) => {
@@ -251,40 +474,74 @@ const closeDetail = () => {
 
 // 캐릭터 검색
 const searchCharacters = async () => {
-  if (!characterName.value.trim()) {
+  if (!searchMode.value) {
+    error.value = '서버를 선택해주세요.';
+    return;
+  }
+  
+  if (!searchQuery.value.trim()) {
     error.value = '캐릭터명을 입력해주세요.';
     return;
   }
 
-      try {
-      searching.value = true;
-      error.value = '';
-      successMessage.value = '';
-      selectedCharacter.value = null; // 검색 시 선택된 캐릭터 초기화
+  try {
+    searching.value = true;
+    error.value = '';
+    successMessage.value = '';
+    selectedCharacter.value = null; // 검색 시 선택된 캐릭터 초기화
 
-    // 백엔드 API를 통한 통합 캐릭터 검색
-    const response = await fetch(`http://localhost:8080/api/characters/search?serverId=${selectedServer.value || 'all'}&characterName=${encodeURIComponent(characterName.value)}`);
+    // 캐릭터 검색 (DFO API 호출)
+    const serverId = searchMode.value;
+    const response = await fetch(`http://localhost:8080/api/characters/search?serverId=${serverId}&characterName=${encodeURIComponent(searchQuery.value)}`);
     
     if (response.ok) {
       const data = await response.json();
       if (data.success) {
         searchResults.value = Array.isArray(data.characters) ? data.characters : [data.character];
         successMessage.value = `${searchResults.value.length}개의 캐릭터를 찾았습니다.`;
-          } else {
-      // 백엔드에서 반환한 에러 메시지 사용
-      error.value = data.message || '캐릭터 검색에 실패했습니다.';
-    }
+        
+        // 검색 결과 디버그 출력
+        console.log('캐릭터 검색 결과:', searchResults.value);
+        searchResults.value.forEach((char: any, index: number) => {
+          console.log(`캐릭터 ${index + 1}:`, {
+            characterName: char.characterName,
+            adventureName: char.adventureName,
+            serverId: char.serverId,
+            level: char.level,
+              fame: char.fame
+            });
+          });
+          
+        // 모험단 모드일 때 selectedAdventure 설정
+        if (searchMode.value === 'adventure' && searchResults.value.length > 0) {
+          const firstCharacter = searchResults.value[0];
+          if (firstCharacter.adventureName && firstCharacter.adventureName !== 'N/A') {
+            selectedAdventure.value = firstCharacter.adventureName;
+            console.log('선택된 모험단:', selectedAdventure.value);
+          }
+        }
+          
+        // 검색 기록을 localStorage에 저장
+        saveToSearchHistory(searchResults.value);
+      } else {
+        // 백엔드에서 반환한 에러 메시지 사용
+        error.value = data.message || '캐릭터 검색에 실패했습니다.';
+      }
     } else {
-      error.value = '캐릭터 검색 중 오류가 발생했습니다.';
+      error.value = '검색 요청이 실패했습니다.';
     }
 
   } catch (err) {
-    console.error('캐릭터 검색 실패:', err);
-    error.value = '캐릭터 검색 중 오류가 발생했습니다.';
+    console.error('검색 실패:', err);
+    error.value = '검색 중 오류가 발생했습니다.';
   } finally {
     searching.value = false;
   }
 };
+
+
+
+
 
 // 캐릭터를 DB에 저장
 const saveCharacterToDB = async (character: any) => {
@@ -299,8 +556,7 @@ const saveCharacterToDB = async (character: any) => {
 
     if (response.ok) {
       successMessage.value = `${character.characterName} 캐릭터가 DB에 저장되었습니다.`;
-      // 검색 기록에도 자동 추가
-      addToSearchHistory(character);
+
     } else {
       error.value = '캐릭터 저장에 실패했습니다.';
     }
@@ -310,63 +566,122 @@ const saveCharacterToDB = async (character: any) => {
   }
 };
 
-// 검색 기록에 추가
-const addToSearchHistory = (character: any) => {
-  const newRecord: SearchRecord = {
-    id: Date.now().toString(),
-    serverId: character.serverId,
-    serverName: getServerName(character.serverId),
-    adventureName: character.adventureName || 'N/A',
-    characterName: character.characterName,
-    characterId: character.characterId,
-    timestamp: new Date().toISOString()
-  };
 
-  // 중복 제거 (같은 캐릭터 ID가 있으면 업데이트)
-  const existingIndex = searchHistory.value.findIndex(r => r.characterId === character.characterId);
-  if (existingIndex >= 0) {
-    searchHistory.value[existingIndex] = newRecord;
-  } else {
-    searchHistory.value.unshift(newRecord); // 맨 앞에 추가
+
+// 검색 모드 변경 핸들러
+const onSearchModeChange = () => {
+  // 서버 선택이 변경되면 기존 검색 결과와 입력값 초기화
+  searchQuery.value = '';
+  searchResults.value = [];
+  selectedCharacter.value = null;
+  error.value = '';
+  successMessage.value = '';
+  
+  // 서버 선택에 따라 selectedServer 값 설정
+  selectedServer.value = searchMode.value;
+  
+  // 모험단 모드일 때 selectedAdventure 설정
+  if (searchMode.value === 'adventure') {
+    selectedAdventure.value = null; // 초기화
   }
-
-  // 최대 50개까지만 유지
-  if (searchHistory.value.length > 50) {
-    searchHistory.value = searchHistory.value.slice(0, 50);
-  }
-
-  saveSearchHistory();
-  successMessage.value = '검색 기록에 추가되었습니다.';
-};
-
-// 검색 기록에서 캐릭터 불러오기
-const loadCharacterFromHistory = async (record: SearchRecord) => {
-  try {
-    // 백엔드 API에서 캐릭터 정보 조회
-    const response = await fetch(`http://localhost:8080/api/characters/${record.serverId}/${record.characterId}`);
-    if (response.ok) {
-      const characterData = await response.json();
-      // 검색 결과에 표시
-      searchResults.value = [characterData];
-      successMessage.value = '검색 기록에서 캐릭터를 불러왔습니다.';
-    }
-  } catch (err) {
-    console.error('캐릭터 정보 로드 실패:', err);
-    error.value = '캐릭터 정보를 불러오는데 실패했습니다.';
-  }
-};
-
-// 검색 기록에서 제거
-const removeFromHistory = (id: string) => {
-  searchHistory.value = searchHistory.value.filter(record => record.id !== id);
-  saveSearchHistory();
-  successMessage.value = '검색 기록에서 제거되었습니다.';
 };
 
 // 유틸리티 함수들
 const getServerName = (serverId: string): string => {
   const server = servers.value.find(s => s.serverId === serverId);
   return server?.serverName || serverId;
+};
+
+// 이미지 로드 에러 처리
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  // 이미지 로드 실패 시 숨기고 플레이스홀더 표시
+  img.style.display = 'none';
+  console.warn('캐릭터 이미지 로드 실패:', img.src);
+};
+
+// 컨텍스트 메뉴 관련 함수들
+const showContextMenuForCharacter = async (event: MouseEvent, character: any) => {
+  event.preventDefault();
+  contextCharacter.value = character;
+  
+  // 컨텍스트 메뉴 위치 계산
+  contextMenuStyle.value = {
+    position: 'fixed',
+    left: event.clientX + 'px',
+    top: event.clientY + 'px',
+    zIndex: 1000
+  };
+  
+  // 현재 캐릭터의 던전별 업둥이 상태 로드
+  await loadDungeonFavorites(character.characterId);
+  
+  showContextMenu.value = true;
+  
+  // 클릭 외부 감지를 위한 이벤트 리스너 추가
+  document.addEventListener('click', hideContextMenu);
+};
+
+const hideContextMenu = () => {
+  showContextMenu.value = false;
+  document.removeEventListener('click', hideContextMenu);
+};
+
+// 던전별 업둥이 상태 로드
+const loadDungeonFavorites = async (characterId: string) => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/characters/${characterId}/favorites`);
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        dungeonFavorites.value = result.data.favorites;
+      }
+    }
+  } catch (error) {
+    console.error('던전별 업둥이 상태 로드 실패:', error);
+  }
+};
+
+// 던전별 업둥이 설정 토글
+const toggleDungeonFavorite = async (dungeonType: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const isFavorite = target.checked;
+  
+  if (!contextCharacter.value) return;
+  
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/characters/${contextCharacter.value.characterId}/favorite/${dungeonType}?isFavorite=${isFavorite}`,
+      { method: 'POST' }
+    );
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        // 로컬 상태 업데이트
+        (dungeonFavorites.value as any)[dungeonType] = isFavorite;
+        
+        // 성공 메시지 표시
+        successMessage.value = result.message;
+        setTimeout(() => {
+          successMessage.value = '';
+        }, 3000);
+      } else {
+        // 실패 시 체크박스 상태 되돌리기
+        target.checked = !isFavorite;
+        error.value = result.message;
+      }
+    } else {
+      // 실패 시 체크박스 상태 되돌리기
+      target.checked = !isFavorite;
+      error.value = '업둥이 설정에 실패했습니다.';
+    }
+  } catch (err) {
+    // 실패 시 체크박스 상태 되돌리기
+    target.checked = !isFavorite;
+    console.error('업둥이 설정 오류:', err);
+    error.value = '업둥이 설정 중 오류가 발생했습니다.';
+  }
 };
 
 const formatNumber = (num?: number): string => {
@@ -379,8 +694,219 @@ const formatNumber = (num?: number): string => {
   return num.toLocaleString();
 };
 
+// 직업명 포맷팅 함수
+const formatJobName = (jobName: string): string => {
+  if (!jobName || jobName === 'N/A') return 'N/A';
+  
+  // 괄호 안의 내용만 추출 (예: "귀검사(여) (베가본드)" → "베가본드")
+  const match = jobName.match(/\(([^)]+)\)$/);
+  if (match) {
+    return match[1].replace(/眞\s*/, ''); // "眞" 문자도 제거
+  }
+  
+  // 괄호가 없으면 "眞" 문자만 제거
+  return jobName.replace(/眞\s*/, '');
+};
+
+// 직업 판별 함수들
+const isBuffer = (character: any): boolean => {
+  // 백엔드 API 호출로 직업 타입 확인
+  if (character.jobName && character.jobGrowName) {
+    // "眞" 문자를 제거한 후 버퍼 직업 판별
+    const cleanJobName = formatJobName(character.jobGrowName);
+    const cleanBaseJobName = formatJobName(character.jobName);
+    
+      // 버퍼 직업 목록 (眞 제거 후 판별)
+  const bufferJobs = ['뮤즈', '패러메딕', '크루세이더', '인챈트리스'];
+    
+    return bufferJobs.some(job => 
+      cleanJobName.includes(job) || cleanBaseJobName.includes(job)
+    );
+  }
+  return false;
+};
+
+const isDealer = (character: any): boolean => {
+  // 버퍼가 아니면 딜러로 간주
+  return !isBuffer(character);
+};
+
 const formatDate = (dateString: string): string => {
+  if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString('ko-KR');
+};
+
+// 수동 입력 관련 메서드들
+const showManualInput = (character: any, statType: string) => {
+  manualInputCharacter.value = character;
+  
+  // 기존 수동 입력 값으로 초기화
+  manualInputData.value = {
+    buffPower: character.manualBuffPower || null,
+    totalDamage: character.manualTotalDamage || null
+  };
+  
+  showManualInputModal.value = true;
+};
+
+const hideManualInput = () => {
+  showManualInputModal.value = false;
+  manualInputCharacter.value = null;
+  manualInputData.value = {
+    buffPower: null,
+    totalDamage: null
+  };
+};
+
+const saveManualInput = async () => {
+  try {
+    if (!manualInputCharacter.value) return;
+    
+    const response = await fetch(`http://localhost:8080/api/characters/${manualInputCharacter.value.characterId}/manual-stats`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...manualInputData.value,
+        updatedBy: '사용자'
+      })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        successMessage.value = '수동 입력이 저장되었습니다.';
+        
+        // 검색 결과 업데이트
+        const characterIndex = searchResults.value.findIndex(
+          c => c.characterId === manualInputCharacter.value.characterId
+        );
+        if (characterIndex !== -1) {
+          searchResults.value[characterIndex] = {
+            ...searchResults.value[characterIndex],
+            manualBuffPower: manualInputData.value.buffPower,
+            manualTotalDamage: manualInputData.value.totalDamage
+          };
+        }
+        
+        hideManualInput();
+      } else {
+        error.value = result.message || '저장에 실패했습니다.';
+      }
+    } else {
+      error.value = '저장에 실패했습니다.';
+    }
+  } catch (err: any) {
+    console.error('수동 입력 저장 실패:', err);
+    error.value = '저장 중 오류가 발생했습니다: ' + err.message;
+  }
+};
+
+// 동기화 상태 관련 메서드들
+const loadSyncStatus = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/character-sync/status');
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        syncStatus.value = result.data;
+      }
+    }
+  } catch (err: any) {
+    console.error('동기화 상태 로드 실패:', err);
+  }
+};
+
+const startManualSync = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/character-sync/start', {
+      method: 'POST'
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        successMessage.value = '수동 동기화가 시작되었습니다.';
+        await loadSyncStatus(); // 상태 새로고침
+      } else {
+        error.value = result.message || '동기화 시작에 실패했습니다.';
+      }
+    } else {
+      error.value = '동기화 시작에 실패했습니다.';
+    }
+  } catch (err: any) {
+    console.error('수동 동기화 시작 실패:', err);
+    error.value = '동기화 시작 중 오류가 발생했습니다: ' + err.message;
+  }
+};
+
+// 컴포넌트 마운트 시 동기화 상태도 로드
+onMounted(async () => {
+  await loadServers();
+  await loadSyncStatus();
+});
+
+// 캐릭터 상세 페이지로 이동
+const goToCharacterDetail = (character: any) => {
+  // 현재 검색 상태 저장
+  const searchState = {
+    searchResults: searchResults.value,
+    selectedCharacter: character,
+    searchQuery: searchQuery.value,
+    selectedServer: selectedServer.value
+  }
+  localStorage.setItem('characterSearchState', JSON.stringify(searchState))
+  
+  router.push(`/character/${character.characterId}`)
+}
+
+// 검색 기록을 localStorage에 저장
+const saveToSearchHistory = (characters: any[]) => {
+  try {
+    // 기존 검색 기록 가져오기
+    const existingHistory = JSON.parse(localStorage.getItem('df_search_history') || '[]');
+    
+    // 새로운 검색 결과를 기존 기록에 추가
+    const newRecords = characters.map(char => ({
+      characterId: char.characterId,
+      characterName: char.characterName,
+      serverId: char.serverId,
+      adventureName: char.adventureName,
+      level: char.level,
+      fame: char.fame,
+      jobName: char.jobName,
+      jobGrowName: char.jobGrowName,
+      buffPower: char.buffPower,
+      totalDamage: char.totalDamage,
+      dungeonClearNabel: char.dungeonClearNabel,
+      dungeonClearVenus: char.dungeonClearVenus,
+      dungeonClearFog: char.dungeonClearFog,
+      searchTimestamp: new Date().toISOString()
+    }));
+    
+    console.log('저장할 새로운 기록:', newRecords);
+    
+    // 중복 제거 (characterId 기준)
+    const existingIds = new Set(existingHistory.map((record: any) => record.characterId));
+    const uniqueNewRecords = newRecords.filter(record => !existingIds.has(record.characterId));
+    
+    console.log('중복 제거 후 새로운 기록:', uniqueNewRecords);
+    
+    // 기존 기록과 새로운 기록 합치기
+    const updatedHistory = [...existingHistory, ...uniqueNewRecords];
+    
+    // localStorage에 저장
+    localStorage.setItem('df_search_history', JSON.stringify(updatedHistory));
+    console.log('검색 기록 저장 완료:', updatedHistory.length, '개 캐릭터');
+    
+    // 저장된 데이터 확인
+    const savedData = JSON.parse(localStorage.getItem('df_search_history') || '[]');
+    console.log('localStorage에 저장된 최종 데이터:', savedData);
+    
+  } catch (error) {
+    console.error('검색 기록 저장 실패:', error);
+  }
 };
 </script>
 
@@ -493,6 +1019,13 @@ const formatDate = (dateString: string): string => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.character-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .avatar-placeholder {
   width: 100%;
   height: 100%;
@@ -506,21 +1039,6 @@ const formatDate = (dateString: string): string => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.level-badge {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  background: #ff6b35;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 12px;
-  border: 2px solid white;
-  min-width: 24px;
-  text-align: center;
-}
-
 .character-info {
   flex: 1;
   display: flex;
@@ -528,8 +1046,35 @@ const formatDate = (dateString: string): string => {
   gap: 8px;
 }
 
+.character-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.server-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3498db;
+  background: #ecf0f1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.level-display {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
+  background: #ecf0f1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin: 0;
+}
+
 .character-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: #2c3e50;
   margin: 0;
@@ -576,21 +1121,6 @@ const formatDate = (dateString: string): string => {
   margin-top: auto;
 }
 
-.server-info {
-  display: flex;
-  align-items: center;
-}
-
-.server-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: #3498db;
-  background: #ecf0f1;
-  padding: 2px 8px;
-  border-radius: 12px;
-  margin: 0;
-}
-
 .fame-info {
   display: flex;
   align-items: center;
@@ -619,6 +1149,235 @@ const formatDate = (dateString: string): string => {
   background: rgba(39, 174, 96, 0.1);
   padding: 2px 8px;
   border-radius: 8px;
+}
+
+/* 던전 클리어 상태 스타일 */
+.dungeon-clear-status {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.dungeon-clear-section {
+  margin-top: 15px;
+}
+
+.dungeon-title {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.character-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.server-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3498db;
+  background: #ecf0f1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.level-display {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
+  background: #ecf0f1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.character-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.edit-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.edit-btn:hover {
+  background: #f8f9fa;
+  transform: scale(1.1);
+}
+
+.dungeon-status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  min-width: 40px;
+  transition: all 0.2s ease;
+}
+
+.dungeon-status-item.cleared {
+  background: #e8f5e8;
+  border-color: #4caf50;
+}
+
+.dungeon-status-item:not(.cleared) {
+  background: #fff5f5;
+  border-color: #f44336;
+}
+
+.dungeon-icon {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.dungeon-name {
+  font-size: 10px;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 1px;
+}
+
+.clear-status {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.dungeon-status-item.cleared .clear-status {
+  color: #4caf50;
+}
+
+.dungeon-status-item:not(.cleared) .clear-status {
+  color: #f44336;
+}
+
+/* 컨텍스트 메뉴 스타일 */
+.context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  min-width: 280px;
+  z-index: 1000;
+  font-size: 14px;
+}
+
+.context-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e5e5;
+  border-radius: 8px 8px 0 0;
+}
+
+.context-character-name {
+  font-weight: bold;
+  color: #333;
+}
+
+.context-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.context-close:hover {
+  color: #333;
+}
+
+.context-section {
+  padding: 16px;
+}
+
+.context-section h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.dungeon-favorites {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+}
+
+.favorite-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 0;
+  width: 100%;
+}
+
+.favorite-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #4a90e2;
+}
+
+.dungeon-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.dungeon-name {
+  flex: 1;
+  color: #333;
+  font-weight: 500;
+}
+
+.coming-soon {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+}
+
+.favorite-item:hover {
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin: 0 -8px;
+  padding: 6px 8px;
+}
+
+.favorite-item:hover label {
+  padding: 6px 0;
 }
 
 .character-detail {
@@ -879,5 +1638,784 @@ const formatDate = (dateString: string): string => {
   .character-actions {
     flex-direction: column;
   }
+}
+
+/* 빠른 테스트 섹션 스타일 */
+.quick-test-section {
+  margin: 30px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.quick-test-section h3 {
+  margin: 0 0 20px 0;
+  text-align: center;
+  font-size: 1.4rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.test-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.test-group {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.test-group h4 {
+  margin: 0 0 15px 0;
+  text-align: center;
+  font-size: 1.1rem;
+  color: #f8f9fa;
+}
+
+.test-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.test-btn.buffer {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+}
+
+.test-btn.buffer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+}
+
+.test-btn.dealer {
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  color: white;
+  box-shadow: 0 4px 15px rgba(68, 160, 141, 0.3);
+}
+
+.test-btn.dealer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(68, 160, 141, 0.4);
+}
+
+.test-btn.direct {
+  background: linear-gradient(135deg, #a8edea, #fed6e3);
+  color: #333;
+  box-shadow: 0 4px 15px rgba(168, 237, 234, 0.3);
+}
+
+.test-btn.direct:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(168, 237, 234, 0.4);
+}
+
+.direct-test {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.direct-test-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+  .direct-test-input:focus {
+    outline: none;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  }
+
+  /* 자동 테스트 스타일 */
+  .auto-test-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .test-mode-selector {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .mode-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mode-label:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .mode-label input[type="radio"] {
+    margin: 0;
+  }
+
+  .mode-label span {
+    font-size: 14px;
+    color: #f8f9fa;
+    font-weight: 500;
+  }
+
+  .test-btn.auto-start {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .test-btn.auto-start:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .test-btn.auto-stop {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  }
+
+  .test-btn.auto-stop:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  }
+
+  .test-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .auto-test-progress {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ecdc4, #44a08d);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+
+  .progress-text {
+    font-size: 14px;
+    color: #f8f9fa;
+    font-weight: 600;
+  }
+
+  /* 테스트 결과 스타일 */
+  .test-results {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+  }
+
+  .test-results h3 {
+    margin: 0 0 20px 0;
+    text-align: center;
+    color: #495057;
+  }
+
+  .results-summary {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .summary-item {
+    text-align: center;
+  }
+
+  .summary-label {
+    display: block;
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 5px;
+  }
+
+  .summary-value {
+    display: block;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .summary-value.success {
+    color: #28a745;
+  }
+
+  .summary-value.error {
+    color: #dc3545;
+  }
+
+  .test-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .test-result-item {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 4px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .test-result-item.success {
+    border-left-color: #28a745;
+    background: #f8fff9;
+  }
+
+  .test-result-item.error {
+    border-left-color: #dc3545;
+    background: #fff8f8;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .result-number {
+    background: #6c757d;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .result-name {
+    font-weight: bold;
+    color: #495057;
+    flex: 1;
+  }
+
+  .result-type {
+    font-size: 12px;
+    color: #6c757d;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 12px;
+  }
+
+  .result-status {
+    font-size: 18px;
+  }
+
+  .result-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .result-expected,
+  .result-actual,
+  .result-error {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 80px;
+  }
+
+  .detail-value {
+    color: #6c757d;
+  }
+
+  .detail-value.error {
+    color: #dc3545;
+  }
+
+@media (max-width: 768px) {
+  .test-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .direct-test {
+    flex-direction: column;
+  }
+  
+  .direct-test-input {
+    width: 100%;
+  }
+}
+
+/* 수동 입력 모달 스타일 */
+.manual-input-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #333;
+}
+
+.manual-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.manual-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  justify-content: flex-end;
+}
+
+.save-btn, .cancel-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.save-btn {
+  background: #28a745;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #218838;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
+}
+
+/* 동기화 상태 표시 스타일 */
+.sync-status-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 30px 0;
+  border: 1px solid #dee2e6;
+}
+
+.sync-status-section h3 {
+  margin: 0 0 20px 0;
+  color: #495057;
+  text-align: center;
+}
+
+.sync-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.sync-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.sync-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.sync-value {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.sync-value.running {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.sync-value.disabled {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.sync-btn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  display: block;
+}
+
+.sync-btn:hover {
+  background: #357abd;
+}
+
+.sync-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.sync-notice {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.sync-notice p {
+  margin: 5px 0;
+  color: #856404;
+  font-size: 14px;
+}
+
+/* 수동 입력 값과 동기화 값 표시 스타일 */
+.stat-values {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.manual-value, .synced-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.value-label {
+  color: #6c757d;
+  font-weight: 500;
+  min-width: 40px;
+}
+
+.stat-value.manual {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.stat-value.synced {
+  color: #6c757d;
+}
+
+.edit-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.edit-btn:hover {
+  background: #5a6268;
+}
+
+/* 명성 섹션 스타일 */
+.fame-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.fame-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.fame-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f39c12;
+}
+
+/* 던전 클리어 상태 반전 스타일 */
+.dungeon-status-item.cleared {
+  background: #fff5f5;
+  border-color: #f44336;
+}
+
+.dungeon-status-item.cleared .clear-status {
+  color: #f44336;
+}
+
+.dungeon-status-item:not(.cleared) {
+  background: #e8f5e8;
+  border-color: #4caf50;
+}
+
+.dungeon-status-item:not(.cleared) .clear-status {
+  color: #4caf50;
+}
+
+/* 스탯 표시 개선 */
+.stats-info {
+  display: flex;
+  gap: 16px;
+  margin: 8px 0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  min-width: 50px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e67e22;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* 서버 선택 관련 스타일 */
+.form-group select:invalid,
+.form-group select[value=""] {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.form-group select:invalid:focus,
+.form-group select[value=""]:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.search-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.search-btn:disabled:hover {
+  background-color: #6c757d;
+}
+
+/* Neople API 푸터 스타일 */
+.neople-api-footer {
+  text-align: center;
+  padding: 20px;
+  margin-top: 40px;
+  border-top: 1px solid #e5e5e5;
+  background: #f8f9fa;
+}
+
+.neople-api-footer p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.neople-api-footer a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.neople-api-footer a:hover {
+  text-decoration: underline;
+  color: #0056b3;
+}
+
+/* 던담 동기화 버튼 스타일 */
+.dundam-sync-controls {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dundam-sync-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.dundam-sync-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.dundam-sync-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.sync-status {
+  font-size: 12px;
+  color: #6c757d;
+  text-align: center;
+  max-width: 300px;
+  word-wrap: break-word;
 }
 </style> 

@@ -8,7 +8,7 @@
     <!-- 설정 섹션 -->
     <div class="configuration-section">
       <div class="config-card">
-        <h3>⚙️ 최적화 설정</h3>
+        <h3>⚙️ 파티 구성 설정</h3>
         
         <div class="form-row">
           <div class="form-group">
@@ -54,17 +54,77 @@
           </div>
           
           <div class="form-group">
-            <label for="character-count">선택된 캐릭터</label>
-            <div class="character-count-display">
-              <span class="count">{{ selectedCharacters.length }}</span>
-              <span class="max">/ {{ partySize === 8 ? 8 : 4 }}</span>
-            </div>
+            <label for="party-count">파티 수</label>
+            <select id="party-count" v-model="partyCount">
+              <option value="1">1개 파티</option>
+              <option value="2">2개 파티</option>
+              <option value="3">3개 파티</option>
+              <option value="4">4개 파티</option>
+            </select>
           </div>
         </div>
 
         <div class="strategy-info" v-if="selectedStrategy">
           <h4>📋 {{ getStrategyInfo(selectedStrategy).name }}</h4>
           <p>{{ getStrategyInfo(selectedStrategy).description }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 파티 구성 섹션 -->
+    <div class="party-formation-section">
+      <div class="formation-card">
+        <h3>🎯 파티 구성</h3>
+        
+        <div class="party-list">
+          <div 
+            v-for="(party, partyIndex) in parties" 
+            :key="partyIndex"
+            class="party-container"
+          >
+            <div class="party-header">
+              <h4>{{ partyIndex + 1 }}파티</h4>
+              <button @click="removeParty(partyIndex)" class="remove-party-btn" v-if="parties.length > 1">삭제</button>
+            </div>
+            
+            <div class="party-slots">
+              <div 
+                v-for="slotIndex in parseInt(partySize)" 
+                :key="slotIndex"
+                class="party-slot"
+                :class="{ 'empty': !party.slots[slotIndex - 1]?.characterId }"
+                @click="openCharacterSelector(partyIndex, slotIndex - 1)"
+              >
+                <div v-if="party.slots[slotIndex - 1]?.characterId" class="slot-content">
+                  <div class="character-name">{{ party.slots[slotIndex - 1].characterName }}</div>
+                  <div class="character-job">{{ party.slots[slotIndex - 1].job || 'Unknown' }}</div>
+                  <div class="character-stats">
+                    <span class="fame">{{ party.slots[slotIndex - 1].fame?.toLocaleString() || 'N/A' }}</span>
+                  </div>
+                  <button @click.stop="removeCharacterFromSlot(partyIndex, slotIndex - 1)" class="remove-character-btn">×</button>
+                </div>
+                <div v-else class="slot-placeholder">
+                  <span>클릭하여 캐릭터 선택</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="party-stats">
+              <span>효율성: {{ calculatePartyEfficiency(party.slots).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="party-actions">
+          <button @click="addParty" class="add-party-btn" :disabled="parties.length >= parseInt(partyCount)">
+            파티 추가
+          </button>
+          <button @click="autoFillParties" class="auto-fill-btn">
+            자동 채우기
+          </button>
+          <button @click="clearAllParties" class="clear-all-btn">
+            전체 초기화
+          </button>
         </div>
       </div>
     </div>
@@ -105,12 +165,12 @@
             :key="character.characterId"
             class="character-item"
             :class="{ 
-              'selected': isCharacterSelected(character.characterId),
+              'selected': isCharacterInAnyParty(character.characterId),
               'favorite': character.isFavorite,
               'dealer': character.job?.includes('딜러') || false,
               'buffer': character.job?.includes('버퍼') || false
             }"
-            @click="toggleCharacterSelection(character.characterId)"
+            @click="selectCharacterForSlot(character)"
           >
             <div class="character-info">
               <div class="character-name">{{ character.characterName }}</div>
@@ -121,7 +181,7 @@
               </div>
             </div>
             <div class="selection-indicator">
-              <span v-if="isCharacterSelected(character.characterId)" class="selected-icon">✓</span>
+              <span v-if="isCharacterInAnyParty(character.characterId)" class="selected-icon">✓</span>
             </div>
           </div>
         </div>
@@ -131,23 +191,23 @@
     <!-- 최적화 실행 섹션 -->
     <div class="optimization-section">
       <div class="optimization-card">
-        <h3>🚀 최적화 실행</h3>
+        <h3>🚀 파티 최적화 실행</h3>
         
         <div class="optimization-actions">
           <button 
-            @click="executeOptimization" 
-            :disabled="!canExecuteOptimization"
+            @click="executePartyOptimization" 
+            :disabled="!canExecutePartyOptimization"
             class="execute-btn primary"
           >
-            {{ selectedStrategy ? `${getStrategyInfo(selectedStrategy).name} 최적화 실행` : '최적화 실행' }}
+            {{ selectedStrategy ? `${getStrategyInfo(selectedStrategy).name} 최적화 실행` : '파티 최적화 실행' }}
           </button>
           
           <button 
-            @click="compareAllStrategies" 
-            :disabled="!canExecuteOptimization"
-            class="compare-btn secondary"
+            @click="optimizePartyBalance" 
+            :disabled="!canExecutePartyOptimization"
+            class="balance-btn secondary"
           >
-            모든 전략 비교 분석
+            파티 밸런스 조정
           </button>
           
           <button 
@@ -160,7 +220,7 @@
 
         <div class="optimization-status" v-if="isOptimizing">
           <div class="loading-spinner"></div>
-          <span>최적화 실행 중...</span>
+          <span>파티 최적화 실행 중...</span>
         </div>
       </div>
     </div>
@@ -319,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useCharacterStore } from '@/stores/character'
 import { usePartyStore } from '@/stores/party'
 import type { Character, Server } from '@/types'
@@ -333,11 +393,24 @@ const selectedServer = ref('')
 const selectedDungeon = ref('')
 const partySize = ref(4)
 const selectedStrategy = ref('')
-const selectedCharacters = ref<string[]>([])
+const partyCount = ref(1)
 const searchQuery = ref('')
 const showFavorites = ref(false)
 const showDealers = ref(false)
 const showBuffers = ref(false)
+
+// 파티 구성 관련 상태
+const parties = ref<Array<{
+  slots: Array<{
+    characterId?: string
+    characterName?: string
+    job?: string
+    fame?: number
+    totalDamage?: number
+    buffPower?: number
+  }>
+  efficiency?: number
+}>>([])
 
 // 최적화 관련 상태
 const isOptimizing = ref(false)
@@ -346,19 +419,24 @@ const comparisonResult = ref<any>(null)
 const performanceResult = ref<any>(null)
 const errorMessage = ref('')
 
+// 현재 선택된 슬롯 정보
+const selectedSlot = ref<{partyIndex: number, slotIndex: number} | null>(null)
+
+// 서버 및 던전 데이터
+const servers = ref<Server[]>([])
+const dungeons = ref<Array<{id: string, name: string, minFame: number}>>([])
+const characters = ref<Character[]>([])
+
 // 던전 목록
-const dungeons = ref([
-  { id: 1, name: '시로코 레이드', minFame: 50000 },
-  { id: 2, name: '바칼 레이드', minFame: 60000 },
-  { id: 3, name: '카인 레이드', minFame: 70000 },
-  { id: 4, name: '디레지에 레이드', minFame: 80000 },
-  { id: 5, name: '일반 던전', minFame: 30000 }
-])
+const dungeonsList = [
+  { id: '1', name: '시로코 레이드', minFame: 50000 },
+  { id: '2', name: '바칼 레이드', minFame: 60000 },
+  { id: '3', name: '카인 레이드', minFame: 70000 },
+  { id: '4', name: '디레지에 레이드', minFame: 80000 },
+  { id: '5', name: '일반 던전', minFame: 30000 }
+]
 
 // Computed properties
-const servers = computed(() => characterStore.servers)
-const characters = computed(() => characterStore.characters)
-
 const filteredCharacters = computed(() => {
   let filtered = characters.value.filter(char => {
     // 검색어 필터
@@ -388,43 +466,7 @@ const filteredCharacters = computed(() => {
   return filtered.sort((a, b) => (b.fame || 0) - (a.fame || 0))
 })
 
-const canExecuteOptimization = computed(() => {
-  return selectedServer.value && 
-         selectedDungeon.value && 
-         selectedStrategy.value && 
-         selectedCharacters.value.length >= (partySize.value === 8 ? 8 : 4)
-})
-
-// Methods
-const onServerChange = async () => {
-  if (selectedServer.value) {
-    await characterStore.loadCharacters(selectedServer.value)
-  }
-}
-
-const onSearchInput = () => {
-  // 검색 입력 시 추가 로직이 필요하면 여기에 구현
-}
-
-const clearSearch = () => {
-  searchQuery.value = ''
-}
-
-const toggleCharacterSelection = (characterId: string) => {
-  const index = selectedCharacters.value.indexOf(characterId)
-  if (index > -1) {
-    selectedCharacters.value.splice(index, 1)
-  } else {
-    if (selectedCharacters.value.length < (partySize.value === 8 ? 8 : 4)) {
-      selectedCharacters.value.push(characterId)
-    }
-  }
-}
-
-const isCharacterSelected = (characterId: string) => {
-  return selectedCharacters.value.includes(characterId)
-}
-
+// 전략 정보
 const getStrategyInfo = (strategy: string) => {
   const strategies = {
     efficiency: { name: '효율성 중심', description: '명성과 전투력을 기준으로 최적화합니다.' },
@@ -436,8 +478,204 @@ const getStrategyInfo = (strategy: string) => {
   return strategies[strategy as keyof typeof strategies] || { name: '', description: '' }
 }
 
-const executeOptimization = async () => {
-  if (!canExecuteOptimization.value) return
+// 유틸리티 메서드
+const formatScore = (score: number) => {
+  return score.toLocaleString()
+}
+
+const formatExecutionTime = (timestamp: number) => {
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString()
+}
+
+const getRoleDisplayName = (role: string) => {
+  const roleNames = {
+    dealer: '딜러',
+    buffer: '버퍼',
+    updoongi: '업둥이',
+    other: '기타',
+    empty: '빈 슬롯'
+  }
+  return roleNames[role as keyof typeof roleNames] || role
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+}
+
+const onSearchInput = () => {
+  // 검색 입력 시 추가 로직이 필요하면 여기에 구현
+}
+
+const clearError = () => {
+  errorMessage.value = ''
+}
+
+// 파티 초기화
+const initializeParties = () => {
+  parties.value = []
+  for (let i = 0; i < partyCount.value; i++) {
+    const party = {
+      slots: Array(partySize.value).fill(null).map(() => ({}))
+    }
+    parties.value.push(party)
+  }
+}
+
+// 파티 추가
+const addParty = () => {
+  if (parties.value.length < partyCount.value) {
+    const party = {
+      slots: Array(partySize.value).fill(null).map(() => ({}))
+    }
+    parties.value.push(party)
+  }
+}
+
+// 파티 삭제
+const removeParty = (partyIndex: number) => {
+  if (parties.value.length > 1) {
+    parties.value.splice(partyIndex, 1)
+  }
+}
+
+// 캐릭터를 슬롯에 배치
+const placeCharacterInSlot = (partyIndex: number, slotIndex: number, character: Character) => {
+  if (partyIndex < parties.value.length && slotIndex < partySize.value) {
+    parties.value[partyIndex].slots[slotIndex] = {
+      characterId: character.characterId,
+      characterName: character.characterName,
+      job: character.job,
+      fame: character.fame,
+      totalDamage: character.totalDamage,
+      buffPower: character.buffPower
+    }
+  }
+}
+
+// 슬롯에서 캐릭터 제거
+const removeCharacterFromSlot = (partyIndex: number, slotIndex: number) => {
+  if (partyIndex < parties.value.length && slotIndex < partySize.value) {
+    parties.value[partyIndex].slots[slotIndex] = {}
+  }
+}
+
+// 캐릭터 선택기 열기
+const openCharacterSelector = (partyIndex: number, slotIndex: number) => {
+  selectedSlot.value = { partyIndex, slotIndex }
+}
+
+// 캐릭터를 슬롯에 선택
+const selectCharacterForSlot = (character: Character) => {
+  if (selectedSlot.value) {
+    const { partyIndex, slotIndex } = selectedSlot.value
+    
+    // 이미 다른 파티에 배치된 캐릭터인지 확인
+    if (isCharacterInAnyParty(character.characterId)) {
+      // 기존 배치 제거
+      removeCharacterFromAllParties(character.characterId)
+    }
+    
+    placeCharacterInSlot(partyIndex, slotIndex, character)
+    selectedSlot.value = null
+  }
+}
+
+// 캐릭터가 어떤 파티에 있는지 확인
+const isCharacterInAnyParty = (characterId: string): boolean => {
+  return parties.value.some(party => 
+    party.slots.some(slot => slot.characterId === characterId)
+  )
+}
+
+// 모든 파티에서 캐릭터 제거
+const removeCharacterFromAllParties = (characterId: string) => {
+  parties.value.forEach(party => {
+    party.slots.forEach(slot => {
+      if (slot.characterId === characterId) {
+        slot.characterId = undefined
+        slot.characterName = undefined
+        slot.job = undefined
+        slot.fame = undefined
+        slot.totalDamage = undefined
+        slot.buffPower = undefined
+      }
+    })
+  })
+}
+
+// 파티 효율성 계산
+const calculatePartyEfficiency = (slots: any[]): number => {
+  const validSlots = slots.filter(slot => slot.characterId)
+  if (validSlots.length === 0) return 0
+  
+  let totalEfficiency = 0
+  validSlots.forEach(slot => {
+    // 명성 기반 효율성 계산
+    if (slot.fame) {
+      totalEfficiency += slot.fame
+    }
+    // 직업별 보너스
+    if (slot.job?.includes('딜러') && slot.totalDamage) {
+      totalEfficiency += slot.totalDamage / 1000000 // 백만 단위로 정규화
+    }
+    if (slot.job?.includes('버퍼') && slot.buffPower) {
+      totalEfficiency += slot.buffPower / 1000 // 천 단위로 정규화
+    }
+  })
+  
+  return totalEfficiency / validSlots.length
+}
+
+// 자동 파티 채우기
+const autoFillParties = () => {
+  const availableCharacters = filteredCharacters.value.filter(char => !isCharacterInAnyParty(char.characterId))
+  
+  if (availableCharacters.length === 0) return
+  
+  // 파티별로 균등하게 분배
+  let charIndex = 0
+  parties.value.forEach(party => {
+    party.slots.forEach((slot, slotIndex) => {
+      if (!slot.characterId && charIndex < availableCharacters.length) {
+        placeCharacterInSlot(
+          parties.value.indexOf(party), 
+          slotIndex, 
+          availableCharacters[charIndex]
+        )
+        charIndex++
+      }
+    })
+  })
+}
+
+// 전체 파티 초기화
+const clearAllParties = () => {
+  parties.value.forEach(party => {
+    party.slots.forEach(slot => {
+      slot.characterId = undefined
+      slot.characterName = undefined
+      slot.job = undefined
+      slot.fame = undefined
+      slot.totalDamage = undefined
+      slot.buffPower = undefined
+    })
+  })
+}
+
+// 파티 최적화 실행 가능 여부
+const canExecutePartyOptimization = computed(() => {
+  return selectedServer.value && 
+         selectedDungeon.value && 
+         selectedStrategy.value && 
+         parties.value.some(party => 
+           party.slots.some(slot => slot.characterId)
+         )
+})
+
+// 파티 최적화 실행
+const executePartyOptimization = async () => {
+  if (!canExecutePartyOptimization.value) return
   
   try {
     isOptimizing.value = true
@@ -445,13 +683,13 @@ const executeOptimization = async () => {
     
     const request = {
       serverId: selectedServer.value,
-      characterIds: selectedCharacters.value,
       dungeonName: selectedDungeon.value,
       partySize: partySize.value,
-      optimizationStrategy: selectedStrategy.value
+      optimizationStrategy: selectedStrategy.value,
+      parties: parties.value
     }
     
-    const response = await fetch(`/api/advanced-optimization/${selectedStrategy.value}`, {
+    const response = await fetch(`/api/party-optimization/optimize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -470,19 +708,18 @@ const executeOptimization = async () => {
     }
     
     optimizationResult.value = result
-    comparisonResult.value = null
-    performanceResult.value = null
     
   } catch (error) {
-    console.error('최적화 실행 중 오류:', error)
+    console.error('파티 최적화 실행 중 오류:', error)
     errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
   } finally {
     isOptimizing.value = false
   }
 }
 
-const compareAllStrategies = async () => {
-  if (!canExecuteOptimization.value) return
+// 파티 밸런스 조정
+const optimizePartyBalance = async () => {
+  if (!canExecutePartyOptimization.value) return
   
   try {
     isOptimizing.value = true
@@ -490,12 +727,58 @@ const compareAllStrategies = async () => {
     
     const request = {
       serverId: selectedServer.value,
-      characterIds: selectedCharacters.value,
       dungeonName: selectedDungeon.value,
-      partySize: partySize.value
+      partySize: partySize.value,
+      parties: parties.value
     }
     
-    const response = await fetch('/api/advanced-optimization/compare', {
+    const response = await fetch('/api/party-optimization/balance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request)
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const result = await response.json()
+    
+    if (result.error) {
+      throw new Error(result.message)
+    }
+    
+    // 밸런스 조정된 파티 정보로 업데이트
+    if (result.optimizedParties) {
+      parties.value = result.optimizedParties
+    }
+    
+  } catch (error) {
+    console.error('파티 밸런스 조정 중 오류:', error)
+    errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+  } finally {
+    isOptimizing.value = false
+  }
+}
+
+// 전략 비교 분석
+const compareAllStrategies = async () => {
+  if (!canExecutePartyOptimization.value) return
+  
+  try {
+    isOptimizing.value = true
+    errorMessage.value = ''
+    
+    const request = {
+      serverId: selectedServer.value,
+      dungeonName: selectedDungeon.value,
+      partySize: partySize.value,
+      parties: parties.value
+    }
+    
+    const response = await fetch('/api/party-optimization/compare', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -514,8 +797,6 @@ const compareAllStrategies = async () => {
     }
     
     comparisonResult.value = result
-    optimizationResult.value = null
-    performanceResult.value = null
     
   } catch (error) {
     console.error('전략 비교 분석 중 오류:', error)
@@ -525,19 +806,23 @@ const compareAllStrategies = async () => {
   }
 }
 
+// 성능 테스트
 const runPerformanceTest = async () => {
   try {
-    const request = {
-      testType: 'basic',
-      iterations: 10
-    }
+    isOptimizing.value = true
+    errorMessage.value = ''
     
-    const response = await fetch('/api/advanced-optimization/performance-test', {
+    const response = await fetch('/api/party-optimization/performance-test', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(request)
+      body: JSON.stringify({
+        serverId: selectedServer.value,
+        dungeonName: selectedDungeon.value,
+        partySize: partySize.value,
+        parties: parties.value
+      })
     })
     
     if (!response.ok) {
@@ -555,37 +840,99 @@ const runPerformanceTest = async () => {
   } catch (error) {
     console.error('성능 테스트 중 오류:', error)
     errorMessage.value = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+  } finally {
+    isOptimizing.value = false
   }
 }
 
-const clearError = () => {
-  errorMessage.value = ''
-}
-
-const formatExecutionTime = (timestamp: number) => {
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString()
-}
-
-const formatScore = (score: number) => {
-  return score.toFixed(2)
-}
-
-const getRoleDisplayName = (role: string) => {
-  const roleNames = {
-    dealer: '딜러',
-    buffer: '버퍼',
-    updoongi: '업둥이',
-    other: '기타',
-    empty: '빈 슬롯'
+// 서버 변경 시 던전 로드
+const onServerChange = async () => {
+  if (selectedServer.value) {
+    await characterStore.loadCharacters(selectedServer.value)
+    // 던전 목록 설정
+    dungeons.value = dungeonsList
+    initializeParties()
   }
-  return roleNames[role as keyof typeof roleNames] || role
 }
 
-// Lifecycle
+// 전체 파티 효율성 계산
+const totalEfficiency = computed(() => {
+  return parties.value.reduce((sum, party) => sum + (party.efficiency || 0), 0)
+})
+
+// 파티 최적화 결과 표시
+const displayOptimizationResult = computed(() => {
+  if (optimizationResult.value) {
+    if (optimizationResult.value.error) {
+      return `❌ 오류: ${optimizationResult.value.message}`
+    }
+    return `✅ 최적화 완료! 총 효율성: ${formatScore(optimizationResult.value.totalEfficiency || optimizationResult.value.efficiency)}`
+  }
+  return ''
+})
+
+// 비교 분석 결과 표시
+const displayComparisonResult = computed(() => {
+  if (comparisonResult.value) {
+    if (comparisonResult.value.error) {
+      return `❌ 오류: ${comparisonResult.value.message}`
+    }
+    return `✅ 전략 비교 완료! 추천 전략: ${getStrategyInfo(comparisonResult.value.recommendedStrategy).name}`
+  }
+  return ''
+})
+
+// 성능 테스트 결과 표시
+const displayPerformanceResult = computed(() => {
+  if (performanceResult.value) {
+    if (performanceResult.value.error) {
+      return `❌ 오류: ${performanceResult.value.message}`
+    }
+    return `✅ 성능 테스트 완료! 평균 실행 시간: ${performanceResult.value.averageExecutionTime.toFixed(2)}ms`
+  }
+  return ''
+})
+
+// 에러 메시지 표시
+const displayErrorMessage = computed(() => {
+  if (errorMessage.value) {
+    return `❌ 오류: ${errorMessage.value}`
+  }
+  return ''
+})
+
+// 컴포넌트 마운트 시 초기화
 onMounted(async () => {
   await characterStore.loadServers()
+  servers.value = characterStore.servers
+  initializeParties()
 })
+
+// 서버 변경 시 캐릭터 로드
+watch(() => selectedServer.value, async (newServer) => {
+  if (newServer) {
+    await characterStore.loadCharacters(newServer)
+    characters.value = characterStore.characters
+    initializeParties()
+  }
+})
+
+// 파티 크기 변경 시 파티 초기화
+watch(() => partySize.value, () => {
+  initializeParties()
+})
+
+// 파티 수 변경 시 파티 초기화
+watch(() => partyCount.value, () => {
+  initializeParties()
+})
+
+// 파티 구성 변경 시 효율성 재계산
+watch(() => parties.value, () => {
+  parties.value.forEach(party => {
+    party.efficiency = calculatePartyEfficiency(party.slots)
+  })
+}, { deep: true })
 </script>
 
 <style scoped>

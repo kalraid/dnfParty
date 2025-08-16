@@ -10,9 +10,9 @@ import { RouterLink, RouterView } from 'vue-router'
         
         <nav class="main-nav">
           <RouterLink to="/" class="nav-link">홈</RouterLink>
-          <RouterLink to="/character-search" class="nav-link">캐릭터 검색</RouterLink>
-          <RouterLink to="/character-list" class="nav-link">캐릭터 리스트</RouterLink>
-          <RouterLink to="/party-formation" class="nav-link">파티 짜기</RouterLink>
+          <RouterLink to="/character-search" class="nav-link">1. 캐릭터 검색</RouterLink>
+          <RouterLink to="/dungeon-status" class="nav-link">2. 던전 클리어 현황</RouterLink>
+          <RouterLink to="/party-formation" class="nav-link">3. 파티 구성</RouterLink>
         </nav>
       </div>
     </header>

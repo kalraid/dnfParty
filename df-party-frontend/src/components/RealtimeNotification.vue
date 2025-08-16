@@ -85,7 +85,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import websocketService, { type RealtimeEvent } from '@/services/websocketService'
+// import websocketService, { type RealtimeEvent } from '@/services/websocketService'
+import { type RealtimeEvent } from '@/services/websocketService'
 
 interface Notification extends RealtimeEvent {
   timestamp: string
@@ -124,15 +125,15 @@ const settings = ref<NotificationSettings>({
 // WebSocket 연결
 const connectWebSocket = async () => {
   try {
-    await websocketService.connect()
-    isConnected.value = true
+    // await websocketService.connect() // 임시 비활성화
+    // isConnected.value = true
     
     // 이벤트 리스너 등록
-    websocketService.addEventListener('*', handleRealtimeEvent)
+    // websocketService.addEventListener('*', handleRealtimeEvent) // 임시 비활성화
     
     // 연결 상태 모니터링
-    const status = websocketService.getConnectionStatus()
-    isConnected.value = status.value
+    // const status = websocketService.getConnectionStatus() // 임시 비활성화
+    // isConnected.value = status.value // 임시 비활성화
   } catch (error) {
     console.error('WebSocket 연결 실패:', error)
   }
@@ -277,7 +278,7 @@ const toggleChat = () => {
 // 채팅 메시지 전송
 const sendChatMessage = () => {
   if (chatInput.value.trim()) {
-    websocketService.sendChatMessage(chatInput.value.trim())
+    // websocketService.sendChatMessage(chatInput.value.trim()) // 임시 비활성화
     chatInput.value = ''
   }
 }
@@ -289,8 +290,8 @@ onMounted(() => {
 
 // 컴포넌트 언마운트 시 정리
 onUnmounted(() => {
-  websocketService.removeEventListener('*', handleRealtimeEvent)
-  websocketService.disconnect()
+  // websocketService.removeEventListener('*', handleRealtimeEvent) // 임시 비활성화
+  // websocketService.disconnect() // 임시 비활성화
 })
 </script>
 

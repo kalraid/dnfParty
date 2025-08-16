@@ -18,9 +18,9 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     
     List<Character> findByServerId(String serverId);
     
-    List<Character> findByAdventureName(String adventureName);
+    List<Character> findByAdventure_AdventureName(String adventureName);
     
-    List<Character> findByServerIdAndAdventureName(String serverId, String adventureName);
+    List<Character> findByServerIdAndAdventure_AdventureName(String serverId, String adventureName);
     
     // 던전 클리어 현황 기반 조회
     List<Character> findByDungeonClearNabelFalse();
@@ -42,8 +42,11 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     
     List<Character> findByIsExcludedFalse();
     
-    // 즐겨찾기 캐릭터 조회
-    List<Character> findByIsFavoriteTrue();
+    // 던전별 즐겨찾기 캐릭터 조회
+    List<Character> findByIsFavoriteNabelTrue();
+    List<Character> findByIsFavoriteVenusTrue();
+    List<Character> findByIsFavoriteFogTrue();
+    List<Character> findByIsFavoriteTwilightTrue();
     
     // 복합 조건 조회
     @Query("SELECT c FROM Character c WHERE c.serverId = :serverId AND c.fame >= :minFame AND c.isExcluded = false")
@@ -60,7 +63,7 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     List<Character> findCharactersNotClearedFog(@Param("serverId") String serverId);
     
     // 모험단별 통계 조회
-    @Query("SELECT c.adventureName, COUNT(c), AVG(c.fame), AVG(c.level) FROM Character c WHERE c.serverId = :serverId GROUP BY c.adventureName")
+    @Query("SELECT c.adventure.adventureName, COUNT(c), AVG(c.fame), AVG(c.level) FROM Character c WHERE c.serverId = :serverId GROUP BY c.adventure.adventureName")
     List<Object[]> getAdventureStatsByServer(@Param("serverId") String serverId);
     
     // 업데이트가 필요한 캐릭터 조회 (1시간 이상 업데이트되지 않은 명성 정보)
@@ -74,7 +77,7 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     // 특정 조건을 만족하는 캐릭터 수 조회
     long countByServerIdAndIsExcludedFalse(String serverId);
     
-    long countByAdventureNameAndIsExcludedFalse(String adventureName);
+    long countByAdventure_AdventureNameAndIsExcludedFalse(String adventureName);
     
     // 존재 여부 확인
     boolean existsByCharacterId(String characterId);
@@ -83,4 +86,12 @@ public interface CharacterRepository extends JpaRepository<Character, Long> {
     
     // ID 목록으로 캐릭터 조회
     List<Character> findAllByCharacterIdIn(List<String> characterIds);
+    
+    // 모험단명 목록 조회
+    @Query("SELECT DISTINCT c.adventure.adventureName FROM Character c WHERE c.adventure.adventureName IS NOT NULL AND c.adventure.adventureName != 'N/A' ORDER BY c.adventure.adventureName")
+    List<String> findDistinctAdventureNames();
+    
+    // 동기화를 위한 캐릭터 조회 (최근 업데이트 순)
+    @Query("SELECT c FROM Character c ORDER BY COALESCE(c.lastStatsUpdate, c.createdAt) ASC")
+    List<Character> findAllByOrderByLastStatsUpdateAsc();
 }

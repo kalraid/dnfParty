@@ -22,31 +22,43 @@ public class DungeonClearService {
 
     /**
      * 캐릭터의 던전 클리어 현황을 확인합니다.
-     * 최근 목요일 오전 9시를 기준으로 확인합니다.
+     * DFO API 타임라인을 통해 실제 클리어 현황을 확인합니다.
      */
     public Map<String, Object> getDungeonClearStatus(String serverId, String characterId) {
         try {
-            // 최근 목요일 오전 9시 계산
-            LocalDateTime lastThursday = getLastThursday9AM();
-            String startDate = lastThursday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            String endDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-            // 타임라인 조회
-            Object timeline = dfoApiService.getCharacterTimeline(
-                serverId, characterId, 100, null, startDate, endDate, null
-            );
-
-            // 던전 클리어 현황 분석
-            Map<String, Boolean> clearStatus = analyzeDungeonClear(timeline);
-
+            // DFO API 타임라인 조회 (새로운 메서드 사용)
+            Map<String, Object> timelineResult = dfoApiService.getCharacterTimeline(serverId, characterId);
+            
+            if (!(Boolean) timelineResult.get("success")) {
+                // 타임라인 조회 실패 시 기본값 반환
+                Map<String, Boolean> defaultStatus = new HashMap<>();
+                defaultStatus.put("nabel", false);
+                defaultStatus.put("venus", false);
+                defaultStatus.put("fog", false);
+                defaultStatus.put("twilight", false);
+                
+                Map<String, Object> result = new HashMap<>();
+                result.put("success", true);
+                result.put("characterId", characterId);
+                result.put("serverId", serverId);
+                result.put("clearStatus", defaultStatus);
+                result.put("message", "타임라인 조회 실패로 기본값을 반환합니다: " + timelineResult.get("error"));
+                result.put("source", "Default (Timeline Failed)");
+                
+                return result;
+            }
+            
+            // 타임라인에서 던전 클리어 현황 추출
+            @SuppressWarnings("unchecked")
+            Map<String, Boolean> clearStatus = (Map<String, Boolean>) timelineResult.get("dungeonStatus");
+            
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("characterId", characterId);
             result.put("serverId", serverId);
-            result.put("startDate", startDate);
-            result.put("endDate", endDate);
             result.put("clearStatus", clearStatus);
             result.put("message", "던전 클리어 현황을 성공적으로 조회했습니다.");
+            result.put("source", timelineResult.get("source"));
 
             return result;
 

@@ -1,7 +1,9 @@
 package com.dfparty.backend.controller;
 
 import com.dfparty.backend.service.CharacterService;
+import com.dfparty.backend.service.DundamService;
 import com.dfparty.backend.service.DungeonClearService;
+import com.dfparty.backend.dto.ManualStatsUpdateDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,9 @@ public class CharacterController {
 
     @Autowired
     private CharacterService characterService;
+    
+    @Autowired
+    private DundamService dundamService;
 
     @Autowired
     private DungeonClearService dungeonClearService;
@@ -35,6 +40,209 @@ public class CharacterController {
             Map<String, Object> error = Map.of(
                 "success", false,
                 "message", "캐릭터 정보 조회 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 모험단별 캐릭터 조회
+     */
+    @GetMapping("/adventure/{adventureName}")
+    public ResponseEntity<Map<String, Object>> getCharactersByAdventure(
+            @PathVariable String adventureName) {
+        try {
+            Map<String, Object> result = characterService.getCharactersByAdventure(adventureName);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "모험단별 캐릭터 조회 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 모험단 목록 조회
+     */
+    @GetMapping("/adventures")
+    public ResponseEntity<Map<String, Object>> getAllAdventures() {
+        try {
+            Map<String, Object> result = characterService.getAllAdventures();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "모험단 목록 조회 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 던전별 업둥이 설정
+     */
+    @PostMapping("/{characterId}/favorite/{dungeonType}")
+    public ResponseEntity<Map<String, Object>> setDungeonFavorite(
+            @PathVariable String characterId,
+            @PathVariable String dungeonType,
+            @RequestParam boolean isFavorite) {
+        try {
+            Map<String, Object> result = characterService.setDungeonFavorite(characterId, dungeonType, isFavorite);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "업둥이 설정 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+    
+    /**
+     * 하드 나벨 대상자 여부 업데이트
+     */
+    @PostMapping("/{characterId}/hard-nabel-eligibility")
+    public ResponseEntity<Map<String, Object>> updateHardNabelEligibility(
+            @PathVariable String characterId) {
+        try {
+            Map<String, Object> result = characterService.updateHardNabelEligibility(characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "하드 나벨 대상자 여부 업데이트 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 수동 스탯 입력
+     */
+    @PostMapping("/{characterId}/manual-stats")
+    public ResponseEntity<Map<String, Object>> updateManualStats(
+            @PathVariable String characterId,
+            @RequestBody ManualStatsUpdateDto manualStatsDto) {
+        try {
+            Map<String, Object> result = characterService.updateManualStats(characterId, manualStatsDto);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "수동 스탯 입력 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 캐릭터의 수동/동기화 스탯 조회
+     */
+    @GetMapping("/{characterId}/stats")
+    public ResponseEntity<Map<String, Object>> getCharacterStats(@PathVariable String characterId) {
+        try {
+            Map<String, Object> result = characterService.getCharacterStats(characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "캐릭터 스탯 조회 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 던전별 업둥이 상태 조회
+     */
+    @GetMapping("/{characterId}/favorites")
+    public ResponseEntity<Map<String, Object>> getDungeonFavorites(
+            @PathVariable String characterId) {
+        try {
+            Map<String, Object> result = characterService.getDungeonFavorites(characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "업둥이 상태 조회 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 셀레니움으로 CSS 셀렉터 찾기 (디버깅용)
+     */
+    @PostMapping("/{characterId}/dundam-css-finder")
+    public ResponseEntity<Map<String, Object>> findCssSelectors(
+            @PathVariable String characterId,
+            @RequestParam String serverId) {
+        try {
+            Map<String, Object> result = dundamService.findCssSelectorsWithSelenium(serverId, characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "CSS 셀렉터 찾기 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 빠른 Playwright 크롤링 (CSS 셀렉터 기반)
+     */
+    @PostMapping("/{characterId}/dundam-playwright-fast")
+    public ResponseEntity<Map<String, Object>> getCharacterInfoWithPlaywrightFast(
+            @PathVariable String characterId,
+            @RequestParam String serverId) {
+        try {
+            Map<String, Object> result = dundamService.getCharacterInfoWithPlaywrightFast(serverId, characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "빠른 크롤링 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * WebDriver를 사용한 Dundam 크롤링 테스트
+     */
+    @PostMapping("/{characterId}/dundam-webdriver")
+    public ResponseEntity<Map<String, Object>> testDundamWebDriver(
+            @PathVariable String characterId,
+            @RequestParam String serverId) {
+        try {
+            Map<String, Object> result = dundamService.getCharacterInfoWithWebDriver(serverId, characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "WebDriver 크롤링 테스트 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * Playwright를 사용한 Dundam 크롤링 테스트
+     */
+    @PostMapping("/{characterId}/dundam-playwright")
+    public ResponseEntity<Map<String, Object>> testDundamPlaywright(
+            @PathVariable String characterId,
+            @RequestParam String serverId) {
+        try {
+            Map<String, Object> result = dundamService.getCharacterInfoWithPlaywrightFast(serverId, characterId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "Playwright 크롤링 테스트 중 오류가 발생했습니다: " + e.getMessage()
             );
             return ResponseEntity.internalServerError().body(error);
         }
@@ -106,25 +314,7 @@ public class CharacterController {
         }
     }
 
-    /**
-     * 모험단별 캐릭터 목록 조회
-     */
-    @GetMapping("/adventure/{adventureName}")
-    public ResponseEntity<Map<String, Object>> getCharactersByAdventure(
-            @PathVariable String adventureName) {
-        
-        try {
-            Map<String, Object> result = characterService.getCharactersByAdventure(adventureName);
-            return ResponseEntity.ok(result);
-            
-        } catch (Exception e) {
-            Map<String, Object> error = Map.of(
-                "success", false,
-                "message", "모험단별 캐릭터 조회 중 오류가 발생했습니다: " + e.getMessage()
-            );
-            return ResponseEntity.internalServerError().body(error);
-        }
-    }
+
 
     /**
      * 캐릭터 정보 새로고침
@@ -247,6 +437,74 @@ public class CharacterController {
             Map<String, Object> error = Map.of(
                 "success", false,
                 "message", "에러: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 던전별 안감 상태 업데이트
+     */
+    @PatchMapping("/{characterId}/exclude-dungeon")
+    public ResponseEntity<Map<String, Object>> updateDungeonExcludeStatus(
+            @PathVariable String characterId,
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            String dungeonType = (String) request.get("dungeonType"); // "nabel", "venus", "fog"
+            Boolean isExcluded = (Boolean) request.get("isExcluded");
+            
+            Map<String, Object> result = characterService.updateDungeonExcludeStatus(characterId, dungeonType, isExcluded);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "던전 안감 상태 업데이트 실패: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 던전별 업둥 상태 업데이트
+     */
+    @PatchMapping("/{characterId}/skip-dungeon")
+    public ResponseEntity<Map<String, Object>> updateDungeonSkipStatus(
+            @PathVariable String characterId,
+            @RequestBody Map<String, Object> request) {
+        
+        try {
+            String dungeonType = (String) request.get("dungeonType"); // "nabel", "venus", "fog"
+            Boolean isSkip = (Boolean) request.get("isSkip");
+            
+            Map<String, Object> result = characterService.updateDungeonSkipStatus(characterId, dungeonType, isSkip);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "던전 업둥 상태 업데이트 실패: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 모험단 전체 캐릭터 최신화
+     */
+    @PostMapping("/adventure/{adventureName}/refresh")
+    public ResponseEntity<Map<String, Object>> refreshAdventureCharacters(
+            @PathVariable String adventureName) {
+        
+        try {
+            Map<String, Object> result = characterService.refreshAdventureCharacters(adventureName);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "모험단 전체 최신화 실패: " + e.getMessage()
             );
             return ResponseEntity.internalServerError().body(error);
         }

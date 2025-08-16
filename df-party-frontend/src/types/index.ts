@@ -3,7 +3,9 @@ export interface Character {
   characterId: string
   characterName: string
   serverId: string
+  adventureName?: string
   jobName?: string
+  jobGrowName?: string
   job?: string
   fame?: number
   level?: number
@@ -12,8 +14,29 @@ export interface Character {
   totalDamage?: number
   buffPower?: number
   combatPower?: number
+  isHardNabelEligible?: boolean
+  isNormalNabelEligible?: boolean
   createdAt?: string
   updatedAt?: string
+  // 던전 클리어 상태
+  dungeonClearNabel?: boolean
+  dungeonClearVenus?: boolean
+  dungeonClearFog?: boolean
+  dungeonClearAzure?: boolean
+  dungeonClearStorm?: boolean
+  dungeonClearNightmare?: boolean
+  dungeonClearTemple?: boolean
+  dungeonClearTwilight?: boolean
+  // 던전 제외/스킵 상태
+  isExcludedNabel?: boolean
+  isExcludedVenus?: boolean
+  isExcludedFog?: boolean
+  isSkipNabel?: boolean
+  isSkipVenus?: boolean
+  isSkipFog?: boolean
+  // 마지막 업데이트 시간
+  lastDungeonCheck?: string
+  lastStatsUpdate?: string
 }
 
 // 서버 관련 타입

@@ -61,15 +61,9 @@ public class DfoApiController {
     @GetMapping("/characters/{serverId}/{characterId}/timeline")
     public ResponseEntity<Object> getCharacterTimeline(
             @PathVariable String serverId,
-            @PathVariable String characterId,
-            @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String next) {
+            @PathVariable String characterId) {
         try {
-            Object timeline = dfoApiService.getCharacterTimeline(
-                serverId, characterId, limit, code, startDate, endDate, next);
+            Object timeline = dfoApiService.getCharacterTimeline(serverId, characterId);
             return ResponseEntity.ok(timeline);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();

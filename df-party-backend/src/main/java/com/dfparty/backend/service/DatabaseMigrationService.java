@@ -191,9 +191,11 @@ public class DatabaseMigrationService {
             return;
         }
 
-        Optional<Adventure> existingAdventure = adventureRepository.findByServerIdAndAdventureName(serverId, adventureName);
+        // 모험단명만으로 검색 (서버와 무관)
+        Optional<Adventure> existingAdventure = adventureRepository.findByAdventureName(adventureName);
         if (existingAdventure.isEmpty()) {
-            Adventure newAdventure = new Adventure(adventureName, serverId);
+            Adventure newAdventure = new Adventure();
+            newAdventure.setAdventureName(adventureName);
             adventureRepository.save(newAdventure);
         }
     }
@@ -207,8 +209,7 @@ public class DatabaseMigrationService {
         for (Adventure adventure : allAdventures) {
             try {
                 // 해당 모험단의 캐릭터 수와 통계 계산
-                List<Character> characters = characterRepository.findByServerIdAndAdventureName(
-                    adventure.getServerId(), 
+                List<Character> characters = characterRepository.findByAdventure_AdventureName(
                     adventure.getAdventureName()
                 );
 
@@ -221,7 +222,7 @@ public class DatabaseMigrationService {
                     .average()
                     .orElse(0.0);
 
-                adventure.updateStats(characterCount, totalFame, averageLevel);
+                // 새로운 스키마에서는 통계를 별도로 관리하지 않음
                 adventureRepository.save(adventure);
 
             } catch (Exception e) {

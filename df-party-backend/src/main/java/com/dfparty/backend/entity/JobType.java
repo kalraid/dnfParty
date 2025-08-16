@@ -1,38 +1,42 @@
 package com.dfparty.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "adventures")
+@Table(name = "job_types")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Adventure {
+public class JobType {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "adventure_name", unique = true, nullable = false)
-    private String adventureName;
+    @Column(name = "job_name", nullable = false, unique = true)
+    private String jobName;
+    
+    @Column(name = "job_grow_name")
+    private String jobGrowName;
+    
+    @Column(name = "is_buffer", nullable = false)
+    private Boolean isBuffer;
+    
+    @Column(name = "is_dealer", nullable = false)
+    private Boolean isDealer;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    // 양방향 관계 설정 (선택사항)
-    @OneToMany(mappedBy = "adventure", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Character> characters;
     
     @PrePersist
     protected void onCreate() {
@@ -44,6 +48,4 @@ public class Adventure {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
-    // 기본 생성자만 유지
 }

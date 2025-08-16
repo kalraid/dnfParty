@@ -14,9 +14,18 @@ public class CharacterDetailDto {
     private int level;
     private String adventureName;
     private long fame;
+    private Long buffPower;
+    private Long totalDamage;
+    private Boolean dungeonClearNabel;
+    private Boolean dungeonClearVenus;
+    private Boolean dungeonClearFog;
     private Map<String, Object> status;
     private List<Map<String, Object>> equipment;
     private Map<String, Object> buffSkill;
+    private String characterImageUrl;
+    private String avatarImageUrl;
+    private Boolean isHardNabelEligible;
+    private Boolean isNormalNabelEligible;
 
     public CharacterDetailDto() {}
 
@@ -74,4 +83,31 @@ public class CharacterDetailDto {
 
     public Map<String, Object> getBuffSkill() { return buffSkill; }
     public void setBuffSkill(Map<String, Object> buffSkill) { this.buffSkill = buffSkill; }
+
+    public String getCharacterImageUrl() { return characterImageUrl; }
+    public void setCharacterImageUrl(String characterImageUrl) { this.characterImageUrl = characterImageUrl; }
+
+    public String getAvatarImageUrl() { return avatarImageUrl; }
+    public void setAvatarImageUrl(String avatarImageUrl) { this.avatarImageUrl = avatarImageUrl; }
+
+    public Long getBuffPower() { return buffPower; }
+    public void setBuffPower(Long buffPower) { this.buffPower = buffPower; }
+
+    public Long getTotalDamage() { return totalDamage; }
+    public void setTotalDamage(Long totalDamage) { this.totalDamage = totalDamage; }
+
+    public Boolean getDungeonClearNabel() { return dungeonClearNabel; }
+    public void setDungeonClearNabel(Boolean dungeonClearNabel) { this.dungeonClearNabel = dungeonClearNabel; }
+
+    public Boolean getDungeonClearVenus() { return dungeonClearVenus; }
+    public void setDungeonClearVenus(Boolean dungeonClearVenus) { this.dungeonClearVenus = dungeonClearVenus; }
+
+    public Boolean getDungeonClearFog() { return dungeonClearFog; }
+    public void setDungeonClearFog(Boolean dungeonClearFog) { this.dungeonClearFog = dungeonClearFog; }
+    
+    public Boolean getIsHardNabelEligible() { return isHardNabelEligible; }
+    public void setIsHardNabelEligible(Boolean isHardNabelEligible) { this.isHardNabelEligible = isHardNabelEligible; }
+    
+    public Boolean getIsNormalNabelEligible() { return isNormalNabelEligible; }
+    public void setIsNormalNabelEligible(Boolean isNormalNabelEligible) { this.isNormalNabelEligible = isNormalNabelEligible; }
 }

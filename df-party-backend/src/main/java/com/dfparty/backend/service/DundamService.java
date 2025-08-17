@@ -159,6 +159,15 @@ public class DundamService {
         try {
             log.info("=== 던담 HTML 파싱 시작 ===");
             
+            // 셀레니움으로 가져온 페이지 HTML 로그 출력 (디버깅용)
+            log.info("=== 셀레니움 페이지 HTML 시작 ===");
+            log.info("HTML 전체 텍스트 길이: {} 문자", htmlContent.length());
+            log.info("HTML 전체 텍스트 (처음 3000자): {}", 
+                htmlContent.length() > 3000 ? htmlContent.substring(0, 3000) + "..." : htmlContent);
+            log.info("HTML 전체 텍스트 (마지막 3000자): {}", 
+                htmlContent.length() > 3000 ? "..." + htmlContent.substring(htmlContent.length() - 3000) : htmlContent);
+            log.info("=== 셀레니움 페이지 HTML 끝 ===");
+            
             Document doc = Jsoup.parse(htmlContent);
             
             // 캐릭터 직업 정보 가져오기 (직업별 스탯 추출을 위해)
@@ -195,21 +204,9 @@ public class DundamService {
                 totalDamage = extractTotalDamage(doc);
                 buffPower = 0L; // 딜러는 버프력 0
                 
-                // 딜러의 경우 두 개의 총딜 값이 있는지 확인
+                // 딜러의 경우 총딜 값만 사용 (사용자 수정된 로직)
                 if (totalDamage != null) {
-                    // 두 개의 총딜 값 추출 시도
-                    Long[] totalDamages = extractMultipleTotalDamage(doc);
-                    if (totalDamages.length == 2) {
-                        // 두 개의 값이 모두 추출된 경우
-                        characterInfo.put("dundamTotalDamage1", totalDamages[0]);
-                        characterInfo.put("dundamTotalDamage2", totalDamages[1]);
-                        log.info("딜러 총딜 두 개 값 추출: {} / {}", totalDamages[0], totalDamages[1]);
-                    } else {
-                        // 단일 값인 경우
-                        characterInfo.put("dundamTotalDamage1", totalDamage);
-                        characterInfo.put("dundamTotalDamage2", null);
-                        log.info("딜러 총딜 단일 값: {}", totalDamage);
-                    }
+                    log.info("딜러 총딜 값: {}", totalDamage);
                 }
             }
             
@@ -309,16 +306,30 @@ public class DundamService {
             String htmlText = doc.text();
             log.info("전체 HTML 텍스트 길이: {}", htmlText.length());
             
-            // 사진에서 확인된 패턴: 5,053,108 형태의 버프력 찾기
-            Pattern buffPattern = Pattern.compile("([1-9],[0-9]{3},[0-9]{3})");
-            Matcher buffMatcher = buffPattern.matcher(htmlText);
+            // 다양한 버프력 패턴 시도
+            String[] buffPatterns = {
+                "([1-9],[0-9]{3},[0-9]{3})",           // 5,053,108 형태
+                "([1-9][0-9]{6,7})",                   // 5053108 형태 (쉼표 없음)
+                "([1-9][0-9]{2,3}만)",                 // 505만 형태
+                "([1-9][0-9]{2,3}천)",                 // 505천 형태
+                "([1-9][0-9]{2,3}억)",                 // 5억 형태
+                "([1-9][0-9]{2,3}M)",                  // 505M 형태
+                "([1-9][0-9]{2,3}K)"                   // 505K 형태
+            };
             
-            while (buffMatcher.find()) {
-                String buffStr = buffMatcher.group(1);
-                Long buffPower = extractNumberFromText(buffStr);
-                if (buffPower != null) {
-                    log.info("버프력 추출 성공 (패턴 매칭): {}", buffPower);
-                    return buffPower;
+            for (String patternStr : buffPatterns) {
+                Pattern buffPattern = Pattern.compile(patternStr);
+                Matcher buffMatcher = buffPattern.matcher(htmlText);
+                
+                while (buffMatcher.find()) {
+                    String buffStr = buffMatcher.group(1);
+                    log.info("버프력 패턴 매칭: {}", buffStr);
+                    
+                    Long buffPower = extractNumberFromText(buffStr);
+                    if (buffPower != null && buffPower > 100000 && buffPower < 100000000) { // 10만~1억 사이
+                        log.info("버프력 추출 성공 (패턴 매칭): {}", buffPower);
+                        return buffPower;
+                    }
                 }
             }
             
@@ -326,7 +337,8 @@ public class DundamService {
             String[] selectors = {
                 ".stat-value", ".number", ".score", ".value", 
                 "[class*=buff]", "[class*=stat]", "[class*=score]",
-                "span", "div", "strong", "b"
+                "[class*=power]", "[class*=point]", "[class*=damage]",
+                "span", "div", "strong", "b", "p", "h1", "h2", "h3", "h4", "h5", "h6"
             };
             
             for (String selector : selectors) {
@@ -334,8 +346,21 @@ public class DundamService {
                 for (Element element : elements) {
                     String text = element.text();
                     Long buffPower = extractNumberFromText(text);
-                    if (buffPower != null && buffPower > 1000000 && buffPower < 10000000) {
+                    if (buffPower != null && buffPower > 100000 && buffPower < 100000000) { // 10만~1억 사이로 범위 확장
                         log.info("버프력 추출 성공 (CSS 셀렉터 {}): {}", selector, buffPower);
+                        return buffPower;
+                    }
+                }
+            }
+            
+            // 방법 4: 모든 텍스트 노드에서 버프력으로 추정되는 숫자 찾기
+            Elements allElements = doc.getAllElements();
+            for (Element element : allElements) {
+                String text = element.ownText(); // 자식 요소 제외하고 현재 요소의 텍스트만
+                if (text != null && !text.trim().isEmpty()) {
+                    Long buffPower = extractNumberFromText(text);
+                    if (buffPower != null && buffPower > 100000 && buffPower < 100000000) {
+                        log.info("버프력 추출 성공 (전체 요소 스캔): {}", buffPower);
                         return buffPower;
                     }
                 }
@@ -434,75 +459,108 @@ public class DundamService {
     private Long[] extractMultipleTotalDamage(Document doc) {
         try {
             log.info("=== 두 개의 총딜 값 추출 시작 ===");
+            log.info("HTML 전체 텍스트 길이: {}", doc.text().length());
             
             List<Long> damageValues = new ArrayList<>();
             
-            // 방법 1: "30Lv", "전투력", "딜량" 관련 텍스트가 포함된 요소에서 모든 숫자 찾기
-            String[] damageKeywords = {"30Lv", "전투력", "딜량", "총딜", "점수"};
+            // 방법 1: "총딜" 텍스트가 포함된 요소에서 숫자 찾기 (우선순위 높음)
+            log.info("=== 방법 1: '총딜' 키워드로 검색 ===");
+            Elements totalDamageElements = doc.getElementsContainingOwnText("총딜");
+            log.info("'총딜' 키워드가 포함된 요소 수: {}", totalDamageElements.size());
+            
+            for (int i = 0; i < totalDamageElements.size(); i++) {
+                Element element = totalDamageElements.get(i);
+                String text = element.text();
+                log.info("'총딜' 요소 {} 텍스트: '{}'", i, text);
+                
+                // 텍스트에서 모든 숫자 추출 (1억 이상)
+                List<Long> numbers = extractAllNumbersFromText(text);
+                log.info("'총딜' 요소 {}에서 추출된 숫자들: {}", i, numbers);
+                
+                for (Long number : numbers) {
+                    if (number >= 100000000L) { // 1억 이상 (3억 5천만도 포함)
+                        if (!damageValues.contains(number)) {
+                            damageValues.add(number);
+                            log.info("총딜 값 추가 ('총딜' 키워드): {}", number);
+                        }
+                    }
+                }
+                
+                // 부모/형제 요소에서도 숫자 찾기
+                Element parent = element.parent();
+                if (parent != null) {
+                    String parentText = parent.text();
+                    List<Long> parentNumbers = extractAllNumbersFromText(parentText);
+                    log.info("'총딜' 요소 {}의 부모에서 추출된 숫자들: {}", i, parentNumbers);
+                    
+                    for (Long number : parentNumbers) {
+                        if (number >= 100000000L) {
+                            if (!damageValues.contains(number)) {
+                                damageValues.add(number);
+                                log.info("총딜 값 추가 (부모 요소): {}", number);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 방법 2: "30Lv", "전투력", "딜량" 관련 텍스트가 포함된 요소에서 숫자 찾기
+            log.info("=== 방법 2: 전투력 관련 키워드로 검색 ===");
+            String[] damageKeywords = {"30Lv", "전투력", "딜량", "점수"};
             
             for (String keyword : damageKeywords) {
                 Elements damageElements = doc.getElementsContainingOwnText(keyword);
-                log.info("{} 관련 요소 수: {}", keyword, damageElements.size());
+                log.info("'{}' 관련 요소 수: {}", keyword, damageElements.size());
                 
-                for (Element element : damageElements) {
+                for (int i = 0; i < damageElements.size(); i++) {
+                    Element element = damageElements.get(i);
                     String text = element.text();
-                    log.info("{} 요소 텍스트: {}", keyword, text);
+                    log.info("'{}' 요소 {} 텍스트: '{}'", keyword, i, text);
                     
-                    // 텍스트에서 모든 큰 숫자 추출
+                    // 텍스트에서 모든 큰 숫자 추출 (1억 이상)
                     List<Long> numbers = extractAllNumbersFromText(text);
+                    log.info("'{}' 요소 {}에서 추출된 숫자들: {}", keyword, i, numbers);
+                    
                     for (Long number : numbers) {
-                        if (number > 1000000000L && number < 1000000000000L) { // 10억~1조 사이
+                        if (number >= 100000000L) { // 1억 이상
                             if (!damageValues.contains(number)) {
                                 damageValues.add(number);
-                                log.info("총딜 값 추가 (키워드 {}): {}", keyword, number);
-                            }
-                        }
-                    }
-                    
-                    // 부모/형제 요소에서도 숫자 찾기
-                    Element parent = element.parent();
-                    if (parent != null) {
-                        String parentText = parent.text();
-                        List<Long> parentNumbers = extractAllNumbersFromText(parentText);
-                        for (Long number : parentNumbers) {
-                            if (number > 1000000000L && number < 1000000000000L) {
-                                if (!damageValues.contains(number)) {
-                                    damageValues.add(number);
-                                    log.info("총딜 값 추가 (부모 요소, 키워드 {}): {}", keyword, number);
-                                }
+                                log.info("총딜 값 추가 (키워드 '{}'): {}", keyword, number);
                             }
                         }
                     }
                 }
             }
             
-            // 방법 2: 전체 HTML에서 억 단위 숫자 패턴으로 전투력 추정
+            // 방법 3: 전체 HTML에서 콤마가 포함된 큰 숫자 패턴으로 검색
+            log.info("=== 방법 3: 콤마 패턴으로 검색 ===");
             String htmlText = doc.text();
             
-            // 사진에서 확인된 패턴: 1,875,485 형태의 전투력 찾기
-            Pattern damagePattern = Pattern.compile("([1-9](?:[0-9]{1,2})?,[0-9]{3},[0-9]{3})");
-            Matcher damageMatcher = damagePattern.matcher(htmlText);
+            // 콤마가 포함된 숫자 패턴: 1,234,567 형태
+            Pattern commaPattern = Pattern.compile("([1-9][0-9]{0,2}(?:,[0-9]{3}){1,3})");
+            Matcher commaMatcher = commaPattern.matcher(htmlText);
             
-            while (damageMatcher.find()) {
-                String damageStr = damageMatcher.group(1);
-                Long totalDamage = extractNumberFromText(damageStr);
-                if (totalDamage != null && totalDamage > 1000000L && !damageValues.contains(totalDamage)) {
-                    damageValues.add(totalDamage);
-                    log.info("총딜 값 추가 (패턴 매칭): {}", totalDamage);
+            while (commaMatcher.find()) {
+                String numberStr = commaMatcher.group(1);
+                Long number = extractNumberFromText(numberStr);
+                if (number != null && number >= 100000000L && !damageValues.contains(number)) {
+                    damageValues.add(number);
+                    log.info("총딜 값 추가 (콤마 패턴): {} (원본: {})", number, numberStr);
                 }
             }
             
-            // 방법 3: HTML에서 모든 큰 숫자들을 찾아서 전투력으로 추정
+            // 방법 4: HTML에서 모든 큰 숫자들을 찾아서 전투력으로 추정
+            log.info("=== 방법 4: 모든 숫자 검색 ===");
             Pattern allNumberPattern = Pattern.compile("([0-9,]+)");
             Matcher allNumberMatcher = allNumberPattern.matcher(htmlText);
             
             while (allNumberMatcher.find()) {
                 String numberStr = allNumberMatcher.group(1);
-                if (numberStr.contains(",")) { // 콤마가 포함된 큰 숫자만
+                if (numberStr.contains(",") && numberStr.length() >= 7) { // 콤마가 포함되고 7자리 이상
                     Long number = extractNumberFromText(numberStr);
-                    if (number != null && number > 5000000000L && number < 1000000000000L && !damageValues.contains(number)) {
+                    if (number != null && number >= 100000000L && !damageValues.contains(number)) {
                         damageValues.add(number);
-                        log.info("총딜 값 추가 (모든 숫자 검색): {}", number);
+                        log.info("총딜 값 추가 (모든 숫자 검색): {} (원본: {})", number, numberStr);
                     }
                 }
             }
@@ -513,7 +571,9 @@ public class DundamService {
                 .sorted()
                 .collect(Collectors.toList());
             
-            log.info("추출된 총딜 값들: {}", damageValues);
+            log.info("=== 최종 결과 ===");
+            log.info("추출된 총딜 값들 (정렬됨): {}", damageValues);
+            log.info("총딜 값 개수: {}", damageValues.size());
             
             if (damageValues.size() >= 2) {
                 // 두 개 이상의 값이 있는 경우, 작은 값과 큰 값 반환
@@ -572,23 +632,40 @@ public class DundamService {
     private List<Long> extractAllNumbersFromText(String text) {
         List<Long> numbers = new ArrayList<>();
         try {
+            log.debug("텍스트에서 숫자 추출 시작: '{}'", text);
+            
             // 숫자와 콤마만 추출하는 정규식
             Pattern pattern = Pattern.compile("([0-9,]+)");
             Matcher matcher = pattern.matcher(text);
             
+            int matchCount = 0;
             while (matcher.find()) {
-                String numberStr = matcher.group(1).replace(",", "");
+                matchCount++;
+                String originalNumberStr = matcher.group(1);
+                String cleanNumberStr = originalNumberStr.replace(",", "");
+                
+                log.debug("매치 {}: 원본='{}', 정리됨='{}'", matchCount, originalNumberStr, cleanNumberStr);
+                
                 try {
-                    Long number = Long.parseLong(numberStr);
+                    Long number = Long.parseLong(cleanNumberStr);
+                    log.debug("매치 {}: 숫자 변환 성공 = {}", matchCount, number);
+                    
                     // 의미 있는 숫자만 추가 (1000 이상)
                     if (number >= 1000) {
                         numbers.add(number);
+                        log.debug("매치 {}: 숫자 추가됨 = {}", matchCount, number);
+                    } else {
+                        log.debug("매치 {}: 숫자 너무 작음, 제외 = {}", matchCount, number);
                     }
                 } catch (NumberFormatException e) {
-                    // 숫자 변환 실패 시 다음 매치 시도
+                    log.debug("매치 {}: 숫자 변환 실패 = '{}', 오류: {}", matchCount, cleanNumberStr, e.getMessage());
                     continue;
                 }
             }
+            
+            log.debug("숫자 추출 완료: 총 {}개 매치, {}개 숫자 추가됨", matchCount, numbers.size());
+            log.debug("추출된 숫자들: {}", numbers);
+            
         } catch (Exception e) {
             log.error("모든 숫자 추출 중 오류: {}", e.getMessage(), e);
         }

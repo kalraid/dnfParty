@@ -29,6 +29,9 @@ public class DundamSyncController {
     // 캐릭터별 마지막 동기화 시간 저장 (2분 제한용)
     private final Map<String, LocalDateTime> lastSyncTime = new ConcurrentHashMap<>();
     
+    // 현재 진행 중인 동기화 작업 추적
+    private final Map<String, LocalDateTime> activeSyncs = new ConcurrentHashMap<>();
+    
     // 2분 제한 확인 메서드
     private boolean isWithinTimeLimit(String characterKey) {
         LocalDateTime lastSync = lastSyncTime.get(characterKey);

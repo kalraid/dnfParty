@@ -87,6 +87,21 @@ df:
     rate-limit: 100
     rate-limit-window: 60000
 
+# Dundam crawling configuration
+dundam:
+  crawling:
+    enabled: true  # 던담 크롤링 활성화
+    timeout: 30000  # 30초 타임아웃
+    retry-count: 3  # 재시도 횟수
+
+# Logging configuration
+logging:
+  level:
+    com.dfparty.backend.service.DundamService: DEBUG  # 던담 서비스 상세 로그
+    com.dfparty.backend.service.CharacterService: DEBUG  # 캐릭터 서비스 상세 로그
+    org.springframework.web: INFO
+    org.hibernate: INFO
+
 # Actuator Configuration
 management:
   endpoints:
@@ -99,25 +114,5 @@ management:
       show-details: always
       show-components: always
 
-# Logging Configuration
-logging:
-  level:
-    com.dfparty.backend: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
 # DFO API Configuration (기본값 - 프로필별 설정으로 오버라이드됨)
-
-
-
-# Dundam Configuration
-dundam:
-  scheduler:
-    enabled: false  # 던담 스케줄러 동기화 활성화/비활성화 (기본값: false)
-  crawling:
-    enabled: false  # 던담 크롤링 기능 활성화/비활성화 (기본값: false)
-  sync:
-    interval: 60000  # 동기화 간격 (밀리초, 기본값: 1분)
-    batch-size: 1    # 배치 크기 (기본값: 1개씩)
 

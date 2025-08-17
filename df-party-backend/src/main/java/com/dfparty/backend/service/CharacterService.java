@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +35,8 @@ import com.dfparty.backend.entity.JobType;
 import com.dfparty.backend.entity.Server;
 import com.dfparty.backend.repository.ServerRepository;
 import com.dfparty.backend.dto.CharacterDetailDto;
+import com.dfparty.backend.repository.NabelDifficultySelectionRepository;
+import com.dfparty.backend.entity.NabelDifficultySelection;
 
 @Slf4j
 @Service
@@ -68,6 +71,9 @@ public class CharacterService {
     
     @Autowired
     private RealtimeEventService realtimeEventService;
+    
+    @Autowired
+    private NabelDifficultySelectionRepository nabelDifficultySelectionRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -1086,6 +1092,15 @@ public class CharacterService {
         // 일반 나벨 대상자 여부 추가
         dto.put("isNormalNabelEligible", character.getIsNormalNabelEligible());
         
+        // 매칭 나벨 대상자 여부 추가
+        dto.put("isMatchingNabelEligible", character.getIsMatchingNabelEligible());
+        
+        // 선택된 나벨 난이도 추가
+        String selectedDifficulty = getNabelDifficultySelection(character.getCharacterId());
+        if (selectedDifficulty != null) {
+            dto.put("selectedNabelDifficulty", selectedDifficulty);
+        }
+        
         log.info("convertToDto 완료 - DTO에 포함된 모험단 정보: '{}'", dto.get("adventureName"));
         return dto;
     }
@@ -1125,6 +1140,111 @@ public class CharacterService {
         response.put("success", false);
         response.put("message", message);
         return response;
+    }
+
+    /**
+     * 나벨 난이도 선택 저장
+     */
+    @Transactional
+    public Map<String, Object> saveNabelDifficultySelection(String characterId, String difficulty) {
+        try {
+            log.info("나벨 난이도 선택 저장: characterId={}, difficulty={}", characterId, difficulty);
+            
+            // 기존 선택 삭제
+            nabelDifficultySelectionRepository.deleteByCharacterId(characterId);
+            
+            // 새로운 선택 저장
+            NabelDifficultySelection.NabelDifficulty selectedDifficulty = 
+                NabelDifficultySelection.NabelDifficulty.valueOf(difficulty.toUpperCase());
+            
+            NabelDifficultySelection selection = NabelDifficultySelection.builder()
+                .characterId(characterId)
+                .selectedDifficulty(selectedDifficulty)
+                .build();
+            
+            nabelDifficultySelectionRepository.save(selection);
+            
+            log.info("나벨 난이도 선택 저장 완료: characterId={}, difficulty={}", characterId, difficulty);
+            
+            return createSuccessResponse(
+                String.format("나벨 난이도 선택이 저장되었습니다: %s", difficulty),
+                Map.of(
+                    "characterId", characterId,
+                    "selectedDifficulty", difficulty
+                )
+            );
+            
+        } catch (Exception e) {
+            log.error("나벨 난이도 선택 저장 실패: characterId={}, difficulty={}", characterId, difficulty, e);
+            return createErrorResponse("나벨 난이도 선택 저장에 실패했습니다: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 나벨 난이도 선택 조회
+     */
+    @Transactional(readOnly = true)
+    public String getNabelDifficultySelection(String characterId) {
+        try {
+            Optional<NabelDifficultySelection> selection = 
+                nabelDifficultySelectionRepository.findByCharacterId(characterId);
+            
+            if (selection.isPresent()) {
+                return selection.get().getSelectedDifficulty().name().toLowerCase();
+            }
+            
+            return null; // 선택된 난이도가 없음
+            
+        } catch (Exception e) {
+            log.error("나벨 난이도 선택 조회 실패: characterId={}", characterId, e);
+            return null;
+        }
+    }
+    
+    /**
+     * server_id가 'all'인 캐릭터들을 'bakal'로 변경
+     */
+    @Transactional
+    public Map<String, Object> fixServerIdForAllCharacters() {
+        try {
+            log.info("=== server_id가 'all'인 캐릭터들을 'bakal'로 변경 시작 ===");
+            
+            // server_id가 'all'인 캐릭터들 조회
+            List<Character> allCharacters = characterRepository.findByServerId("all");
+            log.info("server_id가 'all'인 캐릭터 {}개 발견", allCharacters.size());
+            
+            if (allCharacters.isEmpty()) {
+                return createSuccessResponse("변경할 캐릭터가 없습니다.", null);
+            }
+            
+            int updatedCount = 0;
+            for (Character character : allCharacters) {
+                try {
+                    log.info("캐릭터 {}의 server_id를 'all'에서 'bakal'로 변경", character.getCharacterName());
+                    character.setServerId("bakal");
+                    characterRepository.save(character);
+                    updatedCount++;
+                } catch (Exception e) {
+                    log.error("캐릭터 {} server_id 변경 실패: {}", character.getCharacterName(), e.getMessage());
+                }
+            }
+            
+            log.info("=== server_id 변경 완료: {}개 캐릭터 업데이트됨 ===", updatedCount);
+            
+            return createSuccessResponse(
+                String.format("server_id 변경 완료: %d개 캐릭터가 'bakal'로 변경되었습니다.", updatedCount),
+                Map.of(
+                    "updatedCount", updatedCount,
+                    "characters", allCharacters.stream()
+                        .map(Character::getCharacterName)
+                        .collect(java.util.stream.Collectors.toList())
+                )
+            );
+            
+        } catch (Exception e) {
+            log.error("server_id 변경 실패: {}", e.getMessage(), e);
+            return createErrorResponse("server_id 변경 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
     /**
@@ -1828,6 +1948,11 @@ public class CharacterService {
     public boolean isHardNabelEligible(Character character) {
         if (character == null) return false;
         
+        // 명성 47,684 이상 조건 확인
+        if (character.getFame() == null || character.getFame() < 47684L) {
+            return false;
+        }
+        
         boolean isBuffer = isBuffer(character.getJobName(), character.getJobGrowName());
         
         if (isBuffer) {
@@ -1847,6 +1972,11 @@ public class CharacterService {
     public boolean isNormalNabelEligible(Character character) {
         if (character == null) return false;
         
+        // 명성 47,684 이상 조건 확인
+        if (character.getFame() == null || character.getFame() < 47684L) {
+            return false;
+        }
+        
         boolean isBuffer = isBuffer(character.getJobName(), character.getJobGrowName());
         
         if (isBuffer) {
@@ -1858,6 +1988,16 @@ public class CharacterService {
             Long totalDamage = character.getEffectiveTotalDamage();
             return totalDamage != null && totalDamage >= 3000000000L;
         }
+    }
+    
+    /**
+     * 매칭 나벨 대상자 여부 확인 (명성만 충족하면 가능)
+     */
+    public boolean isMatchingNabelEligible(Character character) {
+        if (character == null) return false;
+        
+        // 명성 47,684 이상 조건만 확인 (스펙컷 없음)
+        return character.getFame() != null && character.getFame() >= 47684L;
     }
     
     /**
@@ -2375,6 +2515,7 @@ public class CharacterService {
             
             log.info("=== 모험단 전체 캐릭터 최신화 완료: {} ===", adventureName);
             log.info("성공: {}개, 실패: {}개", successCount, failCount);
+            log.info("결과 상세: {}", results.toString());
             
             return createSuccessResponse(
                 String.format("모험단 '%s' 최신화 완료: 성공 %d개, 실패 %d개", 
@@ -2471,28 +2612,11 @@ public class CharacterService {
                 }
             }
             
-            // 던담에서 가져온 두 개의 총딜 값 처리
-            if (dundamInfo.containsKey("dundamTotalDamage1") && dundamInfo.containsKey("dundamTotalDamage2")) {
-                Long damage1 = (Long) dundamInfo.get("dundamTotalDamage1");
-                Long damage2 = (Long) dundamInfo.get("dundamTotalDamage2");
-                
-                if (damage1 != null && damage2 != null && damage1 > 0 && damage2 > 0) {
-                    // 두 개의 총딜 값을 저장하고, 큰 값을 totalDamage로 설정
-                    character.updateDundamTotalDamage(damage1, damage2);
-                    character.setTotalDamage(character.getDundamTotalDamageMax());
-                    updated = true;
-                    log.info("던담 총딜 두 개 값 저장: 작은값={}, 큰값={}, 최종 총딜={}", 
-                            character.getDundamTotalDamageMin(), 
-                            character.getDundamTotalDamageMax(), 
-                            character.getTotalDamage());
-                }
-            } else if (dundamInfo.containsKey("totalDamage")) {
-                // 기존 로직: 단일 총딜 값
+            // 던담에서 가져온 총딜 값 처리 (사용자 수정된 로직 사용)
+            if (dundamInfo.containsKey("totalDamage")) {
                 Long totalDamage = (Long) dundamInfo.get("totalDamage");
                 if (totalDamage != null && totalDamage > 0) {
                     character.setTotalDamage(totalDamage);
-                    // 단일 값인 경우 큰 값으로 설정
-                    character.updateDundamTotalDamage(totalDamage, null);
                     updated = true;
                     log.info("총딜 업데이트: {} -> {}", character.getTotalDamage(), totalDamage);
                 }

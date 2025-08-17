@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import com.dfparty.backend.entity.NabelDifficultySelection.NabelDifficulty;
 
 @Entity
 @Table(name = "characters")
@@ -157,12 +158,7 @@ public class Character {
     @Column(name = "total_damage")
     private Long totalDamage;
     
-    // 던담에서 가져온 두 개의 총딜 값 (작은 값, 큰 값)
-    @Column(name = "dundam_total_damage_small")
-    private Long dundamTotalDamageSmall;
-    
-    @Column(name = "dundam_total_damage_large")
-    private Long dundamTotalDamageLarge;
+    // 던담에서 가져온 총딜 값 (사용자 수정된 로직 사용)
     
 
     
@@ -199,6 +195,10 @@ public class Character {
     @Column(name = "is_normal_nabel_eligible")
     @Builder.Default
     private Boolean isNormalNabelEligible = false;
+    
+    @Column(name = "is_matching_nabel_eligible")
+    @Builder.Default
+    private Boolean isMatchingNabelEligible = false;
     
     @Column(name = "last_dungeon_check")
     private LocalDateTime lastDungeonCheck;
@@ -268,6 +268,8 @@ public class Character {
         
         // 하드 나벨 대상자 여부 업데이트
         updateHardNabelEligibility();
+        // 일반/매칭 나벨 대상자 여부도 함께 업데이트
+        updateNormalNabelEligibility();
     }
     
 
@@ -281,16 +283,23 @@ public class Character {
         
         // 하드 나벨 대상자 여부 업데이트
         updateHardNabelEligibility();
+        // 일반/매칭 나벨 대상자 여부도 함께 업데이트
+        updateNormalNabelEligibility();
     }
     
     // 하드 나벨 대상자 여부 업데이트
     private void updateHardNabelEligibility() {
-        if (isBuffer()) {
-            // 버퍼: 버프력 500만 이상
-            this.isHardNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 50000000L);
+        // 명성 47,684 이상 + 스펙컷 확인
+        if (fame != null && fame >= 47684L) {
+            if (isBuffer()) {
+                // 버퍼: 버프력 500만 이상
+                this.isHardNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 50000000L);
+            } else {
+                // 딜러: 총딜 100억 이상
+                this.isHardNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 10000000000L);
+            }
         } else {
-            // 딜러: 총딜 100억 이상
-            this.isHardNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 10000000000L);
+            this.isHardNabelEligible = false;
         }
         
         // 일반 나벨 대상자 여부도 함께 업데이트
@@ -299,13 +308,27 @@ public class Character {
     
     // 일반 나벨 대상자 여부 업데이트
     private void updateNormalNabelEligibility() {
-        if (isBuffer()) {
-            // 버퍼: 버프력 400만 이상
-            this.isNormalNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 40000000L);
+        // 명성 47,684 이상 + 스펙컷 확인
+        if (fame != null && fame >= 47684L) {
+            if (isBuffer()) {
+                // 버퍼: 버프력 400만 이상
+                this.isNormalNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 40000000L);
+            } else {
+                // 딜러: 총딜 30억 이상
+                this.isNormalNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 3000000000L);
+            }
         } else {
-            // 딜러: 총딜 30억 이상
-            this.isNormalNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 3000000000L);
+            this.isNormalNabelEligible = false;
         }
+        
+        // 매칭 나벨 대상자 여부도 함께 업데이트
+        updateMatchingNabelEligibility();
+    }
+    
+    // 매칭 나벨 대상자 여부 업데이트 (명성만 초과할 때)
+    private void updateMatchingNabelEligibility() {
+        // 명성 47,684 이상이면 매칭 가능 (스펙컷 없음)
+        this.isMatchingNabelEligible = (fame != null && fame >= 47684L);
     }
     
     // 버퍼 여부 판단
@@ -327,48 +350,11 @@ public class Character {
         return manualTotalDamage != null ? manualTotalDamage : totalDamage;
     }
     
-    // 던담에서 가져온 두 개의 총딜 값 중 큰 값 반환
-    public Long getDundamTotalDamageMax() {
-        if (dundamTotalDamageLarge != null && dundamTotalDamageSmall != null) {
-            return Math.max(dundamTotalDamageLarge, dundamTotalDamageSmall);
-        } else if (dundamTotalDamageLarge != null) {
-            return dundamTotalDamageLarge;
-        } else if (dundamTotalDamageSmall != null) {
-            return dundamTotalDamageSmall;
-        }
-        return null;
-    }
+
     
-    // 던담에서 가져온 두 개의 총딜 값 중 작은 값 반환
-    public Long getDundamTotalDamageMin() {
-        if (dundamTotalDamageLarge != null && dundamTotalDamageSmall != null) {
-            return Math.min(dundamTotalDamageLarge, dundamTotalDamageSmall);
-        } else if (dundamTotalDamageLarge != null) {
-            return dundamTotalDamageLarge;
-        } else if (dundamTotalDamageSmall != null) {
-            return dundamTotalDamageSmall;
-        }
-        return null;
-    }
+
     
-    // 던담 총딜 값 업데이트 (두 개의 값 저장)
-    public void updateDundamTotalDamage(Long damage1, Long damage2) {
-        if (damage1 != null && damage2 != null) {
-            if (damage1 >= damage2) {
-                this.dundamTotalDamageLarge = damage1;
-                this.dundamTotalDamageSmall = damage2;
-            } else {
-                this.dundamTotalDamageLarge = damage2;
-                this.dundamTotalDamageSmall = damage1;
-            }
-        } else if (damage1 != null) {
-            this.dundamTotalDamageLarge = damage1;
-            this.dundamTotalDamageSmall = null;
-        } else if (damage2 != null) {
-            this.dundamTotalDamageLarge = damage2;
-            this.dundamTotalDamageSmall = null;
-        }
-    }
+
     
 
     
@@ -406,5 +392,17 @@ public class Character {
         this.serverId = serverId;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+    
+    // 나벨 난이도 선택 관련 편의 메서드
+    @Transient
+    private NabelDifficulty selectedNabelDifficulty;
+    
+    public NabelDifficulty getSelectedNabelDifficulty() {
+        return selectedNabelDifficulty;
+    }
+    
+    public void setSelectedNabelDifficulty(NabelDifficulty selectedNabelDifficulty) {
+        this.selectedNabelDifficulty = selectedNabelDifficulty;
     }
 }

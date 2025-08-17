@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,20 @@ public class CharacterSyncSchedulerService {
     private final AtomicInteger currentIndex = new AtomicInteger(0);
     private List<Character> charactersToSync = null;
     private LocalDateTime lastFullSync = null;
+
+    /**
+     * 서비스 시작 시 초기화
+     */
+    @PostConstruct
+    public void initialize() {
+        try {
+            log.info("CharacterSyncSchedulerService 초기화 시작");
+            reloadCharacterList();
+            log.info("CharacterSyncSchedulerService 초기화 완료");
+        } catch (Exception e) {
+            log.error("CharacterSyncSchedulerService 초기화 실패", e);
+        }
+    }
 
     /**
      * 1시간마다 전체 캐릭터 목록을 새로 로드
@@ -140,15 +155,29 @@ public class CharacterSyncSchedulerService {
      * 동기화 상태 조회
      */
     public Map<String, Object> getSyncStatus() {
-        return Map.of(
-            "schedulerEnabled", schedulerEnabled,
-            "isRunning", schedulerEnabled && charactersToSync != null && !charactersToSync.isEmpty(),
-            "totalCharacters", charactersToSync != null ? charactersToSync.size() : 0,
-            "currentIndex", currentIndex.get(),
-            "lastFullSync", lastFullSync,
-            "nextSyncIn", schedulerEnabled ? (syncInterval / 1000) + "초 후" : "비활성화됨",
-            "syncInterval", syncInterval
-        );
+        try {
+            return Map.of(
+                "schedulerEnabled", schedulerEnabled,
+                "isRunning", schedulerEnabled && charactersToSync != null && !charactersToSync.isEmpty(),
+                "totalCharacters", charactersToSync != null ? charactersToSync.size() : 0,
+                "currentIndex", currentIndex.get(),
+                "lastFullSync", lastFullSync != null ? lastFullSync.toString() : "없음",
+                "nextSyncIn", schedulerEnabled ? (syncInterval / 1000) + "초 후" : "비활성화됨",
+                "syncInterval", syncInterval
+            );
+        } catch (Exception e) {
+            log.error("동기화 상태 조회 중 오류 발생", e);
+            return Map.of(
+                "schedulerEnabled", false,
+                "isRunning", false,
+                "totalCharacters", 0,
+                "currentIndex", 0,
+                "lastFullSync", "오류 발생",
+                "nextSyncIn", "비활성화됨",
+                "syncInterval", syncInterval,
+                "error", e.getMessage()
+            );
+        }
     }
 
     /**

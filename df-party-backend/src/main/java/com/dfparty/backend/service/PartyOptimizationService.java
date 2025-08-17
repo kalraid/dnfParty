@@ -768,24 +768,33 @@ public class PartyOptimizationService {
      * 딜러 여부 판단
      */
     private boolean isDealer(Map<String, Object> character) {
-        Number totalDamage = (Number) character.get("totalDamage");
-        Number buffPower = (Number) character.get("buffPower");
-        
-        if (totalDamage == null || buffPower == null) return false;
-        
-        return totalDamage.longValue() > buffPower.longValue();
+        return !isBuffer(character);
     }
     
     /**
-     * 버퍼 여부 판단
+     * 버퍼 여부 판단 (직업명 기반)
      */
     private boolean isBuffer(Map<String, Object> character) {
-        Number totalDamage = (Number) character.get("totalDamage");
-        Number buffPower = (Number) character.get("buffPower");
+        String jobName = (String) character.get("jobName");
+        String jobGrowName = (String) character.get("jobGrowName");
         
-        if (totalDamage == null || buffPower == null) return false;
+        if (jobGrowName == null && jobName == null) {
+            return false;
+        }
         
-        return buffPower.longValue() > totalDamage.longValue();
+        // jobGrowName 우선, 없으면 jobName 사용
+        String targetJobName = jobGrowName != null ? jobGrowName : jobName;
+        
+        // 버퍼 직업 목록: 크루세이더, 뮤즈, 패러메딕, 인챈트리스
+        String[] bufferJobs = {"크루세이더", "뮤즈", "패러메딕", "인챈트리스"};
+        
+        for (String bufferJob : bufferJobs) {
+            if (targetJobName.contains(bufferJob)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**

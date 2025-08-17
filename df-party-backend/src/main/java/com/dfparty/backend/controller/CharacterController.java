@@ -491,6 +491,25 @@ public class CharacterController {
     }
 
     /**
+     * 나벨 난이도 선택 저장
+     */
+    @PostMapping("/{characterId}/nabel-difficulty")
+    public ResponseEntity<Map<String, Object>> saveNabelDifficulty(
+            @PathVariable String characterId,
+            @RequestParam String difficulty) {
+        try {
+            Map<String, Object> result = characterService.saveNabelDifficultySelection(characterId, difficulty);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "나벨 난이도 선택 저장 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+    
+    /**
      * 모험단 전체 캐릭터 최신화
      */
     @PostMapping("/adventure/{adventureName}/refresh")

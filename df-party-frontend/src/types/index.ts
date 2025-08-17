@@ -16,6 +16,8 @@ export interface Character {
   combatPower?: number
   isHardNabelEligible?: boolean
   isNormalNabelEligible?: boolean
+  isMatchingNabelEligible?: boolean
+  selectedNabelDifficulty?: 'hard' | 'normal' | 'matching'
   createdAt?: string
   updatedAt?: string
   // 던전 클리어 상태
@@ -27,13 +29,13 @@ export interface Character {
   dungeonClearNightmare?: boolean
   dungeonClearTemple?: boolean
   dungeonClearTwilight?: boolean
-  // 던전 제외/스킵 상태
+  // 던전 제외 상태
   isExcludedNabel?: boolean
   isExcludedVenus?: boolean
   isExcludedFog?: boolean
-  isSkipNabel?: boolean
-  isSkipVenus?: boolean
-  isSkipFog?: boolean
+  // 수동 입력 스탯
+  manualTotalDamage?: number
+  manualBuffPower?: number
   // 마지막 업데이트 시간
   lastDungeonCheck?: string
   lastStatsUpdate?: string

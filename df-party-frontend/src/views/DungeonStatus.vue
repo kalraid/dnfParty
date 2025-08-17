@@ -1,40 +1,79 @@
 <template>
   <div class="dungeon-status">
-    <h2>던전 클리어 현황</h2>
-    
-    <!-- 검색바 (모험단 검색) -->
-    <div class="search-form">
-      <div class="form-group">
-        <label for="adventureName">모험단 검색:</label>
-        <input 
-          id="adventureName" 
-          v-model="adventureName" 
-          type="text" 
-          placeholder="모험단명을 입력하세요" 
-          @keyup.enter="searchAdventure"
-        >
+          <h2>던전 클리어 현황</h2>
+      
+      <!-- 모험단 검색 섹션 -->
+      <div class="adventure-selection">
+        <div class="search-section">
+          <div class="search-form">
+            <div class="form-group">
+              <label for="searchQuery">모험단명 검색:</label>
+              <input 
+                id="searchQuery" 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="모험단명을 입력하세요" 
+                @keyup.enter="searchAdventure"
+                list="adventureList"
+              >
+              <datalist id="adventureList">
+                <option v-for="adventure in recentSearchedAdventures" :key="adventure" :value="adventure">
+                  {{ adventure }}
+                </option>
+              </datalist>
+            </div>
+            
+            <button @click="searchAdventure" :disabled="searching" class="search-btn">
+              {{ searching ? '🔍 검색 중...' : '🔍 검색' }}
+            </button>
+          </div>
+          
+          <!-- 최근 검색한 모험단 선택 -->
+          <div v-if="recentSearchedAdventures.length > 0" class="recent-adventures">
+            <label for="recentAdventure">최근 검색:</label>
+            <select 
+              id="recentAdventure" 
+              v-model="selectedRecentAdventure" 
+              @change="selectRecentAdventure"
+              class="recent-adventure-select"
+            >
+              <option value="">모험단 선택</option>
+              <option v-for="adventure in recentSearchedAdventures" :key="adventure" :value="adventure">
+                {{ adventure }}
+              </option>
+            </select>
+          </div>
+          
+
+        </div>
       </div>
       
-      <button @click="searchAdventure" :disabled="searching" class="search-btn">
-        {{ searching ? '검색 중...' : '모험단 검색' }}
-      </button>
-      
-      <!-- 모험단 전체 최신화 버튼 -->
-      <button v-if="selectedAdventure && filteredCharacters.length > 0" 
-              @click="refreshAllCharacters" 
-              :disabled="refreshingAll" 
-              class="refresh-all-btn">
-        {{ refreshingAll ? '최신화 중...' : '🔄 전체 최신화' }}
-      </button>
-      
-      <!-- 정렬 초기화 버튼 -->
-      <button v-if="sortField !== 'characterName' || sortOrder !== 'asc'" 
-              @click="resetSort" 
-              class="reset-sort-btn">
-        🔄 정렬 초기화
-      </button>
-
-    </div>
+      <!-- 선택된 모험단 표시 (회색 칸 밖으로) -->
+      <div v-if="selectedAdventure" class="selected-adventure-display">
+        <div class="selected-adventure-info">
+          <span class="selected-label">선택된 모험단:</span>
+          <span class="selected-adventure-name">{{ selectedAdventure }}</span>
+          <span class="character-count">({{ filteredCharacters.length }}개 캐릭터)</span>
+        </div>
+        
+        <!-- 버튼 그룹 -->
+        <div class="button-group">
+          <!-- 정렬 초기화 버튼 -->
+          <button v-if="sortField !== 'characterName' || sortOrder !== 'asc'" 
+                  @click="resetSort" 
+                  class="reset-sort-btn">
+            🔄 정렬 초기화
+          </button>
+          
+          <!-- 전체 최신화 버튼 -->
+          <button v-if="filteredCharacters.length > 0" 
+                  @click="refreshAllCharacters" 
+                  :disabled="refreshingAll" 
+                  class="refresh-all-btn">
+            {{ refreshingAll ? '🔄 최신화 중...' : '🔄 전체 최신화' }}
+          </button>
+        </div>
+      </div>
 
 
 
@@ -70,10 +109,7 @@
       <table class="characters-table">
         <thead>
           <tr>
-            <th @click="sortBy('adventureName')" class="sortable">
-              모험단 
-              <span v-if="sortField === 'adventureName'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
-            </th>
+
             <th @click="sortBy('characterName')" class="sortable">
               캐릭터명
               <span v-if="sortField === 'characterName'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
@@ -98,6 +134,7 @@
               나벨
               <span v-if="sortField === 'nabel'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
+
             <th @click="sortBy('venus')" class="sortable dungeon-clear-column">
               베누스
               <span v-if="sortField === 'venus'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
@@ -106,14 +143,13 @@
               안개신
               <span v-if="sortField === 'fog'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th>마지막 업데이트</th>
             <th>액션</th>
+            <th>마지막 업데이트</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="character in sortedCharacters" :key="character.characterId" 
               :class="{ 'all-cleared': character.dungeonClearNabel && character.dungeonClearVenus && character.dungeonClearFog }">
-            <td class="adventure-name">{{ character.adventureName || 'N/A' }}</td>
             <td class="character-name">{{ character.characterName }}</td>
             <td>{{ character.level || 'N/A' }}</td>
             <td>{{ formatNumber(character.fame) }}</td>
@@ -125,114 +161,115 @@
               <div class="stat-with-edit">
                 <!-- 버퍼면 버프력, 딜러면 총딜 표시 -->
                 <span v-if="isBuffer(character)">
-                  <span class="stat-label">버프력:</span>
-                  {{ formatBuffPower(character.buffPower || 0) }}
+                  <div class="stat-display">
+                    <div class="stat-label">버프력</div>
+                    <div class="stat-value">{{ formatBuffPower(character.buffPower || 0) }}</div>
+                  </div>
                 </span>
                 <span v-else>
-                  <span class="stat-label">총딜:</span>
-                  {{ formatTotalDamage(character.totalDamage || 0) }}
+                  <div class="stat-display">
+                    <div class="stat-label">총딜</div>
+                    <div class="stat-value">{{ formatTotalDamage(character.totalDamage || 0) }}</div>
+                  </div>
                 </span>
               </div>
             </td>
             <td class="dungeon-status-cell nabel-cell">
+              <!-- 위쪽: 클리어 여부 -->
               <div class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearNabel,
-                     excluded: character.isExcludedNabel,
-                     skip: character.isSkipNabel 
+                     excluded: character.isExcludedNabel
                    }">
                 <span class="clear-icon">
                   {{ character.isExcludedNabel ? '-' : (character.dungeonClearNabel ? '✅' : '❌') }}
                 </span>
                 <span class="clear-text">
-                  {{ character.isExcludedNabel ? '안감' : (character.isSkipNabel ? '업둥' : (character.dungeonClearNabel ? '클리어' : '미클리어')) }}
+                  {{ character.isExcludedNabel ? '안감' : (character.dungeonClearNabel ? '클리어' : '미클리어') }}
                 </span>
               </div>
-              <!-- 나벨 난이도 표시 -->
-              <div class="nabel-difficulty-indicator">
-                <!-- 일반 나벨 표시 -->
-                <span v-if="character.isNormalNabelEligible" class="normal-indicator">일반</span>
-                <!-- 하드 나벨 표시 -->
+              
+              <!-- 아래쪽: 난이도 선택 버튼들 -->
+              <div class="nabel-difficulty-buttons">
+                <!-- 하드 나벨 버튼 -->
                 <button 
-                  v-if="character.isHardNabelEligible"
-                  @click="toggleHardMode(character)"
-                  :class="{ active: getHardModeState(character) }"
-                  class="hard-mode-btn"
-                  title="하드 모드 토글">
+                  @click="setNabelDifficulty(character, 'hard')"
+                  :class="{ active: getNabelDifficulty(character) === 'hard' }"
+                  :disabled="!isHardEligible(character)"
+                  class="difficulty-btn hard-btn"
+                  :title="`하드 모드 선택 (isHardNabelEligible: ${character.isHardNabelEligible}, 계산값: ${isHardEligible(character)})`">
                   하드
                 </button>
+                <!-- 일반 나벨 버튼 -->
                 <button 
-                  v-else-if="character.isNormalNabelEligible"
-                  disabled
-                  class="hard-mode-btn disabled"
-                  title="하드 조건 미충족">
-                  하드
+                  @click="setNabelDifficulty(character, 'normal')"
+                  :class="{ active: getNabelDifficulty(character) === 'normal' }"
+                  :disabled="!isNormalEligible(character)"
+                  class="difficulty-btn normal-btn"
+                  :title="`일반 모드 선택 (isNormalNabelEligible: ${character.isNormalNabelEligible}, 계산값: ${isNormalEligible(character)})`">
+                  일반
                 </button>
-                <span v-else class="not-eligible">미대상</span>
-              </div>
-              <div class="action-buttons-mini">
-                <button @click="toggleExclude(character, 'nabel')" 
-                        class="exclude-btn" 
-                        :class="{ active: character.isExcludedNabel }"
-                        title="안감">안감</button>
-                <button @click="toggleSkip(character, 'nabel')" 
-                        class="skip-btn" 
-                        :class="{ active: character.isSkipNabel }"
-                        title="업둥">업둥</button>
+                <!-- 매칭 나벨 버튼 -->
+                <button 
+                  @click="setNabelDifficulty(character, 'matching')"
+                  :class="{ active: getNabelDifficulty(character) === 'matching' }"
+                  :disabled="!isMatchingEligible(character)"
+                  class="difficulty-btn matching-btn"
+                  :title="`매칭 모드 선택 (isMatchingNabelEligible: ${character.isMatchingNabelEligible}, 계산값: ${isMatchingEligible(character)})`">
+                  매칭
+                </button>
+                <!-- 안감 버튼 -->
+                <button 
+                  @click="toggleExclude(character, 'nabel')" 
+                  :class="{ active: character.isExcludedNabel }"
+                  class="difficulty-btn exclude-btn"
+                  title="안감">
+                  안감
+                </button>
               </div>
             </td>
+
             <td class="dungeon-status-cell venus-cell">
               <div class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearVenus,
-                     excluded: character.isExcludedVenus,
-                     skip: character.isSkipVenus 
+                     excluded: character.isExcludedVenus
                    }">
                 <span class="clear-icon">
                   {{ character.isExcludedVenus ? '-' : (character.dungeonClearVenus ? '✅' : '❌') }}
                 </span>
-                <span class="clear-text">
-                  {{ character.isExcludedVenus ? '안감' : (character.isSkipVenus ? '업둥' : (character.dungeonClearVenus ? '클리어' : '미클리어')) }}
-                </span>
+                                  <span class="clear-text">
+                    {{ character.isExcludedVenus ? '안감' : (character.dungeonClearVenus ? '클리어' : '미클리어') }}
+                  </span>
               </div>
               <div class="action-buttons-mini">
                 <button @click="toggleExclude(character, 'venus')" 
                         class="exclude-btn" 
                         :class="{ active: character.isExcludedVenus }"
                         title="안감">안감</button>
-                <button @click="toggleSkip(character, 'venus')" 
-                        class="skip-btn" 
-                        :class="{ active: character.isSkipVenus }"
-                        title="업둥">업둥</button>
+                
               </div>
             </td>
             <td class="dungeon-status-cell fog-cell">
               <div class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearFog,
-                     excluded: character.isExcludedFog,
-                     skip: character.isSkipFog 
+                     excluded: character.isExcludedFog
                    }">
                 <span class="clear-icon">
                   {{ character.isExcludedFog ? '-' : (character.dungeonClearFog ? '✅' : '❌') }}
                 </span>
-                <span class="clear-text">
-                  {{ character.isExcludedFog ? '안감' : (character.isSkipFog ? '업둥' : (character.dungeonClearFog ? '클리어' : '미클리어')) }}
-                </span>
+                                  <span class="clear-text">
+                    {{ character.isExcludedFog ? '안감' : (character.dungeonClearFog ? '클리어' : '미클리어') }}
+                  </span>
               </div>
               <div class="action-buttons-mini">
                 <button @click="toggleExclude(character, 'fog')" 
                         class="exclude-btn" 
                         :class="{ active: character.isExcludedFog }"
                         title="안감">안감</button>
-                <button @click="toggleSkip(character, 'fog')" 
-                        class="skip-btn" 
-                        :class="{ active: character.isSkipFog }"
-                        title="업둥">업둥</button>
+                
               </div>
-            </td>
-            <td class="update-time">
-              {{ formatDateTime(character.lastDungeonCheck || new Date().toISOString()) }}
             </td>
             <td>
               <div class="action-grid">
@@ -242,28 +279,31 @@
                     <button @click="syncCharacterFromDundam(character)" 
                             class="action-btn dundam-sync-btn" 
                             :class="{ 'syncing': syncingCharacters.has(character.characterId) }"
-                            :disabled="syncingCharacters.has(character.characterId) || !isWithinTimeLimit(character.characterId) || !isAdventureSyncAvailable(character.adventureName)" 
+                            :disabled="syncingCharacters.has(character.characterId) || !isWithinTimeLimit(character.characterId) || isAnyCharacterSyncing()" 
                             title="던담 크롤링으로 총딜/버프력 최신화">
                       <span v-if="syncingCharacters.has(character.characterId)" class="syncing-text">
-                        <span class="spinner">🔄</span> 실행
+                        <span class="spinner">🔄</span>
                       </span>
-                      <span v-else>🔄 실행</span>
+                      <span v-else class="button-content">
+                        <span class="button-icon">🔄</span>
+                      </span>
                     </button>
-                    <a :href="getDundamLink(character)" target="_blank" class="dundam-link" :title="getDundamLinkTitle(character)">
-                      🔗 링크
-                    </a>
                   </div>
-                  <div v-if="syncingCharacters.has(character.characterId)" class="syncing-status-message">
-                    🔄 던담 동기화 진행 중...
-                  </div>
-                  <div v-else-if="!isAdventureSyncAvailable(character.adventureName)" class="adventure-time-limit-message">
-                    모험단 제한: {{ getRemainingTime(character.adventureName) }} 후 가능
-                  </div>
-                  <div v-else-if="!isWithinTimeLimit(character.characterId)" class="time-limit-message">
-                    케릭터 제한: {{ getRemainingTime(character.characterId) }} 후 가능
-                  </div>
-                  <div v-if="characterErrors.get(character.characterId)" class="character-error-message">
-                    {{ characterErrors.get(character.characterId) }}
+                  <!-- 고정 높이 메시지 영역 -->
+                  <div class="status-message-container">
+                    <div v-if="syncingCharacters.has(character.characterId)" class="syncing-status-message">
+                      동기화중
+                    </div>
+
+                    <div v-else-if="!isWithinTimeLimit(character.characterId)" class="time-limit-message">
+                      {{ getRemainingTime(character.characterId) }}
+                    </div>
+                    <div v-else-if="characterErrors.get(character.characterId)" class="character-error-message">
+                      {{ characterErrors.get(character.characterId) }}
+                    </div>
+                    <div v-else class="status-message-placeholder">
+                      <!-- 빈 공간으로 높이 유지 -->
+                    </div>
                   </div>
                 </div>
                 
@@ -275,10 +315,10 @@
                 </div>
                 
                 <div class="action-cell">
-                  <div class="action-label">타임라인 최신화</div>
-                  <button @click="refreshDungeonStatus(character)" class="action-btn timeline-btn" :disabled="refreshingTimeline.includes(character.characterId)" title="나벨, 베누스, 안개신 클리어 여부 확인">
-                    {{ refreshingTimeline.includes(character.characterId) ? '🔄' : '🔄' }}
-                  </button>
+                  <div class="action-label">던담 링크</div>
+                  <a :href="getDundamLink(character)" target="_blank" class="dundam-link" :title="getDundamLinkTitle(character)">
+                    🔗 링크
+                  </a>
                 </div>
                 
                 <div class="action-cell">
@@ -289,27 +329,23 @@
                 </div>
               </div>
             </td>
+            <td class="update-time">
+              {{ formatDateTime(character.lastDungeonCheck || new Date().toISOString()) }}
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- 검색 결과가 없을 때 -->
-    <div v-else-if="!searching && adventureName && characters.length === 0" class="no-results">
-      <p>검색 결과가 없습니다.</p>
-      <p v-if="selectedAdventure">'{{ selectedAdventure }}' 모험단의 캐릭터가 데이터베이스에 없습니다.</p>
-      <p v-else>해당 모험단명의 캐릭터가 데이터베이스에 없습니다.</p>
+    <div v-else-if="selectedAdventure && characters.length === 0" class="no-results">
+      <p>'{{ selectedAdventure }}' 모험단의 캐릭터가 데이터베이스에 없습니다.</p>
       <p><strong>해결 방법:</strong> 먼저 <router-link to="/character-search">캐릭터 검색</router-link>에서 해당 모험단의 캐릭터들을 검색하여 추가해주세요.</p>
     </div>
 
     <!-- 초기 상태 -->
-    <div v-else-if="!searching" class="initial-state">
-      <p>캐릭터를 검색해주세요.</p>
-    </div>
-
-    <!-- 로딩 상태 -->
-    <div v-if="searching" class="loading">
-      <p>던전 클리어 현황을 불러오는 중...</p>
+    <div v-else-if="!selectedAdventure" class="initial-state">
+      <p>모험단을 선택해주세요.</p>
     </div>
 
     <!-- 실시간 업데이트 상태 -->
@@ -403,17 +439,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { dfApiService } from '../services/dfApi';
 // import websocketService, { type RealtimeEvent } from '../services/websocketService';
 import { type RealtimeEvent } from '../services/websocketService';
 import { type Character } from '../types';
 
 // 반응형 데이터
-const adventureName = ref(''); // 모험단 검색용
+const searchQuery = ref(''); // 모험단 검색어
 const selectedAdventure = ref('');
 const characters = ref<Character[]>([]);
-const searching = ref(false);
+const searching = ref(false); // 검색 중 상태
 const refreshing = ref(false);
 const updating = ref(false);
 const refreshingAll = ref(false);
@@ -432,6 +468,15 @@ const lastSyncTimes = ref<Map<string, Date>>(new Map());
 
 // 모험단별 마지막 동기화 시간 저장 (모험단 제한용)
 const lastAdventureSyncTimes = ref<Map<string, Date>>(new Map());
+
+// 실시간 타이머를 위한 상태
+const timerInterval = ref<number | null>(null);
+
+// 최근에 검색한 모험단 목록 (로컬스토리지에 저장)
+const recentSearchedAdventures = ref<string[]>([]);
+
+// 최근 검색한 모험단 선택용
+const selectedRecentAdventure = ref('');
 
 // 2분 제한 확인 함수
 const isWithinTimeLimit = (characterId: string): boolean => {
@@ -473,26 +518,46 @@ const isAdventureSyncAvailable = (adventureName: string): boolean => {
   return diffMinutes >= 2;
 };
 
-// 남은 시간 계산 함수
+// 남은 시간 계산 함수 (초 단위만 표시)
 const getRemainingTime = (characterId: string): string => {
   const lastSync = lastSyncTimes.value.get(characterId);
   if (!lastSync) return '';
   
   const now = new Date();
   const diffMs = now.getTime() - lastSync.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+  const totalRemainingSeconds = Math.max(0, 120 - Math.floor(diffMs / 1000));
   
-  if (diffMinutes < 2) {
-    const remainingMinutes = 2 - diffMinutes - 1;
-    const remainingSeconds = 60 - diffSeconds;
-    if (remainingMinutes > 0) {
-      return `${remainingMinutes}분 ${remainingSeconds}초`;
+  if (totalRemainingSeconds > 0) {
+    const minutes = Math.floor(totalRemainingSeconds / 60);
+    const seconds = totalRemainingSeconds % 60;
+    
+    if (minutes > 0) {
+      return `${minutes}분 ${seconds}초`;
     } else {
-      return `${remainingSeconds}초`;
+      return `${seconds}초`;
     }
   }
   return '';
+};
+
+// 실시간 타이머 시작
+const startTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+  }
+  
+  timerInterval.value = setInterval(() => {
+    // 강제로 리렌더링 (Vue의 반응성 시스템 활용)
+    characters.value = [...characters.value];
+  }, 1000); // 1초마다 업데이트
+};
+
+// 타이머 정리
+const clearTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
+  }
 };
 
 // 모험단별 남은 시간 계산 함수
@@ -527,12 +592,20 @@ const manualInputData = ref({
 
 // 던담 동기화 관련
 const syncingCharacters = ref<Set<string>>(new Set()); // 동기화 진행 중인 캐릭터들
+
+// 아무 캐릭터라도 던담 동기화 중인지 확인
+const isAnyCharacterSyncing = (): boolean => {
+  return syncingCharacters.value.size > 0;
+};
 const refreshingCharacters = ref<string[]>([]);
 const refreshingTimeline = ref<string[]>([]);
 
+// 하드 파티 관련
+const hardPartyCharacters = ref<Set<string>>(new Set()); // 하드 파티로 가는 캐릭터들
+
 // 정렬 관련
-const sortField = ref<string>('characterName');
-const sortOrder = ref<'asc' | 'desc'>('asc');
+const sortField = ref<string>('fame');
+const sortOrder = ref<'asc' | 'desc'>('desc');
 
 // WebSocket 연결
 const connectWebSocket = () => {
@@ -579,21 +652,16 @@ const connectWebSocket = () => {
 
 
 
-// 컴포넌트 마운트 시 초기화
-onMounted(async () => {
-  await initializeWebSocket();
-  connectWebSocket();
-});
 
-onUnmounted(() => {
-  // websocketService.removeAllEventListeners(); // 임시 비활성화
-  // websocketService.disconnect(); // 임시 비활성화
-});
 
-// 모험단 검색
+// 모험단 검색 함수
 const searchAdventure = async () => {
-  if (!adventureName.value.trim()) {
-    error.value = '모험단명을 입력해주세요.';
+  console.log('=== 모험단 검색 시작 ===');
+  console.log('검색어:', searchQuery.value);
+  
+  if (!searchQuery.value.trim()) {
+    error.value = '검색어를 입력해주세요.';
+    console.log('검색어가 비어있음');
     return;
   }
 
@@ -601,35 +669,295 @@ const searchAdventure = async () => {
     searching.value = true;
     error.value = '';
     successMessage.value = '';
-
-    // 백엔드 API를 통한 모험단 검색
-    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(adventureName.value)}`);
+    
+    console.log('API 호출 시작:', `http://localhost:8080/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+    
+    console.log('API 응답 상태:', response.status);
     
     if (response.ok) {
       const data = await response.json();
+      console.log('API 응답 데이터:', data);
+      
       if (data.success) {
         characters.value = data.characters || [];
-        successMessage.value = `'${adventureName.value}' 모험단의 ${characters.value.length}개 캐릭터를 찾았습니다.`;
+        console.log('캐릭터 로드 완료:', characters.value.length, '개');
+        
+        successMessage.value = `'${searchQuery.value}' 모험단의 ${characters.value.length}개 캐릭터를 찾았습니다.`;
         
         // 모험단 선택 상태 업데이트
-        selectedAdventure.value = adventureName.value;
+        selectedAdventure.value = searchQuery.value;
+        console.log('선택된 모험단 업데이트:', selectedAdventure.value);
+        
+        // 로컬스토리지에 검색한 모험단 저장
+        saveRecentSearchedAdventure(searchQuery.value);
         
         // 캐릭터 로드 후 동기화 시간 초기화
         initializeSyncTimes();
+        
+        console.log('=== 모험단 검색 완료 ===');
       } else {
-        error.value = data.message || '모험단 검색에 실패했습니다.';
+        error.value = data.message || '검색에 실패했습니다.';
+        console.log('API 응답 실패:', data.message);
       }
     } else {
-      error.value = '모험단 검색 중 오류가 발생했습니다.';
+      error.value = '검색 중 오류가 발생했습니다.';
+      console.log('HTTP 오류:', response.status, response.statusText);
     }
 
   } catch (err) {
-    console.error('모험단 검색 실패:', err);
-    error.value = '모험단 검색 중 오류가 발생했습니다.';
+    console.error('검색 실패:', err);
+    error.value = '검색 중 오류가 발생했습니다.';
   } finally {
     searching.value = false;
   }
 };
+
+// 로컬스토리지에서 최근 검색한 모험단 목록 로드
+const loadRecentSearchedAdventures = () => {
+  try {
+    const saved = localStorage.getItem('df_dungeon_adventure_history');
+    if (saved) {
+      recentSearchedAdventures.value = JSON.parse(saved);
+      console.log('던전 모험단 기록 로드 완료:', recentSearchedAdventures.value);
+    }
+  } catch (error) {
+    console.error('던전 모험단 기록 로드 실패:', error);
+    recentSearchedAdventures.value = [];
+  }
+};
+
+// 로컬스토리지에 최근 검색한 모험단 저장
+const saveRecentSearchedAdventure = (adventureName: string) => {
+  try {
+    // 기존 던전 모험단 기록 가져오기
+    const existingDungeonHistory = JSON.parse(localStorage.getItem('df_dungeon_adventure_history') || '[]');
+    
+    // 이미 존재하는지 확인
+    if (!existingDungeonHistory.includes(adventureName)) {
+      // 최대 10개까지만 저장
+      const updatedDungeonHistory = [...existingDungeonHistory, adventureName];
+      if (updatedDungeonHistory.length > 10) {
+        updatedDungeonHistory.splice(0, updatedDungeonHistory.length - 10);
+      }
+      
+      // 로컬스토리지에 저장
+      localStorage.setItem('df_dungeon_adventure_history', JSON.stringify(updatedDungeonHistory));
+      
+      // 로컬 상태도 업데이트
+      recentSearchedAdventures.value = updatedDungeonHistory;
+      
+      console.log('던전 모험단 기록 저장 완료:', updatedDungeonHistory);
+    }
+  } catch (error) {
+    console.error('던전 모험단 기록 저장 실패:', error);
+  }
+};
+
+// 최근 검색한 모험단 선택 처리
+const selectRecentAdventure = async () => {
+  if (selectedRecentAdventure.value) {
+    // 선택된 모험단으로 검색 실행
+    searchQuery.value = selectedRecentAdventure.value;
+    await searchAdventure();
+    
+    // 선택 초기화
+    selectedRecentAdventure.value = '';
+  }
+};
+
+// 선택된 모험단 초기화
+const clearSelectedAdventure = () => {
+  selectedAdventure.value = '';
+  characters.value = [];
+  searchQuery.value = '';
+  error.value = '';
+  successMessage.value = '';
+  console.log('선택된 모험단 초기화됨');
+};
+
+// 나벨 난이도 설정
+const setNabelDifficulty = async (character: Character, difficulty: 'hard' | 'normal' | 'matching') => {
+  try {
+    // 백엔드에 저장
+    const response = await fetch(`http://localhost:8080/api/characters/${character.characterId}/nabel-difficulty?difficulty=${difficulty}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (response.ok) {
+      // 로컬스토리지에도 저장 (백업용)
+      const key = `nabelDifficulty_${character.characterId}`;
+      localStorage.setItem(key, difficulty);
+      console.log(`캐릭터 ${character.characterName} 나벨 난이도 저장 완료: ${difficulty}`);
+      
+      // 성공 메시지 표시
+      successMessage.value = `캐릭터 ${character.characterName}의 나벨 난이도가 ${difficulty}로 설정되었습니다.`;
+    } else {
+      console.error('나벨 난이도 저장 실패:', response.statusText);
+      error.value = '나벨 난이도 저장에 실패했습니다.';
+    }
+  } catch (err) {
+    console.error('나벨 난이도 저장 중 오류:', err);
+    error.value = '나벨 난이도 저장 중 오류가 발생했습니다.';
+  }
+};
+
+// 하드 나벨 대상자 여부 계산 (백엔드 값이 잘못되었을 때 대체)
+const isHardEligible = (character: Character): boolean => {
+  // 백엔드에서 받은 값이 있으면 사용
+  if (character.isHardNabelEligible !== null) {
+    return character.isHardNabelEligible === true;
+  }
+  
+  // 백엔드 값이 null이면 조건으로 계산
+  if (character.fame === undefined || character.fame === null || character.fame < 47684) {
+    return false;
+  }
+  
+  // 버퍼 여부 판단
+  const isBuffer = character.jobGrowName?.includes("크루세이더") || 
+                   character.jobGrowName?.includes("뮤즈") || 
+                   character.jobGrowName?.includes("패러메딕") || 
+                   character.jobGrowName?.includes("인챈트리스");
+  
+  if (isBuffer) {
+    // 버퍼: 버프력 500만 이상
+    const buffPower = character.manualBuffPower || character.buffPower;
+    return buffPower !== undefined && buffPower !== null && buffPower >= 50000000;
+  } else {
+    // 딜러: 총딜 100억 이상
+    const totalDamage = character.manualTotalDamage || character.totalDamage;
+    return totalDamage !== undefined && totalDamage !== null && totalDamage >= 10000000000;
+  }
+};
+
+// 일반 나벨 대상자 여부 계산 (백엔드 값이 잘못되었을 때 대체)
+const isNormalEligible = (character: Character): boolean => {
+  // 백엔드에서 받은 값이 있으면 사용
+  if (character.isNormalNabelEligible !== null) {
+    return character.isNormalNabelEligible === true;
+  }
+  
+  // 백엔드 값이 null이면 조건으로 계산
+  if (character.fame === undefined || character.fame === null || character.fame < 47684) {
+    return false;
+  }
+  
+  // 버퍼 여부 판단
+  const isBuffer = character.jobGrowName?.includes("크루세이더") || 
+                   character.jobGrowName?.includes("뮤즈") || 
+                   character.jobGrowName?.includes("패러메딕") || 
+                   character.jobGrowName?.includes("인챈트리스");
+  
+  if (isBuffer) {
+    // 버퍼: 버프력 400만 이상
+    const buffPower = character.manualBuffPower || character.buffPower;
+    return buffPower !== undefined && buffPower !== null && buffPower >= 40000000;
+  } else {
+    // 딜러: 총딜 30억 이상
+    const totalDamage = character.manualTotalDamage || character.totalDamage;
+    return totalDamage !== undefined && totalDamage !== null && totalDamage >= 3000000000;
+  }
+};
+
+// 매칭 나벨 대상자 여부 계산 (백엔드 값이 null일 때 대체)
+const isMatchingEligible = (character: Character): boolean => {
+  // 백엔드에서 받은 값이 있으면 사용
+  if (character.isMatchingNabelEligible !== null) {
+    return character.isMatchingNabelEligible === true;
+  }
+  
+  // 백엔드 값이 null이면 명성 기준으로 계산
+  return character.fame !== undefined && character.fame !== null && character.fame >= 47684;
+};
+
+// 나벨 난이도 가져오기
+const getNabelDifficulty = (character: Character): 'hard' | 'normal' | 'matching' | null => {
+  // 백엔드에서 받은 데이터가 있으면 우선 사용
+  if (character.selectedNabelDifficulty) {
+    return character.selectedNabelDifficulty as 'hard' | 'normal' | 'matching';
+  }
+  
+  // 백엔드 데이터가 없으면 로컬스토리지에서 가져오기 (백업용)
+  const key = `nabelDifficulty_${character.characterId}`;
+  const saved = localStorage.getItem(key);
+  if (saved && ['hard', 'normal', 'matching'].includes(saved)) {
+    return saved as 'hard' | 'normal' | 'matching';
+  }
+  
+  // 자동 선택: 조건에 맞는 가장 높은 난이도 선택
+  if (character.isHardNabelEligible) {
+    return 'hard';
+  } else if (character.isNormalNabelEligible) {
+    return 'normal';
+  } else if (isMatchingEligible(character)) {
+    return 'matching';
+  }
+  
+  return null;
+};
+
+// 주기적 체크를 위한 타이머
+let syncCheckTimer: number | null = null;
+
+// 필터 조건 복원 함수
+const restoreFilterCondition = () => {
+  const savedAdventure = localStorage.getItem('df_dungeon_filter_adventure');
+  if (savedAdventure) {
+    selectedAdventure.value = savedAdventure;
+  }
+};
+
+// 컴포넌트 마운트 시 초기화
+onMounted(async () => {
+  loadRecentSearchedAdventures(); // 최근 검색 모험단 로드
+  restoreDundamSyncState(); // 던담 동기화 상태 복원
+  await initializeWebSocket();
+  connectWebSocket();
+  
+  // 저장된 필터 조건 복원
+  restoreFilterCondition();
+  
+  // 10초마다 제한시간 초과된 동기화 상태 체크
+  syncCheckTimer = window.setInterval(() => {
+    checkAndClearExpiredSyncs();
+  }, 10000); // 10초마다 체크
+  
+  // 실시간 타이머 시작
+  startTimer();
+});
+
+// 캐릭터 목록이 로드된 후 하드 파티 상태 복원
+watch(characters, (newCharacters) => {
+  if (newCharacters.length > 0) {
+    restoreHardPartyState();
+  }
+}, { immediate: true });
+
+// 던담 동기화 상태 변화 감지 및 Local Storage 저장
+watch(syncingCharacters, (newValue) => {
+  saveDundamSyncState();
+  console.log('던담 동기화 상태 변경됨:', Array.from(newValue));
+}, { deep: true });
+
+onUnmounted(() => {
+  // websocketService.removeAllEventListeners(); // 임시 비활성화
+  // websocketService.disconnect(); // 임시 비활성화
+  
+  // 타이머 정리
+  if (syncCheckTimer) {
+    window.clearInterval(syncCheckTimer);
+    syncCheckTimer = null;
+  }
+  
+  // 실시간 타이머 정리
+  clearTimer();
+})
+
+
 
 // 서버 변경 시 - 더 이상 필요하지 않음
 // const onServerChange = () => {
@@ -659,23 +987,23 @@ const isBuffer = (character: Character): boolean => {
   );
 };
 
-// 모험단별 필터링 - DB에서 로드된 것과 localStorage 검색 기록 합쳐서 표시
+// 모험단별 필터링 - CharacterSearch.vue와 동일한 localStorage 키 사용
 const availableAdventures = computed(() => {
   const adventures = new Set<string>();
   
   // DB에서 로드된 모험단들 추가
   allAdventures.value.forEach(name => adventures.add(name));
   
-  // localStorage 검색 기록에서 모험단들 추가
+  // CharacterSearch.vue와 동일한 localStorage 키 사용
   try {
-    const searchHistory = JSON.parse(localStorage.getItem('df_search_history') || '[]');
-    searchHistory.forEach((record: any) => {
-      if (record.adventureName && record.adventureName !== 'N/A') {
-        adventures.add(record.adventureName);
+    const dungeonAdventureHistory = JSON.parse(localStorage.getItem('df_dungeon_adventure_history') || '[]');
+    dungeonAdventureHistory.forEach((adventureName: string) => {
+      if (adventureName && adventureName !== 'N/A') {
+        adventures.add(adventureName);
       }
     });
   } catch (error) {
-    console.error('localStorage 검색 기록 로드 실패:', error);
+    console.error('localStorage 던전 모험단 기록 로드 실패:', error);
   }
   
   // 현재 검색 결과의 모험단들도 추가
@@ -705,8 +1033,14 @@ const filterByAdventure = async () => {
         const data = await response.json();
         if (data.success) {
           characters.value = data.characters;
-          adventureName.value = ''; // 검색어 초기화
+          searchQuery.value = ''; // 검색어 초기화
           successMessage.value = `'${selectedAdventure.value}' 모험단의 ${characters.value.length}개 캐릭터를 로드했습니다.`;
+          
+          // 로컬스토리지에 선택한 모험단 저장
+          saveRecentSearchedAdventure(selectedAdventure.value);
+          
+          // 필터 조건을 로컬스토리지에 저장
+          localStorage.setItem('df_dungeon_filter_adventure', selectedAdventure.value);
         }
       }
     } catch (err) {
@@ -774,8 +1108,8 @@ const sortBy = (field: string) => {
 
 // 정렬 초기화
 const resetSort = () => {
-  sortField.value = 'characterName';
-  sortOrder.value = 'asc';
+  sortField.value = 'fame';
+  sortOrder.value = 'desc';
 };
 
 // 던담 링크 생성 함수
@@ -885,9 +1219,11 @@ const initializeSyncTimes = () => {
   });
   
   // 모든 모험단의 동기화 시간을 3분 전으로 설정
-  const uniqueAdventures = [...new Set(characters.value.map(c => c.adventureName))];
+  const uniqueAdventures = [...new Set(characters.value.map(c => c.adventureName).filter(name => name))];
   uniqueAdventures.forEach(adventureName => {
-    lastAdventureSyncTimes.value.set(adventureName, threeMinutesAgo);
+    if (adventureName) {
+      lastAdventureSyncTimes.value.set(adventureName, threeMinutesAgo);
+    }
   });
   
   console.log('동기화 시간 초기화 완료:', {
@@ -928,8 +1264,13 @@ const handleCharacterUpdate = (data: any) => {
           
                   // 스탯 업데이트
         if (updateResult.characterInfo) {
-          character.totalDamage = updateResult.characterInfo.totalDamage || 0;
-          character.buffPower = updateResult.characterInfo.buffPower || 0;
+          // 기존 값이 있으면 유지, 없으면 업데이트
+          if (updateResult.characterInfo.totalDamage !== undefined && updateResult.characterInfo.totalDamage !== null) {
+            character.totalDamage = updateResult.characterInfo.totalDamage;
+          }
+          if (updateResult.characterInfo.buffPower !== undefined && updateResult.characterInfo.buffPower !== null) {
+            character.buffPower = updateResult.characterInfo.buffPower;
+          }
         }
           
           // 성공 메시지 표시
@@ -1195,10 +1536,7 @@ const toggleExclude = async (character: Character, dungeonType: string) => {
         // 로컬 상태 업데이트
         (character as any)[`isExcluded${dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1)}`] = newState;
         
-        // 안감 설정 시 업둥 해제
-        if (newState) {
-          (character as any)[`isSkip${dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1)}`] = false;
-        }
+
         
         successMessage.value = `${character.characterName}의 ${dungeonType} ${newState ? '안감' : '안감 해제'} 설정이 완료되었습니다.`;
       } else {
@@ -1213,46 +1551,7 @@ const toggleExclude = async (character: Character, dungeonType: string) => {
   }
 };
 
-// 업둥 토글
-const toggleSkip = async (character: Character, dungeonType: string) => {
-  try {
-    const currentState = character[`isSkip${dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1)}` as keyof Character] as boolean;
-    const newState = !currentState;
-    
-    const response = await fetch(`http://localhost:8080/api/characters/${character.characterId}/skip-dungeon`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        dungeonType: dungeonType,
-        isSkip: newState
-      })
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        // 로컬 상태 업데이트
-        (character as any)[`isSkip${dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1)}`] = newState;
-        
-        // 업둥 설정 시 안감 해제
-        if (newState) {
-          (character as any)[`isExcluded${dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1)}`] = false;
-        }
-        
-        successMessage.value = `${character.characterName}의 ${dungeonType} ${newState ? '업둥' : '업둥 해제'} 설정이 완료되었습니다.`;
-      } else {
-        error.value = data.message || '업둥 설정에 실패했습니다.';
-      }
-    } else {
-      error.value = '업둥 설정 요청에 실패했습니다.';
-    }
-  } catch (err) {
-    console.error('업둥 설정 오류:', err);
-    error.value = '업둥 설정 중 오류가 발생했습니다.';
-  }
-};
+
 
 // 모험단 전체 캐릭터 최신화
 const refreshAllCharacters = async () => {
@@ -1280,7 +1579,9 @@ const refreshAllCharacters = async () => {
         successMessage.value = data.message;
         
         // 캐릭터 목록 다시 로드
-        await searchAdventure();
+        if (selectedAdventure.value) {
+          await filterByAdventure();
+        }
         
         console.log('모험단 전체 최신화 완료:', data.data);
       } else {
@@ -1375,10 +1676,23 @@ const saveManualInput = async () => {
 
 // 던담 동기화 함수
 const syncCharacterFromDundam = async (character: Character) => {
+  // 이미 크롤링 중인 캐릭터가 있으면 중복 크롤링 방지
+  if (syncingCharacters.value.size > 0) {
+    const syncingCharacterId = Array.from(syncingCharacters.value)[0];
+    const syncingCharacter = characters.value.find(c => c.characterId === syncingCharacterId);
+    error.value = `다른 캐릭터(${syncingCharacter?.characterName || '알 수 없음'})의 던담 크롤링이 진행 중입니다. 완료 후 다시 시도해주세요.`;
+    setTimeout(() => {
+      error.value = '';
+    }, 5000);
+    return;
+  }
+  
   if (syncingCharacters.value.has(character.characterId)) return;
   
   try {
     syncingCharacters.value.add(character.characterId);
+    // 동기화 시작 시간 저장
+    saveDundamSyncStartTime(character.characterId);
     
     const response = await fetch(`http://localhost:8080/api/dundam-sync/character/${character.serverId}/${character.characterId}`, {
       method: 'POST',
@@ -1401,11 +1715,13 @@ const syncCharacterFromDundam = async (character: Character) => {
         // 에러 메시지 제거 및 동기화 시간 업데이트
         characterErrors.value.delete(character.characterId);
         lastSyncTimes.value.set(character.characterId, new Date());
-        lastAdventureSyncTimes.value.set(character.adventureName, new Date());
+        if (character.adventureName) {
+          lastAdventureSyncTimes.value.set(character.adventureName, new Date());
+        }
         
         // 화면 강제 업데이트를 위해 캐릭터 목록 새로고침
         if (selectedAdventure.value) {
-          await searchAdventure();
+          await filterByAdventure();
         }
         
         setTimeout(() => {
@@ -1434,6 +1750,130 @@ const syncCharacterFromDundam = async (character: Character) => {
     error.value = '던담 동기화 중 오류가 발생했습니다.';
   } finally {
     syncingCharacters.value.delete(character.characterId);
+    // 동기화 시작 시간 제거
+    localStorage.removeItem(`dundamSyncStart_${character.characterId}`);
+  }
+};
+
+// 던담 동기화 진행 중인지 확인하는 함수
+const isAnyDundamSyncInProgress = () => {
+  return syncingCharacters.value.size > 0;
+};
+
+// Local Storage에서 동기화 상태 복원 (제한시간 체크 포함)
+const restoreDundamSyncState = () => {
+  try {
+    const savedState = localStorage.getItem('dundam-sync-state');
+    if (savedState) {
+      const parsedState = JSON.parse(savedState);
+      const currentTime = Date.now();
+      
+      // 제한시간(2분) 체크하여 유효한 동기화만 복원
+      const validCharacters = [];
+      for (const characterId of parsedState.syncingCharacters || []) {
+        const startTime = localStorage.getItem(`dundamSyncStart_${characterId}`);
+        if (startTime) {
+          const elapsedTime = currentTime - parseInt(startTime);
+          const timeLimit = 2 * 60 * 1000; // 2분을 밀리초로
+          
+          if (elapsedTime < timeLimit) {
+            validCharacters.push(characterId);
+          } else {
+            // 제한시간 초과된 동기화 상태 제거
+            localStorage.removeItem(`dundamSyncStart_${characterId}`);
+            console.log(`캐릭터 ${characterId} 동기화 상태 제한시간 초과로 자동 해제`);
+          }
+        }
+      }
+      
+      syncingCharacters.value = new Set(validCharacters);
+      console.log('던담 동기화 상태 복원됨 (제한시간 체크 후):', Array.from(syncingCharacters.value));
+    }
+  } catch (error) {
+    console.error('던담 동기화 상태 복원 실패:', error);
+    localStorage.removeItem('dundam-sync-state');
+  }
+};
+
+// Local Storage에 동기화 상태 저장
+const saveDundamSyncState = () => {
+  try {
+    const state = {
+      syncingCharacters: Array.from(syncingCharacters.value),
+      timestamp: Date.now()
+    };
+    localStorage.setItem('dundam-sync-state', JSON.stringify(state));
+  } catch (error) {
+    console.error('던담 동기화 상태 저장 실패:', error);
+  }
+};
+
+// 동기화 시작 시간 저장
+const saveDundamSyncStartTime = (characterId: string) => {
+  try {
+    localStorage.setItem(`dundamSyncStart_${characterId}`, Date.now().toString());
+  } catch (error) {
+    console.error('동기화 시작 시간 저장 실패:', error);
+  }
+};
+
+// 제한시간 초과된 동기화 상태 자동 해제
+const checkAndClearExpiredSyncs = () => {
+  const currentTime = Date.now();
+  const timeLimit = 2 * 60 * 1000; // 2분을 밀리초로
+  const expiredCharacters = [];
+  
+  for (const characterId of syncingCharacters.value) {
+    const startTime = localStorage.getItem(`dundamSyncStart_${characterId}`);
+    if (startTime) {
+      const elapsedTime = currentTime - parseInt(startTime);
+      if (elapsedTime >= timeLimit) {
+        expiredCharacters.push(characterId);
+        localStorage.removeItem(`dundamSyncStart_${characterId}`);
+        console.log(`캐릭터 ${characterId} 동기화 상태 제한시간 초과로 자동 해제`);
+      }
+    }
+  }
+  
+  // 만료된 동기화 상태 제거
+  expiredCharacters.forEach(characterId => {
+    syncingCharacters.value.delete(characterId);
+  });
+  
+  if (expiredCharacters.length > 0) {
+    console.log('제한시간 초과로 자동 해제된 동기화:', expiredCharacters);
+  }
+};
+
+// 하드 파티 토글 함수
+const toggleHardParty = (characterId: string) => {
+  if (hardPartyCharacters.value.has(characterId)) {
+    hardPartyCharacters.value.delete(characterId);
+  } else {
+    hardPartyCharacters.value.add(characterId);
+  }
+  // 로컬스토리지에 저장
+  localStorage.setItem('hardPartyCharacters', JSON.stringify(Array.from(hardPartyCharacters.value)));
+};
+
+// 하드 파티 상태 복원
+const restoreHardPartyState = () => {
+  try {
+    const savedState = localStorage.getItem('hardPartyCharacters');
+    if (savedState) {
+      const parsedState = JSON.parse(savedState);
+      hardPartyCharacters.value = new Set(parsedState);
+    } else {
+      // 기본값: 모든 캐릭터를 하드 파티로 설정
+      const allCharacterIds = characters.value.map(c => c.characterId);
+      hardPartyCharacters.value = new Set(allCharacterIds);
+      localStorage.setItem('hardPartyCharacters', JSON.stringify(allCharacterIds));
+    }
+  } catch (error) {
+    console.error('하드 파티 상태 복원 실패:', error);
+    // 에러 시 기본값으로 설정
+    const allCharacterIds = characters.value.map(c => c.characterId);
+    hardPartyCharacters.value = new Set(allCharacterIds);
   }
 };
 
@@ -1561,95 +2001,118 @@ const refreshDungeonStatus = async (character: Character) => {
   margin: 0 auto;
 }
 
-.search-form {
-  display: flex;
-  gap: 15px;
-  align-items: end;
+.adventure-selection {
   margin-bottom: 30px;
   padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border-radius: 12px;
+  border: 2px solid #90caf9;
+  box-shadow: 0 4px 12px rgba(144, 202, 249, 0.3);
+}
+
+.search-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .form-group {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
 }
 
 .form-group label {
-  font-weight: bold;
-  color: #495057;
+  font-weight: 600;
+  color: #1976d2;
+  white-space: nowrap;
+  font-size: 14px;
 }
 
-.form-group select,
 .form-group input {
   padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
+  border: 2px solid #90caf9;
+  border-radius: 8px;
   font-size: 14px;
+  min-width: 200px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .search-btn {
-  background: #007bff;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
   color: white;
   border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
 }
 
 .search-btn:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, #1565c0, #1976d2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 }
 
 .search-btn:disabled {
   background: #6c757d;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.refresh-all-btn {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  cursor: pointer;
+.recent-adventures {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recent-adventures label {
   font-size: 14px;
-  font-weight: bold;
-  transition: background 0.3s ease;
+  font-weight: 600;
+  color: #1976d2;
+  white-space: nowrap;
 }
 
-.refresh-all-btn:hover:not(:disabled) {
-  background: #218838;
-}
-
-.refresh-all-btn:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.reset-sort-btn {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: 10px;
-  font-size: 12px;
-}
-
-.reset-sort-btn:hover {
-  background: #5a6268;
-}
-
-.adventure-selection {
-  margin-bottom: 30px;
-  padding: 20px;
-  background: #e9ecef;
+.recent-adventure-select {
+  padding: 8px 12px;
+  border: 2px solid #90caf9;
   border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+}
+
+.recent-adventure-select:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
+}
+
+.recent-adventure-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .adventure-dropdown {
@@ -1670,6 +2133,57 @@ const refreshDungeonStatus = async (character: Character) => {
   border-radius: 4px;
   font-size: 14px;
   min-width: 200px;
+}
+
+.refresh-all-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.refresh-all-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #20c997, #28a745);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.refresh-all-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reset-sort-btn {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.reset-sort-btn:hover {
+  background: linear-gradient(135deg, #5a6268, #6c757d);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
 }
 
 .summary-stats {
@@ -1720,7 +2234,7 @@ const refreshDungeonStatus = async (character: Character) => {
 
 .characters-table th,
 .characters-table td {
-  padding: 12px;
+  padding: 8px;
   text-align: left;
   border-bottom: 1px solid #dee2e6;
 }
@@ -1741,14 +2255,14 @@ const refreshDungeonStatus = async (character: Character) => {
 }
 
 .characters-table th.sortable.dungeon-clear-column {
-  background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1);
-  color: white;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
 }
 
 .characters-table th.sortable.dungeon-clear-column:hover {
-  background: linear-gradient(135deg, #ff5252, #26d0ce, #29b6f6);
-  transform: scale(1.02);
+  background: #bbdefb;
+  color: #1565c0;
   transition: all 0.2s ease;
 }
 
@@ -1781,7 +2295,7 @@ const refreshDungeonStatus = async (character: Character) => {
 
 .dungeon-status-cell {
   text-align: center;
-  padding: 8px;
+  padding: 6px;
 }
 
 /* 던전별 바운더리 색상 */
@@ -1907,7 +2421,29 @@ const refreshDungeonStatus = async (character: Character) => {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
+  .adventure-selection {
+    padding: 15px;
+  }
+  
+  .search-section {
+    padding: 10px;
+  }
+  
   .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .form-group input {
+    min-width: auto;
+  }
+  
+  .recent-adventures {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .adventure-dropdown {
     flex-direction: column;
     align-items: stretch;
   }
@@ -2276,20 +2812,29 @@ const refreshDungeonStatus = async (character: Character) => {
   font-weight: 500;
 }
 
-.job-name span {
-  display: inline-block;
-  padding: 4px 8px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
-}
+
 
 /* 스탯 표시 스타일 */
 .stat-label {
   font-weight: 600;
   color: #495057;
-  margin-right: 8px;
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.stat-value {
   font-size: 13px;
+  color: #212529;
+  font-weight: 500;
+  text-align: center;
+}
+
+.stat-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .stat-with-edit {
@@ -2317,24 +2862,24 @@ const refreshDungeonStatus = async (character: Character) => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  min-width: 200px;
+  gap: 2px;
+  padding: 2px;
+  min-width: 180px;
 }
 
 .action-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 4px;
+  gap: 0px;
+  padding: 0px;
   border: 1px solid #dee2e6;
   border-radius: 4px;
   background: #f8f9fa;
 }
 
 .action-label {
-  font-size: 10px;
+  font-size: 12px;
   color: #6c757d;
   font-weight: bold;
   text-align: center;
@@ -2366,6 +2911,8 @@ const refreshDungeonStatus = async (character: Character) => {
 .dundam-sync-btn {
   background: #007bff;
   color: white;
+  position: relative;
+  overflow: hidden;
 }
 
 .dundam-sync-btn.syncing {
@@ -2374,15 +2921,52 @@ const refreshDungeonStatus = async (character: Character) => {
   cursor: not-allowed;
 }
 
+.dundam-link-btn {
+  background: #17a2b8;
+  color: white;
+  text-decoration: none;
+}
+
+.dundam-link-btn:hover {
+  background: #138496;
+  transform: scale(1.1);
+}
+
+/* 버튼 내부 콘텐츠 정렬 */
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+}
+
+.button-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.button-text {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
 .syncing-text {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
   font-size: 12px;
 }
 
 .spinner {
   animation: spin 1s linear infinite;
+  font-size: 14px;
+  line-height: 1;
 }
 
 @keyframes spin {
@@ -2525,6 +3109,19 @@ const refreshDungeonStatus = async (character: Character) => {
   min-width: 30px;
 }
 
+/* 매칭 상태 배경색 */
+.matching-indicator {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #17a2b8;
+  color: white;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  min-width: 30px;
+}
+
 .syncing-status-message {
   color: #ffc107;
   font-size: 11px;
@@ -2599,5 +3196,265 @@ const refreshDungeonStatus = async (character: Character) => {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+
+
+/* 던담 동기화 차단 메시지 스타일 */
+.dundam-sync-blocked-message {
+  font-size: 11px;
+  color: #856404;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-top: 4px;
+  text-align: center;
+  animation: pulse 2s infinite;
+}
+
+/* 고정 높이 메시지 컨테이너 */
+.status-message-container {
+  min-height: 32px; /* 메시지가 없을 때도 높이 유지 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* 상태 메시지 공통 스타일 */
+.status-message-container > div {
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 빈 공간 플레이스홀더 */
+.status-message-placeholder {
+  height: 20px; /* 최소 높이 유지 */
+  border: none !important;
+  background: transparent !important;
+}
+
+/* 기존 메시지 스타일 개선 */
+.syncing-status-message {
+  color: #0c5460;
+  background: #d1ecf1;
+  border-color: #bee5eb;
+}
+
+.adventure-time-limit-message {
+  color: #721c24;
+  background: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.time-limit-message {
+  color: #721c24;
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.character-error-message {
+  color: #721c24;
+  background: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+/* 나벨 난이도 버튼 스타일 */
+.nabel-difficulty-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.difficulty-btn {
+  padding: 4px 8px;
+  border: 2px solid #90caf9;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 40px;
+  text-align: center;
+  margin: 0;
+}
+
+.difficulty-btn:hover {
+  background: linear-gradient(135deg, #f3e5f5, #e3f2fd);
+  border-color: #1976d2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
+}
+
+.difficulty-btn.active {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  border-color: #1976d2;
+  color: white;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+.difficulty-btn.hard-btn {
+  border-color: #dc3545;
+  color: #000;
+}
+
+.difficulty-btn.hard-btn:hover {
+  border-color: #dc3545;
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+}
+
+.difficulty-btn.hard-btn.active {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  border-color: #dc3545;
+}
+
+.difficulty-btn.normal-btn {
+  border-color: #28a745;
+  color: #000;
+}
+
+.difficulty-btn.normal-btn:hover {
+  border-color: #28a745;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.difficulty-btn.normal-btn.active {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  border-color: #28a745;
+}
+
+.difficulty-btn.matching-btn {
+  border-color: #ffc107;
+  color: #000;
+}
+
+.difficulty-btn.matching-btn:hover {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #ffc107, #e0a800);
+  color: white;
+}
+
+.difficulty-btn.matching-btn.active {
+  background: linear-gradient(135deg, #ffc107, #e0a800);
+  border-color: #ffc107;
+}
+
+.difficulty-btn.exclude-btn {
+  border-color: #6c757d;
+  color: #000;
+}
+
+.difficulty-btn.exclude-btn:hover {
+  border-color: #6c757d;
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+}
+
+.difficulty-btn.exclude-btn.active {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  border-color: #6c757d;
+  color: white;
+}
+
+/* disabled 상태 스타일 */
+.difficulty-btn:disabled {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  color: #adb5bd !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.difficulty-btn:disabled:hover {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  color: #adb5bd !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.recent-adventure-select option:hover {
+  background: #f8f9fa;
+}
+
+/* 선택된 모험단 표시 스타일 */
+.selected-adventure-display {
+  margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border: 2px solid #90caf9;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(144, 202, 249, 0.3);
+}
+
+.selected-adventure-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.selected-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.selected-adventure-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1565c0;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 2px solid #1976d2;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
+.character-count {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.change-adventure-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.change-adventure-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+  background: linear-gradient(135deg, #ee5a24, #ff6b6b);
 }
 </style>

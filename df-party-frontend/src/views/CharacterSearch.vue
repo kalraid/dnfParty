@@ -900,12 +900,46 @@ const saveToSearchHistory = (characters: any[]) => {
     localStorage.setItem('df_search_history', JSON.stringify(updatedHistory));
     console.log('검색 기록 저장 완료:', updatedHistory.length, '개 캐릭터');
     
+    // 던전 클리어 현황용 모험단 기록도 저장
+    saveAdventureToDungeonHistory(characters);
+    
     // 저장된 데이터 확인
     const savedData = JSON.parse(localStorage.getItem('df_search_history') || '[]');
     console.log('localStorage에 저장된 최종 데이터:', savedData);
     
   } catch (error) {
     console.error('검색 기록 저장 실패:', error);
+  }
+};
+
+// 던전 클리어 현황용 모험단 기록 저장
+const saveAdventureToDungeonHistory = (characters: any[]) => {
+  try {
+    // 기존 던전 모험단 기록 가져오기
+    const existingDungeonHistory = JSON.parse(localStorage.getItem('df_dungeon_adventure_history') || '[]');
+    
+    // 검색된 캐릭터들의 모험단명 추출 (중복 제거)
+    const adventureNames = [...new Set(characters
+      .map(char => char.adventureName)
+      .filter(name => name && name !== 'N/A')
+    )];
+    
+    // 새로운 모험단명들을 기존 기록에 추가
+    const newAdventures = adventureNames.filter(name => !existingDungeonHistory.includes(name));
+    
+    if (newAdventures.length > 0) {
+      // 최대 10개까지만 저장
+      const updatedDungeonHistory = [...existingDungeonHistory, ...newAdventures];
+      if (updatedDungeonHistory.length > 10) {
+        updatedDungeonHistory.splice(0, updatedDungeonHistory.length - 10);
+      }
+      
+      // 로컬스토리지에 저장
+      localStorage.setItem('df_dungeon_adventure_history', JSON.stringify(updatedDungeonHistory));
+      console.log('던전 모험단 기록 저장 완료:', updatedDungeonHistory);
+    }
+  } catch (error) {
+    console.error('던전 모험단 기록 저장 실패:', error);
   }
 };
 </script>

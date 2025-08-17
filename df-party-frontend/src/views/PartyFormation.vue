@@ -1,97 +1,113 @@
 <template>
   <div class="party-formation">
-    <h2>3. 파티 구성</h2>
+    <h2>파티 구성</h2>
     
-    <!-- 성공/에러 메시지 -->
+    <!-- 성공 메시지 -->
     <div v-if="successMessage" class="success-message">
       {{ successMessage }}
     </div>
-    <div v-if="error" class="error-message">
-      {{ error }}
+    
+    <!-- 던전 선택 버튼들 -->
+    <div class="dungeon-selection-container">
+      <div class="dungeon-selection-row">
+        <button 
+          @click="setDungeon('nabel-normal')" 
+          :class="{ active: selectedDungeon === 'nabel-normal' }"
+          class="dungeon-btn nabel-normal-btn">
+          나벨 일반
+        </button>
+        <button 
+          @click="setDungeon('nabel-hard')" 
+          :class="{ active: selectedDungeon === 'nabel-hard' }"
+          class="dungeon-btn nabel-hard-btn">
+          나벨 하드
+        </button>
+        <button 
+          @click="setDungeon('venus')" 
+          :class="{ active: selectedDungeon === 'venus' }"
+          class="dungeon-btn venus-btn">
+          베누스
+        </button>
+        <button 
+          @click="setDungeon('fog')" 
+          :class="{ active: selectedDungeon === 'fog' }"
+          class="dungeon-btn fog-btn">
+          안개신
+        </button>
+        <button 
+          @click="setDungeon('twilight')" 
+          :class="{ active: selectedDungeon === 'twilight' }"
+          class="dungeon-btn twilight-btn">
+          황혼전
+        </button>
+      </div>
     </div>
     
     <!-- 상단 선택 바 -->
     <div class="top-bar">
-    <!-- 던전 선택 -->
-      <div class="form-group">
-        <label for="dungeonSelect">던전 선택:</label>
-        <select id="dungeonSelect" v-model="selectedDungeon" @change="onDungeonChange">
-          <option value="">던전을 선택하세요</option>
-          <option value="nabel">나벨</option>
-          <option value="venus">베누스</option>
-          <option value="fog">안개신</option>
-          <option value="twilight">황혼전</option>
-        </select>
-      </div>
-      
-      <!-- 나벨 던전 난이도 선택 -->
-      <div v-if="selectedDungeon === 'nabel'" class="form-group">
-        <label for="nabelDifficulty">나벨 난이도:</label>
-        <div class="difficulty-buttons">
-          <button 
-            @click="setNabelDifficulty('normal')" 
-            :class="{ active: nabelDifficulty === 'normal' }"
-            class="difficulty-btn normal-btn">
-            일반
-          </button>
-          <button 
-            @click="setNabelDifficulty('hard')" 
-            :class="{ active: nabelDifficulty === 'hard' }"
-            class="difficulty-btn hard-btn">
-            하드
-          </button>
-                </div>
-              </div>
-              
-      <!-- 모험단 멀티선택 -->
-      <div class="form-group">
-        <label for="adventureSelect">모험단 선택:</label>
-        <div class="multi-select-container">
-          <!-- 선택된 모험단들 표시 -->
-          <div class="selected-adventures">
-            <span v-if="selectedAdventures.length === 0" class="placeholder">모험단을 선택하세요</span>
-            <div v-for="adventure in selectedAdventures" :key="adventure" class="selected-adventure">
-              {{ adventure }}
-              <button @click="removeAdventure(adventure)" class="remove-btn">×</button>
-                </div>
-              </div>
-              
-          <!-- 모험단 추가 드롭다운 -->
-          <div class="adventure-select-container">
-            <select @change="addAdventure" class="adventure-select">
-              <option value="">모험단 추가...</option>
-              <option v-for="adventure in availableAdventures.filter(a => !selectedAdventures.includes(a))" 
-                      :key="adventure" :value="adventure">
-                {{ adventure }}
-              </option>
-            </select>
-            
-            <!-- 모험단이 없을 때 안내 메시지 -->
-            <div v-if="availableAdventures.length === 0" class="no-adventures-message">
-              <p>⚠️ 아직 검색된 모험단이 없습니다.</p>
-              <p>먼저 <router-link to="/character-search">캐릭터 검색</router-link>에서 캐릭터를 검색해주세요.</p>
-              <button @click="debugLocalStorage" class="debug-btn">🔍 LocalStorage 디버그</button>
-              </div>
-              
-            <!-- 모험단 목록 디버그 정보 -->
-            <div v-if="availableAdventures.length > 0" class="adventure-debug-info">
-              <small>사용 가능한 모험단: {{ availableAdventures.length }}개</small>
-              <button @click="debugLocalStorage" class="debug-btn-small">🔍</button>
-                </div>
+      <!-- 첫 번째 줄: 모험단명 검색 + 검색된 모험단 목록 -->
+      <div class="first-row">
+        <!-- 모험단명 검색 (좌측 반) -->
+        <div class="search-section">
+          <div class="form-group">
+            <label for="searchQuery">모험단명 검색:</label>
+            <div class="search-input-container">
+              <input 
+                id="searchQuery" 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="모험단명을 입력하세요" 
+                @keyup.enter="searchCharacters"
+                list="adventureList"
+                class="search-input"
+              >
+              <datalist id="adventureList">
+                <option v-for="adventure in recentSearchedAdventures" :key="adventure" :value="adventure">
+                  {{ adventure }}
+                </option>
+              </datalist>
+              <button @click="searchCharacters" :disabled="isSearchDisabled" class="search-btn">
+                {{ searching ? '검색 중...' : '검색' }}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 검색된 모험단 목록 (우측 반) -->
+        <div class="adventures-section">
+          <div class="form-group">
+            <label for="adventureSelect">검색된 모험단 목록:</label>
+            <div class="multi-select-container">
+              <div class="adventure-select-container">
+                <select @change="addAdventure" class="adventure-select">
+                  <option value="">모험단 추가...</option>
+                  <option v-for="adventure in availableAdventures.filter(a => !selectedAdventures.includes(a))" 
+                          :key="adventure" :value="adventure">
+                    {{ adventure }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
-          
-      <!-- 선택된 모험단 최신화 버튼 -->
-      <div v-if="selectedAdventures.length > 0" class="refresh-section">
-        <button @click="refreshSelectedAdventures" 
-                :disabled="refreshingAdventures" 
-                class="refresh-adventures-btn">
-          {{ refreshingAdventures ? '최신화 중...' : '🔄 선택된 모험단 최신화' }}
-        </button>
-        <small class="refresh-info">선택된 {{ selectedAdventures.length }}개 모험단의 모든 캐릭터를 최신화합니다</small>
-                </div>
+        </div>
+      </div>
+      
+      <!-- 두 번째 줄: 선택된 모험단 -->
+      <div class="second-row">
+        <div class="selected-adventures-section">
+          <div class="form-group">
+            <label>선택된 모험단:</label>
+            <div class="selected-adventures">
+              <span v-if="selectedAdventures.length === 0" class="placeholder">모험단을 선택하세요</span>
+              <div v-for="adventure in selectedAdventures" :key="adventure" class="selected-adventure">
+                {{ adventure }}
+                <button @click="removeAdventure(adventure)" class="remove-btn">×</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
               
     <!-- 파티 구성 버튼들 -->
     <div v-if="selectedDungeon && selectedAdventures.length > 0" class="party-controls">
@@ -100,18 +116,25 @@
         <ul>
           <li>한 파티에 모험단 하나씩만 배치</li>
           <li>버퍼는 버프력, 딜러는 전투력으로 정렬</li>
-          <li>각 모험단의 최고 스탯 캐릭터 1명 선택</li>
+          <li>전체 중 강한딜러 1, 스탯제한에 가까운 약한딜러 2, 버퍼 우선으로 평균치가 비슷한 파티 구성</li>
         </ul>
-                </div>
-      <button @click="autoGenerateParty" :disabled="loading" class="control-btn auto-btn">
-        {{ loading ? '생성 중...' : '자동 파티 생성' }}
-      </button>
-      <button @click="clearParty" class="control-btn clear-btn">파티 초기화</button>
-      <button @click="optimizeParty" :disabled="loading" class="control-btn optimize-btn">
-        {{ loading ? '최적화 중...' : '파티 최적화' }}
-      </button>
-      <button @click="copyPartyToClipboard" class="control-btn copy-btn">📋 클립보드 복사</button>
-              </div>
+      </div>
+      <div class="control-buttons">
+        <button @click="autoGenerateParty" :disabled="loading" class="control-btn auto-btn">
+          {{ loading ? '생성 중...' : '자동 파티 생성' }}
+        </button>
+        <button @click="clearParty" class="control-btn clear-btn">파티 초기화</button>
+        <button @click="optimizeParty" :disabled="loading" class="control-btn optimize-btn">
+          {{ loading ? '최적화 중...' : '파티 최적화' }}
+        </button>
+        <button @click="refreshSelectedAdventures" 
+                :disabled="refreshingAdventures" 
+                class="control-btn refresh-btn">
+          {{ refreshingAdventures ? '최신화 중...' : '🔄 모험단 최신화' }}
+        </button>
+        <button @click="copyPartyToClipboard" class="control-btn copy-btn">📋 클립보드 복사</button>
+      </div>
+    </div>
 
     <!-- 메인 컨텐츠 영역 -->
     <div v-if="selectedDungeon && selectedAdventures.length > 0" class="main-content">
@@ -127,8 +150,8 @@
                   총 전투력: {{ formatNumber(getPartyTotalDamage(party)) }} | 
                   총 버프력: {{ formatNumber(getPartyTotalBuffPower(party)) }}
                 </span>
-                <span v-if="selectedDungeon === 'nabel'" class="nabel-difficulty">
-                  난이도: {{ nabelDifficulty === 'normal' ? '일반' : '하드' }}
+                <span v-if="selectedDungeon === 'nabel-normal' || selectedDungeon === 'nabel-hard'" class="nabel-difficulty">
+                  난이도: {{ selectedDungeon === 'nabel-normal' ? '일반' : '하드' }}
                 </span>
             </div>
           </div>
@@ -283,6 +306,12 @@ import { ref, computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 
 // 반응형 데이터
+const searchMode = ref(''); // 검색 모드 (character 또는 adventure)
+const searchQuery = ref(''); // 검색어 (캐릭터명 또는 모험단명)
+const searching = ref(false); // 검색 중 상태
+const recentSearchedAdventures = ref<string[]>([]); // 최근 검색한 모험단 목록
+const selectedRecentAdventure = ref(''); // 최근 검색에서 선택한 모험단
+
 const selectedDungeon = ref('');
 const selectedAdventures = ref<string[]>([]);
 const parties = ref<Array<Array<any>>>([[]]);
@@ -291,36 +320,71 @@ const error = ref('');
 const successMessage = ref('');
 const allCharacters = ref<any[]>([]);
 const refreshingAdventures = ref(false);
-const nabelDifficulty = ref<'normal' | 'hard'>('normal');
 
 // 컴포넌트 마운트
 onMounted(() => {
   console.log('=== 파티 구성 페이지 마운트 ===');
+  // 기본값: 나벨 일반 선택
+  selectedDungeon.value = 'nabel-normal';
+  // 검색 모드를 adventure로 설정 (모험단 검색 전용)
+  searchMode.value = 'adventure';
   loadSearchHistory();
   loadCharactersFromAPI();
 });
 
-// 검색 기록에서 모험단 목록 가져오기 (LocalStorage 기반)
+// 검색 기록에서 모험단 목록 가져오기 (CharacterSearch.vue와 동일한 localStorage 키 사용)
 const availableAdventures = computed(() => {
-  const searchHistory = JSON.parse(localStorage.getItem('df_search_history') || '[]');
-  console.log('LocalStorage에서 로드된 검색 기록:', searchHistory);
-  
-  const adventures = new Set<string>();
-  
-  searchHistory.forEach((record: any) => {
-    console.log('검색 기록 처리:', record);
-    if (record.adventureName && 
-        record.adventureName !== 'N/A' && 
-        record.adventureName !== '모험단 정보 없음') {
-      adventures.add(record.adventureName);
-      console.log('모험단 추가됨:', record.adventureName);
-    }
-  });
-  
-  const result = Array.from(adventures).sort();
-  console.log('최종 모험단 목록:', result);
-  return result;
+  try {
+    const dungeonAdventureHistory = JSON.parse(localStorage.getItem('df_dungeon_adventure_history') || '[]');
+    console.log('LocalStorage에서 로드된 던전 모험단 기록:', dungeonAdventureHistory);
+    
+    const adventures = new Set<string>();
+    
+    dungeonAdventureHistory.forEach((adventureName: string) => {
+      if (adventureName && adventureName !== 'N/A') {
+        adventures.add(adventureName);
+        console.log('모험단 추가됨:', adventureName);
+      }
+    });
+    
+    const result = Array.from(adventures).sort();
+    console.log('최종 모험단 목록:', result);
+    return result;
+  } catch (error) {
+    console.error('LocalStorage 던전 모험단 기록 로드 실패:', error);
+    return [];
+  }
 });
+
+// 특정 모험단의 캐릭터만 로드 (검색 시 사용)
+const loadCharactersForAdventure = async (adventureName: string) => {
+  try {
+    console.log(`=== 모험단 '${adventureName}' 캐릭터 로드 시작 ===`);
+    
+    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(adventureName)}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.characters) {
+        console.log(`모험단 '${adventureName}' 캐릭터 ${data.characters.length}개 로드됨`);
+        
+        // 기존 캐릭터 목록에서 같은 모험단의 캐릭터들을 제거하고 새로 추가
+        const existingCharacters = allCharacters.value.filter(char => 
+          char.adventureName !== adventureName
+        );
+        
+        // 새로 검색된 캐릭터들을 기존 목록에 추가
+        allCharacters.value = [...existingCharacters, ...data.characters];
+        
+        console.log(`기존 캐릭터 수: ${existingCharacters.length}, 새로 추가된 캐릭터 수: ${data.characters.length}`);
+        
+        console.log(`전체 캐릭터 수: ${allCharacters.value.length}`);
+      }
+    }
+  } catch (err) {
+    console.error(`모험단 '${adventureName}' 로드 중 오류:`, err);
+  }
+};
 
 // API에서 캐릭터 데이터 로드
 const loadCharactersFromAPI = async () => {
@@ -378,7 +442,10 @@ const loadCharactersFromAPI = async () => {
     
     if (flatResults.length === 0) {
       console.warn('로드된 캐릭터가 없습니다. LocalStorage 또는 백엔드 데이터를 확인하세요.');
-      error.value = '사용 가능한 캐릭터가 없습니다. 먼저 캐릭터 검색에서 캐릭터를 검색해주세요.';
+      // 모험단이 선택되었을 때만 에러 메시지 표시
+      if (selectedAdventures.value.length > 0) {
+        error.value = '사용 가능한 캐릭터가 없습니다. 먼저 캐릭터 검색에서 캐릭터를 검색해주세요.';
+      }
     }
     
   } catch (err) {
@@ -390,9 +457,148 @@ const loadCharactersFromAPI = async () => {
   }
 };
 
+// 검색 버튼 비활성화 상태
+const isSearchDisabled = computed(() => {
+  return searching.value;
+});
+
+// 던전 선택 함수
+const setDungeon = (dungeon: string) => {
+  selectedDungeon.value = dungeon;
+  console.log('선택된 던전:', dungeon);
+};
+
+// 검색 모드 변경 핸들러
+const onSearchModeChange = () => {
+  // 검색 모드가 변경되면 기존 검색 결과와 입력값 초기화
+  searchQuery.value = '';
+  error.value = '';
+  successMessage.value = '';
+};
+
+// 최근 검색 모험단 추가 함수
+const addSelectedRecentAdventure = () => {
+  if (selectedRecentAdventure.value && !selectedAdventures.value.includes(selectedRecentAdventure.value)) {
+    selectedAdventures.value.push(selectedRecentAdventure.value);
+    selectedRecentAdventure.value = '';
+    console.log('최근 검색 모험단 추가됨:', selectedRecentAdventures.value);
+  }
+};
+
+// 최근 검색한 모험단 목록 로드
+const loadRecentSearchedAdventures = () => {
+  try {
+    const saved = localStorage.getItem('df_dungeon_adventure_history');
+    if (saved) {
+      recentSearchedAdventures.value = JSON.parse(saved);
+      console.log('던전 모험단 기록 로드 완료:', recentSearchedAdventures.value);
+    }
+  } catch (error) {
+    console.error('던전 모험단 기록 로드 실패:', error);
+    recentSearchedAdventures.value = [];
+  }
+};
+
+// 로컬스토리지에 최근 검색한 모험단 저장 (CharacterSearch.vue와 동일한 방식)
+const saveRecentSearchedAdventure = (adventureName: string) => {
+  try {
+    // 기존 던전 모험단 기록 가져오기
+    const existingDungeonHistory = JSON.parse(localStorage.getItem('df_dungeon_adventure_history') || '[]');
+    
+    // 이미 존재하는지 확인
+    if (!existingDungeonHistory.includes(adventureName)) {
+      // 최대 10개까지만 저장
+      const updatedDungeonHistory = [...existingDungeonHistory, adventureName];
+      if (updatedDungeonHistory.length > 10) {
+        updatedDungeonHistory.splice(0, updatedDungeonHistory.length - 10);
+      }
+      
+      // 로컬스토리지에 저장
+      localStorage.setItem('df_dungeon_adventure_history', JSON.stringify(updatedDungeonHistory));
+      
+      // 로컬 상태도 업데이트
+      recentSearchedAdventures.value = updatedDungeonHistory;
+      
+      console.log('던전 모험단 기록 저장 완료:', updatedDungeonHistory);
+    }
+  } catch (error) {
+    console.error('던전 모험단 기록 저장 실패:', error);
+  }
+};
+
+// 모험단 검색 함수
+const searchCharacters = async () => {
+  if (!searchQuery.value.trim()) {
+    error.value = '검색어를 입력해주세요.';
+    return;
+  }
+
+  try {
+    searching.value = true;
+    error.value = '';
+    successMessage.value = '';
+
+    // 모험단 검색 API 호출
+    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        successMessage.value = `'${searchQuery.value}' 모험단의 ${data.characters?.length || 0}개 캐릭터를 찾았습니다.`;
+        
+        // 로컬스토리지에 검색한 모험단 저장
+        saveRecentSearchedAdventure(searchQuery.value);
+        
+        // 검색된 모험단을 자동으로 selectedAdventures에 추가
+        if (!selectedAdventures.value.includes(searchQuery.value)) {
+          selectedAdventures.value.push(searchQuery.value);
+          // 로컬스토리지에 선택된 모험단들 저장
+          saveSelectedAdventures();
+        }
+        
+        // 새로 검색된 모험단의 캐릭터만 로드 (전체 초기화 방지)
+        await loadCharactersForAdventure(searchQuery.value);
+      } else {
+        error.value = data.message || '검색에 실패했습니다.';
+      }
+    } else {
+      error.value = '검색 중 오류가 발생했습니다.';
+    }
+
+  } catch (err) {
+    console.error('검색 실패:', err);
+    error.value = '검색 중 오류가 발생했습니다.';
+  } finally {
+    searching.value = false;
+  }
+};
+
+// 선택된 모험단들을 로컬스토리지에 저장
+const saveSelectedAdventures = () => {
+  try {
+    localStorage.setItem('df_party_selected_adventures', JSON.stringify(selectedAdventures.value));
+  } catch (error) {
+    console.error('선택된 모험단 저장 실패:', error);
+  }
+};
+
+// 최근 검색한 모험단 선택 처리
+const selectRecentAdventure = async () => {
+  if (selectedRecentAdventure.value) {
+    // 선택된 모험단으로 검색 실행
+    searchQuery.value = selectedRecentAdventure.value;
+    searchMode.value = 'adventure';
+    await searchCharacters();
+    
+    // 선택 초기화
+    selectedRecentAdventure.value = '';
+  }
+};
+
 // 검색 기록 로드
 const loadSearchHistory = () => {
   // 컴포넌트 마운트 시 검색 기록을 로드하여 모험단 목록 갱신
+  loadRecentSearchedAdventures();
 };
 
 // 던전 변경 시
@@ -402,15 +608,10 @@ const onDungeonChange = () => {
     error.value = '⚠️ 황혼전은 아직 개발중인 던전입니다. 곧 업데이트 예정입니다!';
     // 황혼전은 아직 사용 불가하므로 선택 해제
     setTimeout(() => {
-      selectedDungeon.value = '';
+      selectedDungeon.value = 'nabel-normal'; // 기본값으로 복원
       error.value = '';
     }, 3000);
     return;
-  }
-  
-  // 나벨 던전이 아닌 경우 난이도 초기화
-  if (selectedDungeon.value !== 'nabel') {
-    nabelDifficulty.value = 'normal';
   }
   
   // 파티 초기화
@@ -418,15 +619,7 @@ const onDungeonChange = () => {
   error.value = '';
 };
 
-// 나벨 던전 난이도 설정
-const setNabelDifficulty = (difficulty: 'normal' | 'hard') => {
-  nabelDifficulty.value = difficulty;
-  // 난이도 변경 시 파티 초기화
-  parties.value = [[]];
-  error.value = '';
-};
 
-// DB의 isHardNabelEligible 속성을 사용하므로 별도 함수 불필요
 
 // 파티 구성 결과를 클립보드로 복사
 const copyPartyToClipboard = async () => {
@@ -521,18 +714,17 @@ const getFilteredCharacters = (adventureName: string) => {
     let isExcluded = false;
     
   switch (selectedDungeon.value) {
-      case 'nabel':
+      case 'nabel-normal':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
         isExcluded = character.isExcludedNabel; // 안감 여부
-        
-        // 나벨 난이도 조건 추가
-        if (nabelDifficulty.value === 'hard') {
-          // 하드: 하드 대상자만 포함 (100억 딜러, 500만 버퍼)
-          dungeonCondition = dungeonCondition && character.isHardNabelEligible;
-        } else {
-          // 일반: 일반 대상자만 포함 (30억 딜러, 400만 버퍼) + 하드 대상자 제외
-          dungeonCondition = dungeonCondition && character.isNormalNabelEligible && !character.isHardNabelEligible;
-        }
+        // 일반: 일반 대상자만 포함 (30억 딜러, 400만 버퍼) + 하드 대상자 제외
+        dungeonCondition = dungeonCondition && character.isNormalNabelEligible && !character.isHardNabelEligible;
+        break;
+      case 'nabel-hard':
+        dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
+        isExcluded = character.isExcludedNabel; // 안감 여부
+        // 하드: 하드 대상자만 포함 (100억 딜러, 500만 버퍼)
+        dungeonCondition = dungeonCondition && character.isHardNabelEligible;
         break;
       case 'venus':
         dungeonCondition = !character.dungeonClearVenus;
@@ -1035,14 +1227,214 @@ const debugLocalStorage = async () => {
   padding: 20px;
 }
 
+.party-formation h2 {
+  margin-bottom: 30px;
+  text-align: center;
+  color: #333;
+  font-size: 28px;
+  font-weight: 700;
+}
+
 .top-bar {
   display: flex;
   gap: 20px;
   margin-bottom: 20px;
   padding: 20px;
-  background: white;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border-radius: 12px;
+  border: 2px solid #90caf9;
+  box-shadow: 0 4px 12px rgba(144, 202, 249, 0.3);
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.first-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.second-row {
+  width: 100%;
+}
+
+.search-section, .adventures-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.selected-adventures-section {
+  width: 100%;
+}
+
+.search-section .form-group {
+  margin-bottom: 0;
+}
+
+.search-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #495057;
+  font-size: 14px;
+}
+
+.party-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  border: 2px solid #dee2e6;
+}
+
+.party-info {
+  flex: 1;
+  margin-right: 30px;
+}
+
+.party-info p {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.party-info ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.party-info li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.4;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.control-btn {
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 50px;
+  min-width: 140px;
+}
+
+/* 모험단 검색 섹션 스타일 */
+.adventure-search-section {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.adventure-search-section h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.search-form {
+  display: flex;
+  gap: 15px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.search-form .form-group {
+  margin-bottom: 0;
+}
+
+.search-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #495057;
+  font-size: 14px;
+}
+
+.search-form select,
+.search-form input {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  height: 36px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
+.search-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1565c0, #1976d2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.search-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.recent-adventures {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recent-adventures label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+}
+
+.recent-adventure-select {
+  padding: 8px 12px;
+  border: 2px solid #90caf9;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.recent-adventure-select:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
+}
+
+.recent-adventure-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .form-group {
@@ -1067,6 +1459,7 @@ const debugLocalStorage = async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
 }
 
 .selected-adventures {
@@ -1089,11 +1482,12 @@ const debugLocalStorage = async () => {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: #007bff;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
   color: white;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 14px;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
 }
 
 .remove-btn {
@@ -1153,18 +1547,57 @@ const debugLocalStorage = async () => {
 }
 
 .auto-btn {
-  background: #28a745;
+  background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.auto-btn:hover {
+  background: linear-gradient(135deg, #20c997, #28a745);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
 .clear-btn {
-  background: #6c757d;
+  background: linear-gradient(135deg, #6c757d, #5a6268);
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.clear-btn:hover {
+  background: linear-gradient(135deg, #5a6268, #6c757d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
 }
 
 .optimize-btn {
-  background: #007bff;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+}
+
+.optimize-btn:hover {
+  background: linear-gradient(135deg, #1565c0, #1976d2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
 }
 
 .main-content {
@@ -1492,6 +1925,20 @@ const debugLocalStorage = async () => {
 
 .adventure-select-container {
   position: relative;
+  width: 100%;
+}
+
+.adventure-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 0;
 }
 
 .no-adventures-message {
@@ -1629,14 +2076,229 @@ const debugLocalStorage = async () => {
   margin-top: 5px;
 }
 
+/* 새로운 UI 요소들을 위한 스타일 */
+.dungeon-selection-container {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border-radius: 12px;
+  border: 2px solid #90caf9;
+  box-shadow: 0 4px 12px rgba(144, 202, 249, 0.3);
+}
+
+.dungeon-selection-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.dungeon-btn {
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 2px solid #90caf9;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  color: #1976d2;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(144, 202, 249, 0.2);
+}
+
+.dungeon-btn:hover {
+  background: linear-gradient(135deg, #f3e5f5, #e3f2fd);
+  border-color: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(144, 202, 249, 0.3);
+}
+
+.dungeon-btn.active {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  border-color: #1976d2;
+  color: white;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+}
+
+.dungeon-btn.nabel-normal-btn.active {
+  background: #dc3545;
+  border-color: #dc3545;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.dungeon-btn.nabel-hard-btn.active {
+  background: #dc3545;
+  border-color: #dc3545;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.dungeon-btn.venus-btn.active {
+  background: #28a745;
+  border-color: #28a745;
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.dungeon-btn.fog-btn.active {
+  background: #17a2b8;
+  border-color: #17a2b8;
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+
+.dungeon-btn.twilight-btn.active {
+  background: #6f42c1;
+  border-color: #6f42c1;
+  box-shadow: 0 4px 8px rgba(111, 66, 193, 0.3);
+}
+
+.search-row {
+  display: flex;
+  margin-bottom: 20px;
+  align-items: end;
+  justify-content: center;
+}
+
+.search-section {
+  display: flex;
+  width: 100%;
+  align-items: end;
+}
+
+.search-input-container {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  min-width: 0;
+  max-width: calc(100% - 80px);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.search-section .form-group {
+  margin-bottom: 0;
+}
+
+.add-section .form-group {
+  margin-bottom: 0;
+}
+
+.add-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.add-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #20c997, #28a745);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.add-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.adventures-list-row {
+  margin-bottom: 20px;
+}
+
+.adventures-list-row .multi-select-container {
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  background: #f8f9fa;
+  min-height: 80px;
+}
+
+.selected-adventures-row {
+  margin-bottom: 20px;
+}
+
+.selected-adventures-row .selected-adventures {
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  background: #f8f9fa;
+  min-height: 80px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 1024px) {
   .main-content {
-  flex-direction: column;
+    flex-direction: column;
   }
   
   .party-slots {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dungeon-selection-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .dungeon-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: 80px;
+  }
+  
+  .top-bar {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .first-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .search-section, .adventures-section {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .selected-adventures-section {
+    width: 100%;
+  }
+  
+  .party-controls {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .control-buttons {
+    justify-content: center;
+  }
+  
+  .party-info {
+    margin-right: 0;
+    margin-bottom: 20px;
   }
 }
 

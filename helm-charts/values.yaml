@@ -11,9 +11,12 @@ backend:
   enabled: true
   replicaCount: 1
   
+  # DFO API Configuration
+  dfoApiKey: ""
+  
   image:
     repository: kimrie92/dfo-party-backend
-    tag: "latest"
+    tag: playwright-jre
     pullPolicy: Always
   
   service:
@@ -46,28 +49,6 @@ backend:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
-  
-  # Environment variables
-  env:
-    - name: DB_HOST
-
-      value: "df-party-infrastructure-mariadb"
-    - name: DB_PORT
-      value: "3306"
-    - name: DB_NAME
-      value: "dnfp"
-    - name: DB_USERNAME
-      value: "root"
-    - name: DB_PASSWORD
-      value: "dfparty-root-password"
-    - name: SHOW_SQL
-      value: "false"
-    - name: DF_API_BASE_URL
-      value: "https://api.neople.co.kr/df"
-    - name: DF_API_RATE_LIMIT
-      value: "100"
-    - name: DF_API_RATE_LIMIT_WINDOW
-      value: "60000"
   
   # Init container for waiting MariaDB
   initContainers:

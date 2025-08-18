@@ -95,6 +95,7 @@ helm-charts-infrastructure/Chart.lock
 
 # Environment Configuration
 config.env
+config-*.env
 .env
 .env.local
 

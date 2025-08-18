@@ -132,6 +132,52 @@ if ($LASTEXITCODE -ne 0) {
 Set-Location ..
 Write-Host "Helm dependencies built successfully" -ForegroundColor Green
 
+# Package Helm charts to tgz files
+Write-Host "Packaging Helm charts to tgz files..." -ForegroundColor Cyan
+if (-not (Test-Path "packages")) {
+    New-Item -ItemType Directory -Name "packages" -Force
+}
+
+# Package backend chart
+Write-Host "Packaging backend chart..." -ForegroundColor Yellow
+Set-Location helm-charts/backend
+helm package . --destination ../charts
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Backend chart packaging failed" -ForegroundColor Red
+    exit 1
+}
+Set-Location ../..
+
+# Package frontend chart
+Write-Host "Packaging frontend chart..." -ForegroundColor Yellow
+Set-Location helm-charts/frontend
+helm package . --destination ../charts
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Frontend chart packaging failed" -ForegroundColor Red
+    exit 1
+}
+Set-Location ../..
+
+# Package main chart
+Write-Host "Packaging main chart..." -ForegroundColor Yellow
+Set-Location helm-charts
+helm package . --destination ../packages
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Main chart packaging failed" -ForegroundColor Red
+    exit 1
+}
+Set-Location ..
+
+Write-Host "All Helm charts packaged successfully" -ForegroundColor Green
+
+# Get the latest packaged main chart
+$mainChartPackage = Get-ChildItem packages/*.tgz | Where-Object { $_.Name -like "dfo-party-application-*.tgz" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not $mainChartPackage) {
+    Write-Host "Main chart package not found" -ForegroundColor Red
+    exit 1
+}
+Write-Host "Using main chart package: $($mainChartPackage.Name)" -ForegroundColor Cyan
+
 # Deploy using helm upgrade --install
 Write-Host "Deploying using helm upgrade --install..." -ForegroundColor Green
 
@@ -146,11 +192,22 @@ if ($VITE_WS_BASE_URL) {
     Write-Host "Setting VITE_WS_BASE_URL: $VITE_WS_BASE_URL" -ForegroundColor Cyan
 }
 
+# Set backend environment variables from config-prod.env
+$backendEnvSets = @()
+if ($DF_API_KEY) {
+    $backendEnvSets += "--set backend.dfoApiKey=`"$DF_API_KEY`""
+    Write-Host "Setting DF_API_KEY for backend" -ForegroundColor Cyan
+}
+
 # Build helm command with environment variables
-# Force use of local chart directory instead of any .tgz files
-$helmCommand = "helm upgrade --install $ReleaseName ./helm-charts --namespace $Namespace --values $ValuesFile --set frontend.image.pullPolicy=Always --set backend.image.pullPolicy=Always --timeout 10m --force"
+# Use packaged tgz file instead of local chart directory
+$helmCommand = "helm upgrade --install $ReleaseName $($mainChartPackage.FullName) --namespace $Namespace --values $ValuesFile --set frontend.image.pullPolicy=Always --set backend.image.pullPolicy=Always --timeout 10m --force"
+
 if ($frontendEnvSets.Count -gt 0) {
     $helmCommand += " " + ($frontendEnvSets -join " ")
+}
+if ($backendEnvSets.Count -gt 0) {
+    $helmCommand += " " + ($backendEnvSets -join " ")
 }
 
 Write-Host "Executing: $helmCommand" -ForegroundColor Yellow

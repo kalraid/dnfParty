@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
+    id 'org.springframework.boot' version '3.2.1'
     id 'io.spring.dependency-management' version '1.1.4'
 }
 
@@ -46,6 +46,13 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java:8.0.33'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
+tasks.named('bootJar', BootJar) {
+    // Playwright 드라이버 번들을 컨테이너 런타임에서 미리 풀도록 지정 (ZipException 회피)
+    requiresUnpack '**/driver-bundle-*.jar'
 }
 
 tasks.named('test') {

@@ -40,64 +40,120 @@ public class PlaywrightCrawlingService {
      * 공유 브라우저 인스턴스 초기화
      */
     private void initializeSharedBrowser() {
-        if (sharedBrowser != null && sharedBrowser.isConnected()) {
-            log.info("=== 공유 브라우저 사용 중 (구간 1,2,3 생략) ===");
-            return;
-        }
+        try {
+            if (sharedBrowser != null && sharedBrowser.isConnected()) {
+                log.info("=== 공유 브라우저 사용 중 (구간 1,2,3 생략) ===");
+                return;
+            }
 
-        synchronized (browserLock) {
-            if (isInitializing) {
-                log.info("다른 스레드에서 브라우저 초기화 중, 대기...");
-                while (isInitializing) {
-                    try {
-                        browserLock.wait();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+            synchronized (browserLock) {
+                if (isInitializing) {
+                    log.info("다른 스레드에서 브라우저 초기화 중, 대기...");
+                    while (isInitializing) {
+                        try {
+                            browserLock.wait();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
+                    if (sharedBrowser != null && sharedBrowser.isConnected()) {
+                        log.info("다른 스레드에서 초기화 완료, 공유 브라우저 사용");
                         return;
                     }
                 }
-                if (sharedBrowser != null && sharedBrowser.isConnected()) {
-                    log.info("다른 스레드에서 초기화 완료, 공유 브라우저 사용");
-                    return;
+
+                isInitializing = true;
+                try {
+                    log.info("=== 공유 브라우저 인스턴스 초기화 시작 ===");
+
+                    // Playwright 인스턴스 생성
+                    log.info("=== 구간 1: Playwright 인스턴스 생성 시작 ===");
+                    try {
+                        sharedPlaywright = Playwright.create();
+                        log.info("=== 구간 1: Playwright 인스턴스 생성 완료 ===");
+                    } catch (Exception e) {
+                        log.error("Playwright 인스턴스 생성 실패: {}", e.getMessage(), e);
+                        log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
+                        return;
+                    }
+
+                    // Chromium 브라우저 시작 (더 안전한 옵션)
+                    log.info("=== 구간 2: Chromium 브라우저 시작 중 ===");
+                    BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
+                        .setHeadless(true)
+                        .setArgs(Arrays.asList(
+                            "--no-sandbox",
+                            "--disable-dev-shm-usage",
+                            "--disable-blink-features=AutomationControlled",
+                            "--disable-features=IsolateOrigins,site-per-process",
+                            "--lang=ko-KR,ko",
+                            "--window-size=1366,768",
+                            "--disable-gpu",
+                            "--disable-software-rasterizer",
+                            "--disable-extensions",
+                            "--disable-plugins"
+                        ));
+                    
+                    try {
+                        sharedBrowser = sharedPlaywright.chromium().launch(launchOptions);
+                        log.info("=== 구간 2: Chromium 브라우저 시작 완료 ===");
+                    } catch (Exception e) {
+                        log.error("Chromium 브라우저 시작 실패: {}", e.getMessage(), e);
+                        // fallback: 더 간단한 옵션으로 재시도
+                        log.info("=== fallback: 간단한 옵션으로 브라우저 시작 재시도 ===");
+                        BrowserType.LaunchOptions fallbackOptions = new BrowserType.LaunchOptions()
+                            .setHeadless(true)
+                            .setArgs(Arrays.asList(
+                                "--no-sandbox",
+                                "--disable-dev-shm-usage"
+                            ));
+                        
+                        sharedBrowser = sharedPlaywright.chromium().launch(fallbackOptions);
+                        log.info("=== fallback: 브라우저 시작 성공 ===");
+                    }
+
+                    log.info("=== 공유 브라우저 인스턴스 초기화 완료 ===");
+
+                } catch (Exception e) {
+                    log.error("공유 브라우저 초기화 실패: {}", e.getMessage(), e);
+                    cleanupSharedBrowser();
+                    log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
+                } finally {
+                    isInitializing = false;
+                    browserLock.notifyAll();
                 }
             }
+        } catch (Exception e) {
+            log.error("Playwright 초기화 중 예외 발생: {}", e.getMessage(), e);
+            log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
+        }
+    }
 
-            isInitializing = true;
+    /**
+     * Playwright 초기화 상태 확인
+     */
+    public boolean isPlaywrightAvailable() {
+        try {
+            return sharedPlaywright != null && sharedBrowser != null && sharedBrowser.isConnected();
+        } catch (Exception e) {
+            log.warn("Playwright 상태 확인 실패: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Playwright 재초기화 (에러 복구용)
+     */
+    public void reinitializePlaywright() {
+        log.info("=== Playwright 재초기화 시작 ===");
+        synchronized (browserLock) {
+            cleanupSharedBrowser();
             try {
-                log.info("=== 공유 브라우저 인스턴스 초기화 시작 ===");
-
-                // Playwright 인스턴스 생성
-                log.info("=== 구간 1: Playwright 인스턴스 생성 시작 ===");
-                sharedPlaywright = Playwright.create();
-                log.info("=== 구간 1: Playwright 인스턴스 생성 완료 ===");
-
-                // Chromium 브라우저 시작
-                log.info("=== 구간 2: Chromium 브라우저 시작 중 ===");
-                BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
-                    .setHeadless(true)
-                    .setArgs(Arrays.asList(
-                        "--no-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                        "--disable-features=IsolateOrigins,site-per-process",
-                        "--lang=ko-KR,ko",
-                        "--window-size=1366,768"
-                    ));
-                
-
-                
-                sharedBrowser = sharedPlaywright.chromium().launch(launchOptions);
-                log.info("=== 구간 2: Chromium 브라우저 시작 완료 ===");
-
-                log.info("=== 공유 브라우저 인스턴스 초기화 완료 ===");
-
+                initializeSharedBrowser();
+                log.info("=== Playwright 재초기화 완료 ===");
             } catch (Exception e) {
-                log.error("공유 브라우저 초기화 실패: {}", e.getMessage(), e);
-                cleanupSharedBrowser();
-                throw e;
-            } finally {
-                isInitializing = false;
-                browserLock.notifyAll();
+                log.error("Playwright 재초기화 실패: {}", e.getMessage(), e);
             }
         }
     }

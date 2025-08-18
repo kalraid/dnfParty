@@ -116,3 +116,12 @@ management:
 
 # DFO API Configuration (기본값 - 프로필별 설정으로 오버라이드됨)
 
+# Playwright 설정
+playwright:
+  headless: true
+  browser:
+    type: chromium
+  skip-browser-download: false
+  browsers-path: /ms-playwright
+  chromium-executable-path: /usr/bin/chromium-browser
+

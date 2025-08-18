@@ -5,59 +5,40 @@ WORKDIR /app
 
 # Install build tools for faster builds
 RUN apk add --no-cache --virtual .build-deps \
-    curl \
-    bash \
-    && rm -rf /var/cache/apk/*
+	curl \
+	bash \
+	gradle \
+	&& rm -rf /var/cache/apk/*
 
-# Copy gradle files first (for better layer caching)
+# Increase Gradle memory and set encoding to avoid OOM during bootJar
+ENV GRADLE_OPTS="-Xmx2048m -Dfile.encoding=UTF-8"
+
+# Copy gradle wrapper files (not required when using system gradle, but keep structure consistent)
 COPY gradle/ gradle/
-COPY gradlew ./
+
+# Copy build.gradle
 COPY build.gradle ./
 
-# Make gradlew executable and set permissions
-RUN chmod +x ./gradlew
-
-# Download dependencies only (separate from source build)
-# This layer will be cached unless build.gradle changes
-RUN ./gradlew dependencies --no-daemon --parallel
-
-# Copy source code (this layer changes frequently)
+# Copy source code
 COPY src/ src/
 
-# Build with optimizations
-RUN ./gradlew build -x test --no-daemon --parallel --build-cache \
-    && ls -la build/libs/
+# Build the application using system gradle (wrapper not required inside container)
+RUN gradle clean build -x test --no-daemon -Dorg.gradle.workers.max=1 \
+	&& ls -la build/libs/
 
-# Production stage
-FROM eclipse-temurin:17-jre-alpine
+# Production stage (Playwright with browsers preinstalled)
+FROM mcr.microsoft.com/playwright/java:v1.53.0-jammy
 
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    wget \
-    && rm -rf /var/cache/apk/*
-
-# Create app user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+# Headless by default
+ENV PLAYWRIGHT_HEADLESS=true
 
 # Copy built jar from build stage
 COPY --from=build-stage /app/build/libs/*.jar app.jar
 
-# Create shared volume directory
-RUN mkdir -p /app/shared-data && \
-    chown -R appuser:appgroup /app
-
-# Switch to app user
-USER appuser
-
 # Expose port 8080
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 # Start the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,8 +1,11 @@
 replicaCount: 1
 
+# DFO API Configuration
+dfoApiKey: ""
+
 image:
   repository: kimrie92/dfo-party-backend
-  tag: latest
+  tag: playwright-jre-1
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -54,7 +57,7 @@ env:
     value: "3600000"
   # Database Configuration - Root 계정으로 접속
   - name: DB_HOST
-    value: "df-party-mariadb"
+    value: "df-party-infrastructure-mariadb"
   - name: DB_PORT
     value: "3306"
   - name: DB_NAME
@@ -78,7 +81,7 @@ initContainers:
       - -c
       - |
         echo "Waiting for MariaDB to be ready..."
-        until mysql -h df-party-mariadb -P 3306 -u root -p'dfparty-root-password' -e "SELECT 1;" > /dev/null 2>&1; do
+        until mysql -h df-party-infrastructure-mariadb -P 3306 -u root -p'dfparty-root-password' -e "SELECT 1;" > /dev/null 2>&1; do
           echo "MariaDB not ready yet, waiting..."
           sleep 5
         done

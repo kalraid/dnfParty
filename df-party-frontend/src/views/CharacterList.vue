@@ -133,6 +133,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { dundamService } from '../services/dundamService';
+import { apiFetch } from '../config/api';
 
 // 검색 기록 인터페이스 (Local Storage에 저장)
 interface SearchRecord {
@@ -239,7 +240,7 @@ const loadCharacterFromHistory = async (record: SearchRecord) => {
     loading.value = true;
     
     // 백엔드 API에서 캐릭터 정보 조회
-    const response = await fetch(`http://localhost:8080/api/characters/${record.serverId}/${record.characterId}`);
+    const response = await apiFetch(`/characters/${record.serverId}/${record.characterId}`);
     if (response.ok) {
       const characterData = await response.json();
       // 캐릭터 정보를 DB 목록에 추가
@@ -269,7 +270,7 @@ const loadCharactersFromDB = async () => {
     
     // 백엔드 API에서 모험단별 캐릭터 목록 조회
     const promises = selectedAdventures.value.map(async (adventure) => {
-      const response = await fetch(`http://localhost:8080/api/characters/adventure/${adventure}`);
+      const response = await apiFetch(`/characters/adventure/${adventure}`);
       if (response.ok) {
         return await response.json();
       }
@@ -295,7 +296,7 @@ const removeSearchRecord = (id: string) => {
 // DB에서 캐릭터 제거
 const removeCharacterFromDB = async (characterId: string) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/characters/${characterId}`, {
+    const response = await apiFetch(`/characters/${characterId}`, {
       method: 'DELETE'
     });
     
@@ -315,7 +316,7 @@ const refreshCharacterFromDB = async (character: CharacterFromDB) => {
     refreshing.value = true;
     
     // 백엔드 API에서 캐릭터 정보 새로고침
-    const response = await fetch(`http://localhost:8080/api/characters/${character.serverId}/${character.characterId}/refresh`);
+    const response = await apiFetch(`/characters/${character.serverId}/${character.characterId}/refresh`);
     if (response.ok) {
       const updatedCharacter = await response.json();
       const index = charactersFromDB.value.findIndex(c => c.characterId === character.characterId);
@@ -338,7 +339,7 @@ const checkDungeonClear = async (character: CharacterFromDB) => {
     checkingDungeon.value = true;
     
     // 백엔드 API에서 던전 클리어 현황 확인
-    const response = await fetch(`http://localhost:8080/api/dungeon-clear/${character.serverId}/${character.characterId}`);
+    const response = await apiFetch(`/dungeon-clear/${character.serverId}/${character.characterId}`);
     if (response.ok) {
       const dungeonInfo = await response.json();
       
@@ -386,7 +387,7 @@ const setFavoriteCharacter = async () => {
   if (!selectedCharacter.value) return;
   
   try {
-    const response = await fetch(`http://localhost:8080/api/characters/${selectedCharacter.value.serverId}/${selectedCharacter.value.characterId}/favorite`, {
+    const response = await apiFetch(`/characters/${selectedCharacter.value.serverId}/${selectedCharacter.value.characterId}/favorite`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
@@ -423,7 +424,7 @@ const excludeFromDungeon = async (dungeonType: string) => {
       newExcluded = [...currentExcluded, dungeonType];
     }
     
-    const response = await fetch(`http://localhost:8080/api/characters/${selectedCharacter.value.serverId}/${selectedCharacter.value.characterId}/exclude`, {
+    const response = await apiFetch(`/characters/${selectedCharacter.value.serverId}/${selectedCharacter.value.characterId}/exclude`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
@@ -453,7 +454,7 @@ const isExcludedFromDungeon = (dungeonType: string): boolean => {
 
 const toggleFavorite = async (character: CharacterFromDB) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/characters/${character.serverId}/${character.characterId}/favorite`, {
+    const response = await apiFetch(`/characters/${character.serverId}/${character.characterId}/favorite`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'

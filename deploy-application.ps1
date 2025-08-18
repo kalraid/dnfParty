@@ -75,10 +75,10 @@ Write-Host "Creating $Namespace namespace if it doesn't exist..." -ForegroundCol
 kubectl create namespace $Namespace --dry-run=client -o yaml | kubectl apply -f -
 Write-Host "$Namespace namespace ready." -ForegroundColor Green
 
-# Load environment variables from config.env file
-if (Test-Path "config.env") {
-    Write-Host "Loading environment variables from config.env..." -ForegroundColor Cyan
-    Get-Content "config.env" | ForEach-Object {
+# Load environment variables from config-prod.env file
+if (Test-Path "config-prod.env") {
+    Write-Host "Loading environment variables from config-prod.env..." -ForegroundColor Cyan
+    Get-Content "config-prod.env" | ForEach-Object {
         if ($_ -match "^([^#][^=]+)=(.*)$") {
             $name = $matches[1].Trim()
             $value = $matches[2].Trim()
@@ -86,13 +86,13 @@ if (Test-Path "config.env") {
             Write-Host "  $name = $value" -ForegroundColor Gray
         }
     }
-    Write-Host "Environment variables loaded from config.env" -ForegroundColor Green
+    Write-Host "Environment variables loaded from config-prod.env" -ForegroundColor Green
     
     if ($DF_API_KEY) {
         Write-Host "DF_API_KEY loaded: $($DF_API_KEY.Substring(0, [Math]::Min(10, $DF_API_KEY.Length)))..." -ForegroundColor Green
     }
     } else {
-    Write-Host "config.env file not found. Using default values." -ForegroundColor Yellow
+    Write-Host "config-prod.env file not found. Using default values." -ForegroundColor Yellow
 }
 
 # Check Helm version
@@ -121,14 +121,40 @@ Write-Host "Deploying/upgrading Helm release..." -ForegroundColor Green
 Write-Host "   Release name: $ReleaseName" -ForegroundColor Cyan
 Write-Host "   Namespace: $Namespace" -ForegroundColor Cyan
 
+# Build latest Helm chart dependencies before deployment
+Write-Host "Building latest Helm chart dependencies..." -ForegroundColor Cyan
+Set-Location helm-charts
+helm dependency build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Helm dependency build failed" -ForegroundColor Red
+    exit 1
+}
+Set-Location ..
+Write-Host "Helm dependencies built successfully" -ForegroundColor Green
+
 # Deploy using helm upgrade --install
 Write-Host "Deploying using helm upgrade --install..." -ForegroundColor Green
-helm upgrade --install $ReleaseName ./helm-charts `
-    --namespace $Namespace `
-    --values $ValuesFile `
-    --set frontend.image.pullPolicy=Always `
-    --set backend.image.pullPolicy=Always `
-    --timeout 10m
+
+# Set frontend environment variables from config-prod.env
+$frontendEnvSets = @()
+if ($VITE_API_BASE_URL) {
+    $frontendEnvSets += "--set frontend.env.VITE_API_BASE_URL=`"$VITE_API_BASE_URL`""
+    Write-Host "Setting VITE_API_BASE_URL: $VITE_API_BASE_URL" -ForegroundColor Cyan
+}
+if ($VITE_WS_BASE_URL) {
+    $frontendEnvSets += "--set frontend.env.VITE_WS_BASE_URL=`"$VITE_WS_BASE_URL`""
+    Write-Host "Setting VITE_WS_BASE_URL: $VITE_WS_BASE_URL" -ForegroundColor Cyan
+}
+
+# Build helm command with environment variables
+# Force use of local chart directory instead of any .tgz files
+$helmCommand = "helm upgrade --install $ReleaseName ./helm-charts --namespace $Namespace --values $ValuesFile --set frontend.image.pullPolicy=Always --set backend.image.pullPolicy=Always --timeout 10m --force"
+if ($frontendEnvSets.Count -gt 0) {
+    $helmCommand += " " + ($frontendEnvSets -join " ")
+}
+
+Write-Host "Executing: $helmCommand" -ForegroundColor Yellow
+Invoke-Expression $helmCommand
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Helm deployment completed successfully!" -ForegroundColor Green
@@ -142,3 +168,54 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Error details:" -ForegroundColor Red
     exit 1
 }
+
+# Force rollout restart for both frontend and backend to ensure new images are used
+Write-Host ""
+Write-Host "Forcing rollout restart to ensure new images are used..." -ForegroundColor Cyan
+
+# Restart frontend deployment
+Write-Host "Restarting frontend deployment..." -ForegroundColor Yellow
+kubectl rollout restart deployment df-party-application-frontend -n $Namespace
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Frontend rollout restart initiated successfully" -ForegroundColor Green
+} else {
+    Write-Host "Frontend rollout restart failed" -ForegroundColor Red
+}
+
+# Restart backend deployment
+Write-Host "Restarting backend deployment..." -ForegroundColor Yellow
+kubectl rollout restart deployment df-party-application-backend -n $Namespace
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Backend rollout restart initiated successfully" -ForegroundColor Green
+} else {
+    Write-Host "Backend rollout restart failed" -ForegroundColor Red
+}
+
+# Wait for rollouts to complete
+Write-Host ""
+Write-Host "Waiting for rollouts to complete..." -ForegroundColor Cyan
+
+# Wait for frontend rollout
+Write-Host "Waiting for frontend rollout..." -ForegroundColor Yellow
+kubectl rollout status deployment df-party-application-frontend -n $Namespace --timeout=300s
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Frontend rollout completed successfully" -ForegroundColor Green
+} else {
+    Write-Host "Frontend rollout failed or timed out" -ForegroundColor Red
+}
+
+# Wait for backend rollout
+Write-Host "Waiting for backend rollout..." -ForegroundColor Yellow
+kubectl rollout status deployment df-party-application-backend -n $Namespace --timeout=300s
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Backend rollout completed successfully" -ForegroundColor Green
+} else {
+    Write-Host "Backend rollout failed or timed out" -ForegroundColor Red
+}
+
+# Final status check
+Write-Host ""
+Write-Host "Final deployment status:" -ForegroundColor Cyan
+kubectl get pods -n $Namespace
+Write-Host ""
+Write-Host "All deployments and rollouts completed!" -ForegroundColor Green

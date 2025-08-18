@@ -304,6 +304,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
+import { apiFetch } from '../config/api';
 
 // 반응형 데이터
 const searchMode = ref(''); // 검색 모드 (character 또는 adventure)
@@ -361,7 +362,7 @@ const loadCharactersForAdventure = async (adventureName: string) => {
   try {
     console.log(`=== 모험단 '${adventureName}' 캐릭터 로드 시작 ===`);
     
-    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(adventureName)}`);
+    const response = await apiFetch(`/characters/adventure/${encodeURIComponent(adventureName)}`);
     
     if (response.ok) {
       const data = await response.json();
@@ -407,7 +408,7 @@ const loadCharactersFromAPI = async () => {
     const allCharacterPromises = adventureNames.map(async (adventureName) => {
       try {
         console.log(`모험단 '${adventureName}' 캐릭터 로드 시작...`);
-        const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(adventureName)}`);
+        const response = await apiFetch(`/characters/adventure/${encodeURIComponent(adventureName)}`);
         
         console.log(`모험단 '${adventureName}' API 응답 상태:`, response.status);
         
@@ -539,7 +540,7 @@ const searchCharacters = async () => {
     successMessage.value = '';
 
     // 모험단 검색 API 호출
-    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+    const response = await apiFetch(`/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
     
     if (response.ok) {
       const data = await response.json();
@@ -954,7 +955,7 @@ const optimizeParty = async () => {
     loading.value = true;
     error.value = '';
 
-    const response = await fetch('http://localhost:8080/api/party/optimize', {
+    const response = await apiFetch('/party/optimize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1089,7 +1090,7 @@ const refreshSelectedAdventures = async () => {
       try {
         console.log(`모험단 '${adventureName}' 최신화 시작...`);
         
-        const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(adventureName)}/refresh`, {
+        const response = await apiFetch(`/characters/adventure/${encodeURIComponent(adventureName)}/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1167,7 +1168,7 @@ const debugLocalStorage = async () => {
   for (const adventureName of validAdventures) {
     try {
       console.log(`API 테스트: ${adventureName}`);
-      const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(adventureName)}`);
+      const response = await apiFetch(`/characters/adventure/${encodeURIComponent(adventureName)}`);
       const data = await response.json();
       
       apiResults.push({

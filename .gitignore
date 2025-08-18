@@ -1,9 +1,13 @@
 # Gradle
 .gradle/
 build/
+target/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+*/target/*
+*/classes/*
+
 
 # IntelliJ IDEA
 .idea/
@@ -72,6 +76,16 @@ dist/
 charts/*/charts/
 charts/*/requirements.lock
 
+# Helm Chart Dependencies and Build Artifacts
+**/charts/*.tgz
+**/Chart.lock
+**/charts/
+*.tgz
+helm-charts/charts/
+helm-charts/Chart.lock
+helm-charts-infrastructure/charts/
+helm-charts-infrastructure/Chart.lock
+
 # Temporary files
 *.tmp
 *.temp
@@ -92,3 +106,4 @@ config.env
 .Trashes
 ehthumbs.db
 Thumbs.db
+

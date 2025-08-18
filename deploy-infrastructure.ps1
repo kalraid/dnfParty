@@ -72,6 +72,17 @@ try {
         Write-Host "No existing infrastructure release found. Installing new release..." -ForegroundColor Green
     }
     
+    # Build latest Helm chart dependencies before deployment
+    Write-Host "Building latest Helm chart dependencies..." -ForegroundColor Cyan
+    Set-Location $ChartPath
+    helm dependency build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Helm dependency build failed" -ForegroundColor Red
+        exit 1
+    }
+    Set-Location ..
+    Write-Host "Helm dependencies built successfully" -ForegroundColor Green
+    
     # Deploy infrastructure
     Write-Host "Deploying infrastructure chart..." -ForegroundColor Green
     

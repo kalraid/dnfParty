@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { apiFetch } from '../config/api'
 
 interface RestrictionInfo {
   thursdayRestriction: boolean
@@ -49,7 +50,7 @@ const showNotice = ref(false)
 // 목요일 제한 정보 조회
 const fetchRestrictionInfo = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/thursday-restriction/info')
+    const response = await apiFetch('/thursday-restriction/info')
     if (response.ok) {
       const data = await response.json()
       if (data.isApiRestricted) {
@@ -72,7 +73,7 @@ const fetchRestrictionInfo = async () => {
 // 던전 초기화 상태 확인
 const checkStatus = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/thursday-restriction/reset-status')
+    const response = await apiFetch('/thursday-restriction/reset-status')
     if (response.ok) {
       restrictionStatus.value = await response.json()
     }

@@ -49,15 +49,17 @@ public class DundamSyncController {
     }
 
     /**
-     * 특정 캐릭터의 던담 정보 동기화
+     * 특정 캐릭터의 던담 정보 동기화 (통합 API)
+     * method 파라미터로 "selenium" 또는 "playwright" 지정
      */
     @PostMapping("/character/{serverId}/{characterId}")
     public ResponseEntity<Map<String, Object>> syncCharacterFromDundam(
             @PathVariable String serverId,
-            @PathVariable String characterId) {
+            @PathVariable String characterId,
+            @RequestParam(defaultValue = "playwright") String method) {
         
         try {
-            log.info("=== 던담 동기화 시작 ===");
+            log.info("=== 던담 동기화 시작 (메서드: {}) ===", method);
             log.info("서버: {}, 캐릭터 ID: {}", serverId, characterId);
             
             // 2분 제한 확인
@@ -80,13 +82,37 @@ public class DundamSyncController {
                 return ResponseEntity.badRequest().body(limitResult);
             }
             
-            // 던담에서 캐릭터 정보 가져오기 (수동 동기화용 - 크롤링 비활성화 무시)
-            Map<String, Object> dundamResult = dundamService.getCharacterInfoWithSeleniumManual(serverId, characterId);
+            Map<String, Object> dundamResult;
+            
+            // 메서드에 따라 다른 크롤링 방식 사용
+            if ("selenium".equalsIgnoreCase(method)) {
+                // 셀레니움은 K8s 환경에서 실패하여 비활성화됨
+                log.warn("셀레니움 동기화는 K8s 환경에서 실패하여 비활성화되었습니다.");
+                Map<String, Object> disabledResult = Map.of(
+                    "success", false,
+                    "message", "셀레니움 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.",
+                    "seleniumDisabled", true,
+                    "reason", "selenium_failed_in_k8s"
+                );
+                return ResponseEntity.badRequest().body(disabledResult);
+            } else if ("playwright".equalsIgnoreCase(method)) {
+                // Playwright로 던담에서 캐릭터 정보 가져오기
+                dundamResult = dundamService.getCharacterInfoWithMethod(serverId, characterId, method);
+            } else {
+                // 잘못된 메서드 지정
+                Map<String, Object> invalidMethodResult = Map.of(
+                    "success", false,
+                    "message", "잘못된 메서드입니다. 'selenium' 또는 'playwright'를 지정해주세요.",
+                    "invalidMethod", true,
+                    "method", method
+                );
+                return ResponseEntity.badRequest().body(invalidMethodResult);
+            }
             
             if (!(Boolean) dundamResult.get("success")) {
                 log.warn("던담 크롤링 실패: {}", dundamResult.get("message"));
                 
-                // 목요일 제한 확인 (수동 동기화는 크롤링 비활성화에 영향받지 않음)
+                // 목요일 제한 확인
                 if (dundamResult.containsKey("thursdayRestriction") && (Boolean) dundamResult.get("thursdayRestriction")) {
                     Map<String, Object> thursdayResult = Map.of(
                         "success", false,
@@ -112,7 +138,7 @@ public class DundamSyncController {
                     Map<String, Object> wsData = new HashMap<>();
                     wsData.put("characterId", characterId);
                     wsData.put("serverId", serverId);
-                    wsData.put("updateType", "dundam_sync");
+                    wsData.put("updateType", "dundam_sync_" + method.toLowerCase());
                     wsData.put("updateResult", updateResult);
                     wsData.put("timestamp", LocalDateTime.now());
                     
@@ -123,7 +149,7 @@ public class DundamSyncController {
                             .targetId(characterId)
                             .data(wsData)
                             .timestamp(LocalDateTime.now())
-                            .message("던담 동기화가 완료되었습니다.")
+                            .message(method + " 던담 동기화가 완료되었습니다.")
                             .broadcast(true)
                             .build()
                     );
@@ -134,18 +160,18 @@ public class DundamSyncController {
                 }
             }
             
-            log.info("=== 던담 동기화 완료 ===");
+            log.info("=== 던담 동기화 완료 (메서드: {}) ===", method);
             log.info("업데이트 결과: {}", updateResult);
             
             return ResponseEntity.ok(updateResult);
             
         } catch (Exception e) {
-            log.error("던담 동기화 실패: {}", e.getMessage(), e);
+            log.error("던담 동기화 실패 (메서드: {}): {}", method, e.getMessage(), e);
             
             Map<String, Object> errorResult = Map.of(
                 "success", false,
                 "error", e.getMessage(),
-                "message", "던담 동기화 중 오류가 발생했습니다."
+                "message", method + " 던담 동기화 중 오류가 발생했습니다."
             );
             
             return ResponseEntity.internalServerError().body(errorResult);
@@ -153,31 +179,57 @@ public class DundamSyncController {
     }
 
     /**
-     * 모험단 전체 캐릭터 던담 동기화
+     * 모험단 전체 캐릭터 던담 동기화 (통합 API)
+     * method 파라미터로 "selenium" 또는 "playwright" 지정
      */
     @PostMapping("/adventure/{adventureName}")
     public ResponseEntity<Map<String, Object>> syncAdventureFromDundam(
-            @PathVariable String adventureName) {
+            @PathVariable String adventureName,
+            @RequestParam(defaultValue = "playwright") String method) {
         
         try {
-            log.info("=== 모험단 던담 동기화 시작 ===");
+            log.info("=== 모험단 던담 동기화 시작 (메서드: {}) ===", method);
             log.info("모험단: {}", adventureName);
             
-            // 모험단의 모든 캐릭터에 대해 던담 동기화 수행
-            Map<String, Object> syncResult = characterService.syncAdventureFromDundam(adventureName);
+            Map<String, Object> syncResult;
             
-            log.info("=== 모험단 던담 동기화 완료 ===");
+            // 메서드에 따라 다른 동기화 방식 사용
+            if ("selenium".equalsIgnoreCase(method)) {
+                // 셀레니움은 K8s 환경에서 실패하여 비활성화됨
+                log.warn("셀레니움 모험단 동기화는 K8s 환경에서 실패하여 비활성화되었습니다.");
+                Map<String, Object> disabledResult = Map.of(
+                    "success", false,
+                    "message", "셀레니움 모험단 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.",
+                    "seleniumDisabled", true,
+                    "reason", "selenium_failed_in_k8s"
+                );
+                return ResponseEntity.badRequest().body(disabledResult);
+            } else if ("playwright".equalsIgnoreCase(method)) {
+                // Playwright로 모험단의 모든 캐릭터에 대해 던담 동기화 수행
+                syncResult = characterService.syncAdventureFromDundamWithMethod(adventureName, method);
+            } else {
+                // 잘못된 메서드 지정
+                Map<String, Object> invalidMethodResult = Map.of(
+                    "success", false,
+                    "message", "잘못된 메서드입니다. 'selenium' 또는 'playwright'를 지정해주세요.",
+                    "invalidMethod", true,
+                    "method", method
+                );
+                return ResponseEntity.badRequest().body(invalidMethodResult);
+            }
+            
+            log.info("=== 모험단 던담 동기화 완료 (메서드: {}) ===", method);
             log.info("동기화 결과: {}", syncResult);
             
             return ResponseEntity.ok(syncResult);
             
         } catch (Exception e) {
-            log.error("모험단 던담 동기화 실패: {}", e.getMessage(), e);
+            log.error("모험단 던담 동기화 실패 (메서드: {}): {}", method, e.getMessage(), e);
             
             Map<String, Object> errorResult = Map.of(
                 "success", false,
                 "error", e.getMessage(),
-                "message", "모험단 던담 동기화 중 오류가 발생했습니다."
+                "message", method + " 모험단 던담 동기화 중 오류가 발생했습니다."
             );
             
             return ResponseEntity.internalServerError().body(errorResult);

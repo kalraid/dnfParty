@@ -276,16 +276,26 @@
                 <div class="action-cell">
                   <div class="action-label">던담초기화</div>
                   <div class="dundam-actions">
-                    <button @click="syncCharacterFromDundam(character)" 
-                            class="action-btn dundam-sync-btn" 
+                    <!-- 셀레니움 버전 (비활성화됨) -->
+                    <button class="action-btn dundam-sync-btn disabled" 
+                            disabled
+                            title="K8s 환경에서 셀레니움 크롤링 실패로 인해 비활성화됨">
+                      <span class="button-content">
+                        <span class="button-icon">🚫</span>
+                      </span>
+                    </button>
+                    
+                    <!-- Playwright 버전 (활성화됨) -->
+                    <button @click="syncCharacterFromDundamPlaywright(character)" 
+                            class="action-btn dundam-sync-btn playwright-enabled" 
                             :class="{ 'syncing': syncingCharacters.has(character.characterId) }"
                             :disabled="syncingCharacters.has(character.characterId) || !isWithinTimeLimit(character.characterId) || isAnyCharacterSyncing()" 
-                            title="던담 크롤링으로 총딜/버프력 최신화">
+                            title="Playwright로 던담 크롤링하여 총딜/버프력 최신화">
                       <span v-if="syncingCharacters.has(character.characterId)" class="syncing-text">
                         <span class="spinner">🔄</span>
                       </span>
                       <span v-else class="button-content">
-                        <span class="button-icon">🔄</span>
+                        <span class="button-icon">🚀</span>
                       </span>
                     </button>
                   </div>
@@ -444,6 +454,7 @@ import { dfApiService } from '../services/dfApi';
 // import websocketService, { type RealtimeEvent } from '../services/websocketService';
 import { type RealtimeEvent } from '../services/websocketService';
 import { type Character } from '../types';
+import { apiFetch, createWebSocket } from '../config/api';
 
 // 반응형 데이터
 const searchQuery = ref(''); // 모험단 검색어
@@ -610,7 +621,7 @@ const sortOrder = ref<'asc' | 'desc'>('desc');
 // WebSocket 연결
 const connectWebSocket = () => {
   try {
-    const ws = new WebSocket('ws://localhost:8080/ws');
+    const ws = createWebSocket('/ws');
     
     ws.onopen = () => {
       console.log('WebSocket 연결됨');
@@ -670,8 +681,8 @@ const searchAdventure = async () => {
     error.value = '';
     successMessage.value = '';
     
-    console.log('API 호출 시작:', `http://localhost:8080/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
-    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+    console.log('API 호출 시작:', `/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+    const response = await apiFetch(`/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
     
     console.log('API 응답 상태:', response.status);
     
@@ -780,7 +791,7 @@ const clearSelectedAdventure = () => {
 const setNabelDifficulty = async (character: Character, difficulty: 'hard' | 'normal' | 'matching') => {
   try {
     // 백엔드에 저장
-    const response = await fetch(`http://localhost:8080/api/characters/${character.characterId}/nabel-difficulty?difficulty=${difficulty}`, {
+    const response = await apiFetch(`/characters/${character.characterId}/nabel-difficulty?difficulty=${difficulty}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1028,7 +1039,7 @@ const filterByAdventure = async () => {
     // 모험단을 선택하면 해당 모험단의 모든 캐릭터를 로드
     try {
       searching.value = true;
-      const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(selectedAdventure.value)}`);
+      const response = await apiFetch(`/characters/adventure/${encodeURIComponent(selectedAdventure.value)}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -1350,7 +1361,7 @@ const refreshAdventure = async () => {
     updateStatus.value = '업데이트를 시작합니다...';
     error.value = '';
     
-    const response = await fetch(`http://localhost:8080/api/realtime/adventure/${encodeURIComponent(selectedAdventure.value)}/refresh`, {
+    const response = await apiFetch(`/realtime/adventure/${encodeURIComponent(selectedAdventure.value)}/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1390,7 +1401,7 @@ const refreshAdventure = async () => {
 // 개별 캐릭터 실시간 업데이트
 const refreshCharacter = async (characterId: string) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/realtime/character/${characterId}/refresh`, {
+    const response = await apiFetch(`/realtime/character/${characterId}/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1519,7 +1530,7 @@ const toggleExclude = async (character: Character, dungeonType: string) => {
     const currentState = character[`isExcluded${dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1)}` as keyof Character] as boolean;
     const newState = !currentState;
     
-            const response = await fetch(`http://localhost:8080/api/characters/${character.characterId}/exclude-dungeon`, {
+            const response = await apiFetch(`/characters/${character.characterId}/exclude-dungeon`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
@@ -1565,7 +1576,7 @@ const refreshAllCharacters = async () => {
     error.value = '';
     successMessage.value = '';
     
-    const response = await fetch(`http://localhost:8080/api/characters/adventure/${encodeURIComponent(selectedAdventure.value)}/refresh`, {
+    const response = await apiFetch(`/characters/adventure/${encodeURIComponent(selectedAdventure.value)}/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1631,7 +1642,7 @@ const saveManualInput = async () => {
   if (!manualInputCharacter.value) return;
   
   try {
-    const response = await fetch(`http://localhost:8080/api/characters/${manualInputCharacter.value.characterId}/manual-stats`, {
+    const response = await apiFetch(`/characters/${manualInputCharacter.value.characterId}/manual-stats`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1674,27 +1685,29 @@ const saveManualInput = async () => {
   }
 };
 
-// 던담 동기화 함수
+// 던담 동기화 함수 (셀레니움 - 비활성화됨)
 const syncCharacterFromDundam = async (character: Character) => {
+  error.value = '셀레니움 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.';
+};
+
+// 던담 동기화 함수 (Playwright)
+const syncCharacterFromDundamPlaywright = async (character: Character) => {
   // 이미 크롤링 중인 캐릭터가 있으면 중복 크롤링 방지
   if (syncingCharacters.value.size > 0) {
     const syncingCharacterId = Array.from(syncingCharacters.value)[0];
     const syncingCharacter = characters.value.find(c => c.characterId === syncingCharacterId);
-    error.value = `다른 캐릭터(${syncingCharacter?.characterName || '알 수 없음'})의 던담 크롤링이 진행 중입니다. 완료 후 다시 시도해주세요.`;
-    setTimeout(() => {
-      error.value = '';
-    }, 5000);
+    error.value = `'${syncingCharacter?.characterName}' 동기화가 진행 중입니다. 완료 후 다시 시도해주세요.`;
     return;
   }
   
-  if (syncingCharacters.value.has(character.characterId)) return;
+  // 동기화 시작
+  syncingCharacters.value.add(character.characterId);
   
   try {
-    syncingCharacters.value.add(character.characterId);
     // 동기화 시작 시간 저장
     saveDundamSyncStartTime(character.characterId);
     
-    const response = await fetch(`http://localhost:8080/api/dundam-sync/character/${character.serverId}/${character.characterId}`, {
+    const response = await apiFetch(`/dundam-sync/character/${character.serverId}/${character.characterId}?method=playwright`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1884,7 +1897,7 @@ const refreshCharacterInfo = async (character: Character) => {
   try {
     refreshingCharacters.value.push(character.characterId);
     
-    const response = await fetch(`http://localhost:8080/api/characters/${character.serverId}/${character.characterId}/refresh`, {
+    const response = await apiFetch(`/characters/${character.serverId}/${character.characterId}/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1941,7 +1954,7 @@ const refreshDungeonStatus = async (character: Character) => {
   try {
     refreshingTimeline.value.push(character.characterId);
     
-    const response = await fetch(`http://localhost:8080/api/dungeon-clear/${character.serverId}/${character.characterId}`, {
+    const response = await apiFetch(`/dungeon-clear/${character.serverId}/${character.characterId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3269,6 +3282,45 @@ const refreshDungeonStatus = async (character: Character) => {
   color: #721c24;
   background: #f8d7da;
   border-color: #f5c6cb;
+}
+
+/* 비활성화된 던담 동기화 버튼 스타일 */
+.dundam-sync-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5;
+  border-color: #ddd;
+  color: #999;
+}
+
+.dundam-sync-btn.disabled:hover {
+  background: #f5f5f5;
+  border-color: #ddd;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Playwright 던담 동기화 버튼 스타일 */
+.dundam-sync-btn.playwright-enabled {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  font-weight: 600;
+}
+
+.dundam-sync-btn.playwright-enabled:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  border-color: #764ba2;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.dundam-sync-btn.playwright-enabled:disabled {
+  background: #ccc;
+  border-color: #999;
+  color: #666;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 나벨 난이도 버튼 스타일 */

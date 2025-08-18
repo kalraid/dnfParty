@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: kimrie92/dfo-party-frontend
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imagePullSecrets: []
 
@@ -20,6 +20,9 @@ podAnnotations: {}
 podSecurityContext: {}
 
 securityContext: {}
+
+# Environment variables for frontend
+env: {}
 
 service:
   type: ClusterIP

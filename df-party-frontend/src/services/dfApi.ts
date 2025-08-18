@@ -1,10 +1,8 @@
 import axios from 'axios';
-
-// 백엔드 API 사용 (환경변수에서 가져오기)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+import { getApiUrl } from '../config/api';
 
 const dfApiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiUrl(''),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

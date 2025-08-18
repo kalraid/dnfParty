@@ -45,7 +45,28 @@ Write-Host "Building Docker images with BuildKit optimizations..." -ForegroundCo
 # Frontend build with optimizations
 Write-Host "Building frontend..." -ForegroundColor Yellow
 Set-Location df-party-frontend
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from kimrie92/dfo-party-frontend:latest -t kimrie92/dfo-party-frontend:latest .
+
+# Load production environment variables for build
+if (Test-Path "..\config-prod.env") {
+    Write-Host "Loading production environment variables for frontend build..." -ForegroundColor Cyan
+    Get-Content "..\config-prod.env" | ForEach-Object {
+        if ($_ -match "^VITE_([^=]+)=(.*)$") {
+            $name = "VITE_" + $matches[1].Trim()
+            $value = $matches[2].Trim()
+            Write-Host "Setting $name for build: $value" -ForegroundColor Green
+            Set-Variable -Name $name -Value $value -Scope Global
+            [Environment]::SetEnvironmentVariable($name, $value, "Process")
+        }
+    }
+} else {
+    Write-Host "Warning: config-prod.env not found. Using default localhost values." -ForegroundColor Yellow
+    $env:VITE_API_BASE_URL = "http://localhost:8080/api"
+    $env:VITE_WS_BASE_URL = "http://localhost:8080"
+}
+
+# Build with VITE environment variables
+docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg VITE_API_BASE_URL="$env:VITE_API_BASE_URL" --build-arg VITE_WS_BASE_URL="$env:VITE_WS_BASE_URL" --cache-from kimrie92/dfo-party-frontend:latest -t kimrie92/dfo-party-frontend:latest .
+
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Frontend build failed" -ForegroundColor Red
     exit 1
@@ -62,20 +83,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Set-Location ..
 
-# Mock backend build
-Write-Host "Building mock backend..." -ForegroundColor Yellow
-Set-Location df-party-mock
-./gradlew build -x test
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Mock backend Gradle build failed" -ForegroundColor Red
-    exit 1
-}
-docker build -t kimrie92/dfo-party-mock:latest .
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Mock backend Docker build failed" -ForegroundColor Red
-    exit 1
-}
-Set-Location ..
+
 
 Write-Host "All image builds completed!" -ForegroundColor Green
 
@@ -96,15 +104,25 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "Pushing mock backend image..." -ForegroundColor Yellow
-docker push kimrie92/dfo-party-mock:latest
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Mock backend image push failed" -ForegroundColor Red
-    exit 1
-}
+
 
 Write-Host "All image builds and pushes completed!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "   - Helm deployment: .\deploy-helm.ps1" -ForegroundColor Cyan
 Write-Host "   - Or manual Helm deployment: helm upgrade --install dfo-party .\helm-charts" -ForegroundColor Cyan
+
+# Auto-deploy to Kubernetes after successful build and push
+Write-Host ""
+Write-Host "Starting automatic Kubernetes deployment..." -ForegroundColor Green
+Write-Host "Executing deploy-application.ps1..." -ForegroundColor Cyan
+
+# Execute deploy-application.ps1
+& ".\deploy-application.ps1"
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Complete deployment pipeline finished successfully!" -ForegroundColor Green
+} else {
+    Write-Host "Deployment failed with exit code: $LASTEXITCODE" -ForegroundColor Red
+    exit $LASTEXITCODE
+}

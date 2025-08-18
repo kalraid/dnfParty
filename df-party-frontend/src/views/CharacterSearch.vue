@@ -29,12 +29,21 @@
         {{ searching ? '검색 중...' : '검색' }}
       </button>
       
-      <!-- 던담 동기화 버튼 -->
+      <!-- 던담 동기화 버튼들 -->
       <div class="dundam-sync-controls" v-if="selectedAdventure">
-                  <button @click="syncAdventureFromDundam" class="dundam-sync-button" :disabled="isSyncing">
-            {{ isSyncing ? '🔄 동기화 중...' : '🔄 던담 동기화 (셀레니움)' }}
-          </button>
-        <span class="sync-status" v-if="syncStatus">{{ syncStatus }}</span>
+        <!-- 셀레니움 버전 (비활성화됨) -->
+        <button class="dundam-sync-button selenium-disabled" disabled title="K8s 환경에서 셀레니움 크롤링 실패로 인해 비활성화됨">
+          🚫 셀레니움 동기화
+        </button>
+        
+        <!-- Playwright 버전 (활성화됨) -->
+        <button @click="syncAdventureFromDundamPlaywright" class="dundam-sync-button playwright-enabled" :disabled="isSyncing">
+          {{ isSyncing ? '🔄 동기화 중...' : '🚀 Playwright 동기화' }}
+        </button>
+        
+        <span class="sync-status">
+          셀레니움은 K8s 환경에서 실패하여 비활성화, Playwright로 대체
+        </span>
       </div>
     </div>
 
@@ -317,6 +326,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { dfApiService, type Server } from '../services/dfApi';
+import { apiFetch } from '../config/api';
 
 const router = useRouter()
 
@@ -400,8 +410,13 @@ const isSearchDisabled = computed(() => {
   return searching.value || !searchMode.value || searchMode.value === '';
 });
 
-// 던담 동기화 메서드
+// 던담 동기화 메서드 (셀레니움 - 비활성화됨)
 const syncAdventureFromDundam = async () => {
+  error.value = '임시 점검중';
+};
+
+// 던담 동기화 메서드 (Playwright)
+const syncAdventureFromDundamPlaywright = async () => {
   if (!selectedAdventure.value) {
     error.value = '동기화할 모험단이 선택되지 않았습니다.';
     return;
@@ -409,10 +424,10 @@ const syncAdventureFromDundam = async () => {
   
   try {
     isSyncing.value = true;
-    syncStatusMessage.value = '던담에서 모험단 정보를 동기화하고 있습니다...';
+    syncStatusMessage.value = 'Playwright로 던담에서 모험단 정보를 동기화하고 있습니다...';
     error.value = '';
     
-    const response = await fetch(`http://localhost:8080/api/dundam-sync/adventure/${encodeURIComponent(selectedAdventure.value)}`, {
+    const response = await apiFetch(`/dundam-sync/adventure/${encodeURIComponent(selectedAdventure.value)}?method=playwright`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -423,20 +438,20 @@ const syncAdventureFromDundam = async () => {
     
     if (result.success) {
       successMessage.value = result.message;
-      syncStatusMessage.value = `동기화 완료: ${result.successCount}개 성공, ${result.failCount}개 실패`;
+      syncStatusMessage.value = `Playwright 동기화 완료: ${result.successCount}개 성공, ${result.failCount}개 실패`;
       
       // 검색 결과 새로고침
       if (searchResults.value.length > 0) {
         await searchCharacters();
       }
     } else {
-      error.value = result.message || '던담 동기화에 실패했습니다.';
-      syncStatusMessage.value = '동기화 실패';
+      error.value = result.message || 'Playwright 던담 동기화에 실패했습니다.';
+      syncStatusMessage.value = 'Playwright 동기화 실패';
     }
   } catch (err) {
-    console.error('던담 동기화 실패:', err);
-    error.value = '던담 동기화 중 오류가 발생했습니다.';
-    syncStatusMessage.value = '동기화 오류';
+    console.error('Playwright 던담 동기화 실패:', err);
+    error.value = 'Playwright 던담 동기화 중 오류가 발생했습니다.';
+    syncStatusMessage.value = 'Playwright 동기화 오류';
   } finally {
     isSyncing.value = false;
   }
@@ -492,7 +507,7 @@ const searchCharacters = async () => {
 
     // 캐릭터 검색 (DFO API 호출)
     const serverId = searchMode.value;
-    const response = await fetch(`http://localhost:8080/api/characters/search?serverId=${serverId}&characterName=${encodeURIComponent(searchQuery.value)}`);
+    const response = await apiFetch(`/characters/search?serverId=${serverId}&characterName=${encodeURIComponent(searchQuery.value)}`);
     
     if (response.ok) {
       const data = await response.json();
@@ -546,7 +561,7 @@ const searchCharacters = async () => {
 // 캐릭터를 DB에 저장
 const saveCharacterToDB = async (character: any) => {
   try {
-    const response = await fetch('http://localhost:8080/api/characters', {
+    const response = await apiFetch('/characters', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -630,7 +645,7 @@ const hideContextMenu = () => {
 // 던전별 업둥이 상태 로드
 const loadDungeonFavorites = async (characterId: string) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/characters/${characterId}/favorites`);
+    const response = await apiFetch(`/characters/${characterId}/favorites`);
     if (response.ok) {
       const result = await response.json();
       if (result.success) {
@@ -650,10 +665,10 @@ const toggleDungeonFavorite = async (dungeonType: string, event: Event) => {
   if (!contextCharacter.value) return;
   
   try {
-    const response = await fetch(
-      `http://localhost:8080/api/characters/${contextCharacter.value.characterId}/favorite/${dungeonType}?isFavorite=${isFavorite}`,
-      { method: 'POST' }
-    );
+          const response = await apiFetch(
+        `/characters/${contextCharacter.value.characterId}/favorite/${dungeonType}?isFavorite=${isFavorite}`,
+        { method: 'POST' }
+      );
     
     if (response.ok) {
       const result = await response.json();
@@ -762,7 +777,7 @@ const saveManualInput = async () => {
   try {
     if (!manualInputCharacter.value) return;
     
-    const response = await fetch(`http://localhost:8080/api/characters/${manualInputCharacter.value.characterId}/manual-stats`, {
+    const response = await apiFetch(`/characters/${manualInputCharacter.value.characterId}/manual-stats`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -806,7 +821,7 @@ const saveManualInput = async () => {
 // 동기화 상태 관련 메서드들
 const loadSyncStatus = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/character-sync/status');
+    const response = await apiFetch('/character-sync/status');
     if (response.ok) {
       const result = await response.json();
       if (result.success) {
@@ -820,7 +835,7 @@ const loadSyncStatus = async () => {
 
 const startManualSync = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/character-sync/start', {
+    const response = await apiFetch('/character-sync/start', {
       method: 'POST'
     });
     
@@ -2443,6 +2458,33 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   opacity: 0.6;
   transform: none;
   box-shadow: none;
+}
+
+/* 셀레니움 버튼 (비활성화됨) */
+.dundam-sync-button.selenium-disabled {
+  background: #f5f5f5;
+  border: 2px solid #ddd;
+  color: #999;
+  box-shadow: none;
+}
+
+.dundam-sync-button.selenium-disabled:hover {
+  background: #f5f5f5;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Playwright 버튼 (활성화됨) */
+.dundam-sync-button.playwright-enabled {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: 2px solid #28a745;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.dundam-sync-button.playwright-enabled:hover:not(:disabled) {
+  background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+  border-color: #20c997;
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
 }
 
 .sync-status {

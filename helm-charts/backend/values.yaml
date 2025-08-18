@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: kimrie92/dfo-party-backend
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imagePullSecrets: []
 

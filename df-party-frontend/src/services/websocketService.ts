@@ -1,9 +1,7 @@
 import { ref, onUnmounted } from 'vue'
+import { getWsUrl } from '../config/api'
 // import SockJS from 'sockjs-client'
 // import { Stomp } from '@stomp/stompjs'
-
-// API URL (환경변수에서 가져오기)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 export interface RealtimeEvent {
   id: string

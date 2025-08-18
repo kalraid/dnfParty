@@ -2653,11 +2653,25 @@ public class CharacterService {
     }
     
     /**
-     * 모험단 전체 캐릭터 던담 동기화
+     * 모험단 전체 캐릭터 던담 동기화 (셀레니움 - 비활성화됨)
      */
     public Map<String, Object> syncAdventureFromDundam(String adventureName) {
+        log.warn("셀레니움 모험단 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.");
+        
+        return Map.of(
+            "success", false,
+            "message", "셀레니움 모험단 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.",
+            "seleniumDisabled", true,
+            "reason", "selenium_failed_in_k8s"
+        );
+    }
+
+    /**
+     * 모험단 전체 캐릭터 던담 동기화 (Playwright)
+     */
+    public Map<String, Object> syncAdventureFromDundamPlaywright(String adventureName) {
         try {
-            log.info("=== 모험단 던담 동기화 시작 ===");
+            log.info("=== Playwright 모험단 던담 동기화 시작 ===");
             log.info("모험단: {}", adventureName);
             
             // 모험단 찾기
@@ -2683,8 +2697,8 @@ public class CharacterService {
             
             for (Character character : characters) {
                 try {
-                    // 던담에서 캐릭터 정보 가져오기 (셀레니움 사용)
-                    Map<String, Object> dundamResult = dundamService.getCharacterInfoWithSelenium(
+                    // Playwright로 던담에서 캐릭터 정보 가져오기
+                    Map<String, Object> dundamResult = dundamService.getCharacterInfoWithPlaywright(
                         character.getServerId(), 
                         character.getCharacterId()
                     );
@@ -2700,7 +2714,7 @@ public class CharacterService {
                         if ((Boolean) updateResult.get("success")) {
                             successCount++;
                             successList.add(character.getCharacterName());
-                            log.info("캐릭터 '{}' 던담 동기화 성공", character.getCharacterName());
+                            log.info("캐릭터 '{}' Playwright 던담 동기화 성공", character.getCharacterName());
                         } else {
                             failCount++;
                             failList.add(character.getCharacterName() + " (업데이트 실패)");
@@ -2709,8 +2723,8 @@ public class CharacterService {
                         }
                     } else {
                         failCount++;
-                        failList.add(character.getCharacterName() + " (던담 크롤링 실패)");
-                        log.warn("캐릭터 '{}' 던담 크롤링 실패: {}", 
+                        failList.add(character.getCharacterName() + " (Playwright 던담 크롤링 실패)");
+                        log.warn("캐릭터 '{}' Playwright 던담 크롤링 실패: {}", 
                             character.getCharacterName(), dundamResult.get("message"));
                     }
                     
@@ -2720,16 +2734,16 @@ public class CharacterService {
                 } catch (Exception e) {
                     failCount++;
                     failList.add(character.getCharacterName() + " (오류: " + e.getMessage() + ")");
-                    log.error("캐릭터 '{}' 던담 동기화 중 오류: {}", character.getCharacterName(), e.getMessage());
+                    log.error("캐릭터 '{}' Playwright 던담 동기화 중 오류: {}", character.getCharacterName(), e.getMessage());
                 }
             }
             
-            log.info("=== 모험단 던담 동기화 완료 ===");
+            log.info("=== Playwright 모험단 던담 동기화 완료 ===");
             log.info("성공: {}개, 실패: {}개", successCount, failCount);
             
             return Map.of(
                 "success", true,
-                "message", String.format("모험단 '%s' 동기화 완료 (성공: %d개, 실패: %d개)", 
+                "message", String.format("Playwright 모험단 '%s' 동기화 완료 (성공: %d개, 실패: %d개)", 
                     adventureName, successCount, failCount),
                 "adventureName", adventureName,
                 "totalCharacters", characters.size(),
@@ -2740,11 +2754,42 @@ public class CharacterService {
             );
             
         } catch (Exception e) {
-            log.error("모험단 던담 동기화 실패: {}", e.getMessage(), e);
+            log.error("Playwright 모험단 던담 동기화 실패: {}", e.getMessage(), e);
             return Map.of(
                 "success", false,
                 "error", e.getMessage(),
-                "message", "모험단 던담 동기화 중 오류가 발생했습니다."
+                "message", "Playwright 모험단 던담 동기화 중 오류가 발생했습니다."
+            );
+        }
+    }
+
+    /**
+     * 메서드에 따라 모험단 전체 캐릭터 던담 동기화 (통합 API용)
+     */
+    public Map<String, Object> syncAdventureFromDundamWithMethod(String adventureName, String method) {
+        log.info("=== 모험단 던담 동기화 시작 (메서드: {}) ===", method);
+        log.info("모험단: {}", adventureName);
+        
+        if ("selenium".equalsIgnoreCase(method)) {
+            // 셀레니움은 K8s 환경에서 실패하여 비활성화됨
+            log.warn("셀레니움 모험단 동기화는 K8s 환경에서 실패하여 비활성화되었습니다.");
+            return Map.of(
+                "success", false,
+                "message", "셀레니움 모험단 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.",
+                "seleniumDisabled", true,
+                "reason", "selenium_failed_in_k8s"
+            );
+        } else if ("playwright".equalsIgnoreCase(method)) {
+            // Playwright 사용
+            return syncAdventureFromDundamPlaywright(adventureName);
+        } else {
+            // 잘못된 메서드
+            log.error("잘못된 동기화 메서드: {}", method);
+            return Map.of(
+                "success", false,
+                "message", "잘못된 동기화 메서드입니다. 'selenium' 또는 'playwright'를 지정해주세요.",
+                "invalidMethod", true,
+                "method", method
             );
         }
     }

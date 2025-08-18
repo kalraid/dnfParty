@@ -37,7 +37,7 @@ dependencies {
     implementation 'io.github.bonigarcia:webdrivermanager:5.7.0'
     
     // Playwright for faster JavaScript rendering (alternative)
-    implementation 'com.microsoft.playwright:playwright:1.40.0'
+    implementation 'com.microsoft.playwright:playwright:1.53.0'
     
     // 자동 반영을 위한 DevTools 추가
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

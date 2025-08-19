@@ -779,4 +779,52 @@ private boolean isBuffer(Character character) {
            jobName.contains("패러메딕") ||
            jobName.contains("헤카테");
 }
+
+/**
+ * 서비스 종료 시 리소스 정리
+ */
+@PreDestroy
+public void cleanup() {
+    log.info("=== PlaywrightCrawlingService 리소스 정리 시작 ===");
+    try {
+        synchronized (browserLock) {
+            if (sharedBrowser != null) {
+                if (sharedBrowser.isConnected()) {
+                    log.info("공유 브라우저 연결 해제 중...");
+                    sharedBrowser.close();
+                    log.info("공유 브라우저 연결 해제 완료");
+                }
+                sharedBrowser = null;
+            }
+            
+            if (sharedPlaywright != null) {
+                log.info("Playwright 인스턴스 정리 중...");
+                sharedPlaywright.close();
+                log.info("Playwright 인스턴스 정리 완료");
+                sharedPlaywright = null;
+            }
+        }
+        log.info("=== PlaywrightCrawlingService 리소스 정리 완료 ===");
+    } catch (Exception e) {
+        log.error("리소스 정리 중 오류 발생: {}", e.getMessage(), e);
+    }
+}
+
+/**
+ * 메모리 사용량 모니터링
+ */
+public void logMemoryUsage() {
+    Runtime runtime = Runtime.getRuntime();
+    long totalMemory = runtime.totalMemory();
+    long freeMemory = runtime.freeMemory();
+    long usedMemory = totalMemory - freeMemory;
+    long maxMemory = runtime.maxMemory();
+    
+    log.info("=== 메모리 사용량 현황 ===");
+    log.info("사용 중인 메모리: {} MB", usedMemory / (1024 * 1024));
+    log.info("사용 가능한 메모리: {} MB", freeMemory / (1024 * 1024));
+    log.info("총 메모리: {} MB", totalMemory / (1024 * 1024));
+    log.info("최대 메모리: {} MB", maxMemory / (1024 * 1024));
+    log.info("메모리 사용률: {}%", (usedMemory * 100) / maxMemory);
+}
 }

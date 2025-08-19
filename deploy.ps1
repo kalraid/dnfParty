@@ -1,12 +1,15 @@
 # DFO Party Management Application Docker Image Build & Push Script
 # PowerShell Version
 
-Write-Host "Starting DFO Party Management Application Docker Image Build & Push..." -ForegroundColor Green
+# Parse command line arguments
+param(
+    [Parameter(Position=0)]
+    [ValidateSet("backend", "frontend", "all")]
+    [string]$Component = "all"
+)
 
-# Create dfo namespace if it doesn't exist
-Write-Host "Creating dfo namespace if it doesn't exist..." -ForegroundColor Cyan
-kubectl create namespace dfo --dry-run=client -o yaml | kubectl apply -f -
-Write-Host "dfo namespace ready." -ForegroundColor Green
+Write-Host "Starting DFO Party Management Application Docker Image Build & Push..." -ForegroundColor Green
+Write-Host "Deployment Component: $Component" -ForegroundColor Cyan
 
 # Load environment variables from config.env file
 if (Test-Path "config.env") {
@@ -43,45 +46,53 @@ $env:COMPOSE_DOCKER_CLI_BUILD = "1"
 Write-Host "Building Docker images with BuildKit optimizations..." -ForegroundColor Cyan
 
 # Frontend build with optimizations
-Write-Host "Building frontend..." -ForegroundColor Yellow
-Set-Location df-party-frontend
+if ($Component -eq "all" -or $Component -eq "frontend") {
+    Write-Host "Building frontend..." -ForegroundColor Yellow
+    Set-Location df-party-frontend
 
-# Load production environment variables for build
-if (Test-Path "..\config-prod.env") {
-    Write-Host "Loading production environment variables for frontend build..." -ForegroundColor Cyan
-    Get-Content "..\config-prod.env" | ForEach-Object {
-        if ($_ -match "^VITE_([^=]+)=(.*)$") {
-            $name = "VITE_" + $matches[1].Trim()
-            $value = $matches[2].Trim()
-            Write-Host "Setting $name for build: $value" -ForegroundColor Green
-            Set-Variable -Name $name -Value $value -Scope Global
-            [Environment]::SetEnvironmentVariable($name, $value, "Process")
+    # Load production environment variables for build
+    if (Test-Path "..\config-prod.env") {
+        Write-Host "Loading production environment variables for frontend build..." -ForegroundColor Cyan
+        Get-Content "..\config-prod.env" | ForEach-Object {
+            if ($_ -match "^VITE_([^=]+)=(.*)$") {
+                $name = "VITE_" + $matches[1].Trim()
+                $value = $matches[2].Trim()
+                Write-Host "Setting $name for build: $value" -ForegroundColor Green
+                Set-Variable -Name $name -Value $value -Scope Global
+                [Environment]::SetEnvironmentVariable($name, $value, "Process")
+            }
         }
+    } else {
+        Write-Host "Warning: config-prod.env not found. Using default localhost values." -ForegroundColor Yellow
+        $env:VITE_API_BASE_URL = "http://localhost:8080/api"
+        $env:VITE_WS_BASE_URL = "http://localhost:8080"
     }
+
+    # Build with VITE environment variables
+    docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg VITE_API_BASE_URL="$env:VITE_API_BASE_URL" --build-arg VITE_WS_BASE_URL="$env:VITE_WS_BASE_URL" --cache-from kimrie92/dfo-party-frontend:latest -t kimrie92/dfo-party-frontend:latest .
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Frontend build failed" -ForegroundColor Red
+        exit 1
+    }
+    Set-Location ..
 } else {
-    Write-Host "Warning: config-prod.env not found. Using default localhost values." -ForegroundColor Yellow
-    $env:VITE_API_BASE_URL = "http://localhost:8080/api"
-    $env:VITE_WS_BASE_URL = "http://localhost:8080"
+    Write-Host "Skipping frontend build (Component: $Component)" -ForegroundColor Yellow
 }
-
-# Build with VITE environment variables
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg VITE_API_BASE_URL="$env:VITE_API_BASE_URL" --build-arg VITE_WS_BASE_URL="$env:VITE_WS_BASE_URL" --cache-from kimrie92/dfo-party-frontend:latest -t kimrie92/dfo-party-frontend:latest .
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Frontend build failed" -ForegroundColor Red
-    exit 1
-}
-Set-Location ..
 
 # Backend build with optimizations
-Write-Host "Building backend..." -ForegroundColor Yellow
-Set-Location df-party-backend
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from kimrie92/dfo-party-backend:latest -t kimrie92/dfo-party-backend:latest .
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Backend build failed" -ForegroundColor Red
-    exit 1
+if ($Component -eq "all" -or $Component -eq "backend") {
+    Write-Host "Building backend..." -ForegroundColor Yellow
+    Set-Location df-party-backend
+    docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from kimrie92/dfo-party-backend:latest -t kimrie92/dfo-party-backend:latest .
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Backend build failed" -ForegroundColor Red
+        exit 1
+    }
+    Set-Location ..
+} else {
+    Write-Host "Skipping backend build (Component: $Component)" -ForegroundColor Yellow
 }
-Set-Location ..
 
 
 
@@ -90,18 +101,26 @@ Write-Host "All image builds completed!" -ForegroundColor Green
 # Docker image push
 Write-Host "Pushing Docker images..." -ForegroundColor Cyan
 
-Write-Host "Pushing frontend image..." -ForegroundColor Yellow
-docker push kimrie92/dfo-party-frontend:latest
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Frontend image push failed" -ForegroundColor Red
-    exit 1
+if ($Component -eq "all" -or $Component -eq "frontend") {
+    Write-Host "Pushing frontend image..." -ForegroundColor Yellow
+    docker push kimrie92/dfo-party-frontend:latest
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Frontend image push failed" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Host "Skipping frontend image push (Component: $Component)" -ForegroundColor Yellow
 }
 
-Write-Host "Pushing backend image..." -ForegroundColor Yellow
-docker push kimrie92/dfo-party-backend:latest
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Backend image push failed" -ForegroundColor Red
-    exit 1
+if ($Component -eq "all" -or $Component -eq "backend") {
+    Write-Host "Pushing backend image..." -ForegroundColor Yellow
+    docker push kimrie92/dfo-party-backend:latest
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Backend image push failed" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Host "Skipping backend image push (Component: $Component)" -ForegroundColor Yellow
 }
 
 
@@ -111,6 +130,14 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "   - Helm deployment: .\deploy-helm.ps1" -ForegroundColor Cyan
 Write-Host "   - Or manual Helm deployment: helm upgrade --install dfo-party .\helm-charts" -ForegroundColor Cyan
+
+# Show usage information
+Write-Host ""
+Write-Host "Usage Examples:" -ForegroundColor Magenta
+Write-Host "   .\deploy.ps1              # Deploy all components (default)" -ForegroundColor White
+Write-Host "   .\deploy.ps1 all          # Deploy all components" -ForegroundColor White
+Write-Host "   .\deploy.ps1 backend      # Deploy only backend" -ForegroundColor White
+Write-Host "   .\deploy.ps1 frontend     # Deploy only frontend" -ForegroundColor White
 
 # Auto-deploy to Kubernetes after successful build and push
 Write-Host ""

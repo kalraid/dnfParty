@@ -86,6 +86,11 @@ env:
     value: "/ms-playwright"
   - name: PLAYWRIGHT_CACHE_DIR
     value: "/tmp/.playwright"
+  # JVM Memory Configuration - OOM 방지
+  - name: JAVA_OPTS
+    value: "-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp"
+  - name: GRADLE_OPTS
+    value: "-Xmx2g -XX:MaxMetaspaceSize=512m"
 
 # Init Container - 실제 MySQL 연결 확인
 initContainers:

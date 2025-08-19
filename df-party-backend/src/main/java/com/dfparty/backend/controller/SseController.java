@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,6 +18,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SseController {
 
     private final Map<String, CopyOnWriteArrayList<SseEmitter>> emitters = new ConcurrentHashMap<>();
+    private static final int MAX_EMITTERS_PER_CLIENT = 3; // 클라이언트당 최대 에미터 수 제한
+    private static final int MAX_TOTAL_EMITTERS = 100; // 전체 최대 에미터 수 제한
     
     public SseController() {
         // 기본 생성자
@@ -29,7 +32,8 @@ public class SseController {
     public SseEmitter connect(@RequestParam String clientId) {
         System.out.println("SSE 연결 요청: " + clientId);
         
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        // 30초 타임아웃으로 설정 (무한 대기 방지)
+        SseEmitter emitter = new SseEmitter(30000L);
         
         // 연결 성공 이벤트 전송
         try {
@@ -40,8 +44,28 @@ public class SseController {
             System.err.println("SSE 연결 이벤트 전송 실패: " + e.getMessage());
         }
         
-        // 클라이언트별 에미터 저장
-        emitters.computeIfAbsent(clientId, k -> new CopyOnWriteArrayList<>()).add(emitter);
+        // 클라이언트별 에미터 저장 (제한 적용)
+        CopyOnWriteArrayList<SseEmitter> clientEmitters = emitters.computeIfAbsent(clientId, k -> new CopyOnWriteArrayList<>());
+        
+        // 클라이언트당 최대 에미터 수 제한
+        if (clientEmitters.size() >= MAX_EMITTERS_PER_CLIENT) {
+            System.out.println("클라이언트 " + clientId + "의 최대 에미터 수 초과, 오래된 연결 제거");
+            SseEmitter oldEmitter = clientEmitters.remove(0);
+            try {
+                oldEmitter.complete();
+            } catch (Exception e) {
+                System.err.println("오래된 에미터 정리 실패: " + e.getMessage());
+            }
+        }
+        
+        // 전체 최대 에미터 수 제한
+        int totalEmitters = emitters.values().stream().mapToInt(List::size).sum();
+        if (totalEmitters >= MAX_TOTAL_EMITTERS) {
+            System.out.println("전체 최대 에미터 수 초과, 오래된 연결들 정리");
+            cleanupOldEmitters();
+        }
+        
+        clientEmitters.add(emitter);
         
         // 연결 해제 시 정리
         emitter.onCompletion(() -> {
@@ -137,5 +161,49 @@ public class SseController {
             "totalEmitters", emitters.values().stream().mapToInt(CopyOnWriteArrayList::size).sum()
         );
         return ResponseEntity.ok(status);
+    }
+    
+    /**
+     * 오래된 에미터들을 정리하여 메모리 누수 방지
+     */
+    private void cleanupOldEmitters() {
+        System.out.println("오래된 에미터 정리 시작");
+        
+        emitters.forEach((clientId, clientEmitters) -> {
+            // 각 클라이언트의 에미터 수를 제한
+            while (clientEmitters.size() > MAX_EMITTERS_PER_CLIENT) {
+                SseEmitter oldEmitter = clientEmitters.remove(0);
+                try {
+                    oldEmitter.complete();
+                    System.out.println("오래된 에미터 정리 완료: " + clientId);
+                } catch (Exception e) {
+                    System.err.println("오래된 에미터 정리 실패: " + e.getMessage());
+                }
+            }
+        });
+        
+        // 빈 클라이언트 리스트 제거
+        emitters.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        
+        System.out.println("오래된 에미터 정리 완료");
+    }
+    
+    /**
+     * 메모리 사용량 모니터링
+     */
+    public void logMemoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long maxMemory = runtime.maxMemory();
+        
+        System.out.println("=== SSE 메모리 사용량 현황 ===");
+        System.out.println("사용 중인 메모리: " + (usedMemory / (1024 * 1024)) + " MB");
+        System.out.println("사용 가능한 메모리: " + (freeMemory / (1024 * 1024)) + " MB");
+        System.out.println("총 메모리: " + (totalMemory / (1024 * 1024)) + " MB");
+        System.out.println("최대 메모리: " + (maxMemory / (1024 * 1024)) + " MB");
+        System.out.println("메모리 사용률: " + ((usedMemory * 100) / maxMemory) + "%");
+        System.out.println("활성 SSE 연결 수: " + emitters.values().stream().mapToInt(List::size).sum());
     }
 }

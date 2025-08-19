@@ -271,7 +271,7 @@ public class CharacterService {
                                                                         log.info("조건 만족! 모험단 DB 저장 시작: '{}'", adventureName);
                                     // 모험단 정보를 DB에 자동 저장
                                     try {
-                                        saveAdventureToDB(adventureName);
+                                        saveAdventureToDB(adventureName, serverIdChar);
                                         log.info("✅ 모험단 DB 저장 성공, 캐릭터 관계 설정 시작");
                                         
                                         // 캐릭터와 모험단 관계 설정 (모험단 저장 성공 후에만)
@@ -628,10 +628,10 @@ public class CharacterService {
     /**
      * 모험단 정보를 DB에 자동 저장
      */
-    private void saveAdventureToDB(String adventureName) {
+    private void saveAdventureToDB(String adventureName, String serverId) {
         try {
             log.info("=== 모험단 DB 저장 시작 ===");
-            log.info("저장할 모험단명: '{}'", adventureName);
+            log.info("저장할 모험단명: '{}', 서버 ID: '{}'", adventureName, serverId);
             
             // 이미 존재하는지 확인
             Optional<Adventure> existingAdventure = adventureRepository.findByAdventureName(adventureName);
@@ -641,17 +641,20 @@ public class CharacterService {
                 // 새로운 모험단 생성 및 저장
                 Adventure adventure = Adventure.builder()
                     .adventureName(adventureName)
+                    .serverId(serverId)  // serverId 추가
                     .build();
                 Adventure savedAdventure = adventureRepository.save(adventure);
                 
                 log.info("✅ 새로운 모험단 DB 저장 성공!");
                 log.info("   - 모험단명: {}", savedAdventure.getAdventureName());
+                log.info("   - 서버 ID: {}", savedAdventure.getServerId());
                 log.info("   - 모험단 ID: {}", savedAdventure.getId());
                 log.info("   - 생성 시간: {}", savedAdventure.getCreatedAt());
             } else {
                 Adventure existingAdv = existingAdventure.get();
                 log.info("모험단이 이미 존재합니다");
                 log.info("   - 모험단명: {}", existingAdv.getAdventureName());
+                log.info("   - 서버 ID: {}", existingAdv.getServerId());
                 log.info("   - 모험단 ID: {}", existingAdv.getId());
                 log.info("   - 생성 시간: {}", existingAdv.getCreatedAt());
             }
@@ -1316,9 +1319,10 @@ public class CharacterService {
 
             // 모험단 정보 자동 저장 (Adventure 엔티티 먼저 저장)
             String adventureName = (String) characterData.get("adventureName");
+            String adventureServerId = (String) characterData.get("serverId");
             if (adventureName != null && !adventureName.equals("모험단 정보 없음") && !adventureName.trim().isEmpty()) {
-                saveAdventureToDB(adventureName);
-                log.info("모험단 정보 DB 저장 완료: adventureName={}", adventureName);
+                saveAdventureToDB(adventureName, adventureServerId);
+                log.info("모험단 정보 DB 저장 완료: adventureName={}, serverId={}", adventureName, adventureServerId);
             }
 
             // 기존 캐릭터 조회
@@ -2088,7 +2092,7 @@ public class CharacterService {
             log.info("캐릭터 기본정보에서 추출된 모험단 정보: '{}'", adventureName);
             
             if (adventureName != null && !adventureName.trim().isEmpty() && !"null".equals(adventureName)) {
-                saveAdventureToDB(adventureName);
+                saveAdventureToDB(adventureName, serverId);
                 log.info("모험단 정보 자동 저장 완료: {}", adventureName);
             } else {
                 log.warn("모험단 정보가 없거나 비어있음: adventureName='{}'", adventureName);

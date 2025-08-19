@@ -16,7 +16,7 @@ backend:
   
   image:
     repository: kimrie92/dfo-party-backend
-    tag: playwright-jre
+    tag: latest
     pullPolicy: Always
   
   service:

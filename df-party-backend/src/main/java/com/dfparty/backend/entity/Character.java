@@ -287,6 +287,10 @@ public class Character {
         updateNormalNabelEligibility();
     }
     
+    public void updateNabelEligibility(){
+        updateHardNabelEligibility();
+    }
+
     // 하드 나벨 대상자 여부 업데이트
     private void updateHardNabelEligibility() {
         // 명성 47,684 이상 + 스펙컷 확인

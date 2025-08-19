@@ -1,61 +1,77 @@
 package com.dfparty.backend.service;
 
+import com.dfparty.backend.controller.SseController;
 import com.dfparty.backend.model.RealtimeEvent;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class RealtimeEventService {
     
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SseController sseController;
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<RealtimeEvent>> eventHistory = new ConcurrentHashMap<>();
     
-    /**
-     * 특정 사용자에게 이벤트 전송
-     */
+    public RealtimeEventService(SseController sseController) {
+        this.sseController = sseController;
+    }
+    
+    public void sendEvent(RealtimeEvent event) {
+        try {
+            System.out.println("이벤트 전송 시도: " + event);
+            sseController.sendEventToAll(event);
+            System.out.println("이벤트 전송 성공: " + event.getId());
+            
+            // 이벤트 히스토리에 저장
+            String userId = event.getUserId();
+            eventHistory.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(event);
+            
+            // 히스토리 크기 제한 (최근 100개만 유지)
+            if (eventHistory.get(userId).size() > 100) {
+                eventHistory.get(userId).remove(0);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("이벤트 전송 실패: " + event + " - " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     public void sendEventToUser(String userId, RealtimeEvent event) {
         try {
-            messagingTemplate.convertAndSendToUser(userId, "/queue/events", event);
-            log.info("이벤트를 사용자 {}에게 전송: {}", userId, event.getType());
+            System.out.println("사용자별 이벤트 전송 시도: userId=" + userId + ", eventId=" + event.getId());
+            sseController.sendEventToUser(userId, event);
+            System.out.println("사용자별 이벤트 전송 성공: userId=" + userId + ", eventId=" + event.getId());
+            
+            // 이벤트 히스토리에 저장
+            eventHistory.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(event);
+            
+            // 히스토리 크기 제한
+            if (eventHistory.get(userId).size() > 100) {
+                eventHistory.get(userId).remove(0);
+            }
+            
         } catch (Exception e) {
-            log.error("사용자 {}에게 이벤트 전송 실패: {}", userId, e.getMessage());
+            System.err.println("사용자별 이벤트 전송 실패: userId=" + userId + ", eventId=" + event.getId() + " - " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
-    /**
-     * 모든 사용자에게 브로드캐스트
-     */
-    public void broadcastEvent(RealtimeEvent event) {
-        try {
-            messagingTemplate.convertAndSend("/topic/events", event);
-            log.info("이벤트 브로드캐스트: {}", event.getType());
-        } catch (Exception e) {
-            log.error("이벤트 브로드캐스트 실패: {}", e.getMessage());
-        }
-    }
-    
-    /**
-     * 특정 토픽으로 이벤트 전송
-     */
     public void sendEventToTopic(String topic, RealtimeEvent event) {
         try {
-            messagingTemplate.convertAndSend("/topic/" + topic, event);
-            log.info("토픽 {}으로 이벤트 전송: {}", topic, event.getType());
+            System.out.println("토픽별 이벤트 전송 시도: topic=" + topic + ", eventId=" + event.getId());
+            sseController.sendEventToTopic(topic, event);
+            System.out.println("토픽별 이벤트 전송 성공: topic=" + topic + ", eventId=" + event.getId());
         } catch (Exception e) {
-            log.error("토픽 {}으로 이벤트 전송 실패: {}", topic, e.getMessage());
+            System.err.println("토픽별 이벤트 전송 실패: topic=" + topic + ", eventId=" + event.getId() + " - " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
-    /**
-     * 캐릭터 업데이트 이벤트 생성 및 전송
-     */
     public void notifyCharacterUpdated(String characterId, String userId, Map<String, Object> data) {
         RealtimeEvent event = RealtimeEvent.builder()
                 .id(UUID.randomUUID().toString())
@@ -68,30 +84,9 @@ public class RealtimeEventService {
                 .broadcast(true)
                 .build();
         
-        broadcastEvent(event);
+        sendEvent(event);
     }
     
-    /**
-     * 파티 생성 이벤트 생성 및 전송
-     */
-    public void notifyPartyCreated(String partyId, String userId, Map<String, Object> data) {
-        RealtimeEvent event = RealtimeEvent.builder()
-                .id(UUID.randomUUID().toString())
-                .type(RealtimeEvent.EventType.PARTY_CREATED)
-                .targetId(partyId)
-                .userId(userId)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .message("새로운 파티가 생성되었습니다.")
-                .broadcast(true)
-                .build();
-        
-        broadcastEvent(event);
-    }
-    
-    /**
-     * 파티 업데이트 이벤트 생성 및 전송
-     */
     public void notifyPartyUpdated(String partyId, String userId, Map<String, Object> data) {
         RealtimeEvent event = RealtimeEvent.builder()
                 .id(UUID.randomUUID().toString())
@@ -104,48 +99,9 @@ public class RealtimeEventService {
                 .broadcast(true)
                 .build();
         
-        broadcastEvent(event);
+        sendEvent(event);
     }
     
-    /**
-     * 파티 최적화 이벤트 생성 및 전송
-     */
-    public void notifyPartyOptimized(String partyId, String userId, Map<String, Object> data) {
-        RealtimeEvent event = RealtimeEvent.builder()
-                .id(UUID.randomUUID().toString())
-                .type(RealtimeEvent.EventType.PARTY_OPTIMIZED)
-                .targetId(partyId)
-                .userId(userId)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .message("파티가 최적화되었습니다.")
-                .broadcast(true)
-                .build();
-        
-        broadcastEvent(event);
-    }
-    
-    /**
-     * 추천 생성 이벤트 생성 및 전송
-     */
-    public void notifyRecommendationGenerated(String recommendationId, String userId, Map<String, Object> data) {
-        RealtimeEvent event = RealtimeEvent.builder()
-                .id(UUID.randomUUID().toString())
-                .type(RealtimeEvent.EventType.RECOMMENDATION_GENERATED)
-                .targetId(recommendationId)
-                .userId(userId)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .message("새로운 파티 추천이 생성되었습니다.")
-                .broadcast(true)
-                .build();
-        
-        broadcastEvent(event);
-    }
-    
-    /**
-     * 시스템 알림 전송
-     */
     public void sendSystemNotification(String message, Map<String, Object> data) {
         RealtimeEvent event = RealtimeEvent.builder()
                 .id(UUID.randomUUID().toString())
@@ -156,6 +112,15 @@ public class RealtimeEventService {
                 .broadcast(true)
                 .build();
         
-        broadcastEvent(event);
+        sendEvent(event);
+    }
+    
+    public CopyOnWriteArrayList<RealtimeEvent> getUserEventHistory(String userId) {
+        return eventHistory.getOrDefault(userId, new CopyOnWriteArrayList<>());
+    }
+    
+    public void clearUserEventHistory(String userId) {
+        eventHistory.remove(userId);
+        System.out.println("사용자 이벤트 히스토리 삭제: userId=" + userId);
     }
 }

@@ -27,10 +27,15 @@ spec:
       serviceAccountName: {{ include "backend.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.initContainers }}
       initContainers:
-        {{- toYaml .Values.initContainers | nindent 8 }}
-      {{- end }}
+        - name: clear-playwright-cache
+          image: busybox
+          command: ["sh", "-c", "rm -rf /tmp/playwright* /tmp/.playwright* /ms-playwright || true"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: ms-playwright
+              mountPath: /ms-playwright
 
       containers:
         - name: {{ .Chart.Name }}
@@ -42,6 +47,11 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: ms-playwright
+              mountPath: /ms-playwright
           env:
             {{- range .Values.env }}
             - name: {{ .name }}
@@ -71,6 +81,11 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: ms-playwright
+          emptyDir: {}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}

@@ -24,6 +24,9 @@ public class Adventure {
     @Column(name = "adventure_name", unique = true, nullable = false)
     private String adventureName;
     
+    @Column(name = "server_id", nullable = false)
+    private String serverId;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

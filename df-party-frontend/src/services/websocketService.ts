@@ -1,7 +1,7 @@
 import { ref, onUnmounted } from 'vue'
 import { getWsUrl } from '../config/api'
-// import SockJS from 'sockjs-client'
-// import { Stomp } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
+import { Stomp } from '@stomp/stompjs'
 
 export interface RealtimeEvent {
   id: string
@@ -30,43 +30,42 @@ class WebSocketService {
   }
 
   /**
-   * WebSocket 연결 (임시 비활성화)
+   * WebSocket 연결
    */
   async connect(): Promise<void> {
     try {
-      console.log('WebSocket 연결이 임시로 비활성화되어 있습니다.')
-      return Promise.resolve()
-      
-      // if (this.stompClient && this.stompClient.connected) {
-      //   console.log('이미 연결되어 있습니다.')
-      //   return
-      // }
+      if (this.stompClient && this.stompClient.connected) {
+        console.log('이미 연결되어 있습니다.')
+        return
+      }
 
-      // const socket = new SockJS(`${API_BASE_URL}/ws`)
-      // this.stompClient = Stomp.over(socket)
+      const socket = new SockJS(`${getWsUrl('')}/ws`, null, {
+        transports: ['websocket', 'xhr-streaming', 'xhr-polling']
+      })
+      this.stompClient = Stomp.over(socket)
       
-      // // STOMP 디버그 비활성화
-      // this.stompClient.debug = null
+      // STOMP 디버그 비활성화
+      this.stompClient.debug = undefined
 
-      // return new Promise((resolve, reject) => {
-      //   this.stompClient.connect(
-      //     {},
-      //     () => {
-      //       console.log('WebSocket 연결 성공')
-      //       this.isConnected.value = true
-      //       this.reconnectAttempts = 0
-      //       this.subscribeToTopics()
-      //       this.notifyUserJoin()
-      //       resolve()
-      //     },
-      //     (error: any) => {
-      //       console.error('WebSocket 연결 실패:', error)
-      //       this.isConnected.value = false
-      //       this.handleReconnection()
-      //       reject(error)
-      //     }
-      //   )
-      // })
+      return new Promise((resolve, reject) => {
+        this.stompClient.connect(
+          {},
+          () => {
+            console.log('WebSocket 연결 성공')
+            this.isConnected.value = true
+            this.reconnectAttempts = 0
+            this.subscribeToTopics()
+            this.notifyUserJoin()
+            resolve()
+          },
+          (error: any) => {
+            console.error('WebSocket 연결 실패:', error)
+            this.isConnected.value = false
+            this.handleReconnection()
+            reject(error)
+          }
+        )
+      })
     } catch (error) {
       console.error('WebSocket 연결 중 오류:', error)
       this.handleReconnection()

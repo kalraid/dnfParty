@@ -4,12 +4,14 @@ import com.dfparty.backend.dto.ServerDto;
 import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.dto.CharacterDetailDto;
 import com.dfparty.backend.service.DfoApiService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/dfo")
 @CrossOrigin(origins = "*")

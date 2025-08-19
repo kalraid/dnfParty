@@ -4,14 +4,19 @@ import com.dfparty.backend.dto.ServerDto;
 import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.dto.CharacterDetailDto;
 import com.dfparty.backend.service.ThursdayFallbackService;
+import com.dfparty.backend.entity.Server;
+import com.dfparty.backend.repository.ServerRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.stream.Collectors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,9 +28,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.DayOfWeek;
 import java.time.format.DateTimeFormatter;
+import com.dfparty.backend.service.PlaywrightCrawlingService;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DfoApiService {
 
     @Value("${df.api.base-url:https://api.neople.co.kr/df}")
@@ -53,6 +60,7 @@ public class DfoApiService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final ThursdayFallbackService thursdayFallbackService;
+    private final ServerRepository serverRepository;
 
     /**
      * 가장 가까운 목요일 오전 9시를 기준으로 시작날짜 계산 (DFO API 형식)
@@ -112,22 +120,45 @@ public class DfoApiService {
     }
 
     public List<ServerDto> getServers() throws Exception {
-        // 목요일 API 제한 체크
+        log.info("=== 서버 목록 조회 시작 ===");
+        
+        // 1차: DB에서 서버 목록 조회 시도
+        try {
+            log.info("1차: DB에서 서버 목록 조회 시도");
+            List<ServerDto> dbServers = serverRepository.findAll().stream()
+                .map(server -> new ServerDto(server.getServerId(), server.getServerName()))
+                .collect(Collectors.toList());
+            
+            if (!dbServers.isEmpty()) {
+                log.info("DB에서 서버 목록 조회 성공: {}개 서버", dbServers.size());
+                return dbServers;
+            } else {
+                log.info("DB에 서버 데이터가 없음, API 호출로 진행");
+            }
+        } catch (Exception e) {
+            log.warn("DB 조회 실패, API 호출로 진행: {}", e.getMessage());
+        }
+        
+        // 2차: 목요일 API 제한 체크
+        log.info("2차: 목요일 API 제한 체크");
         Map<String, Object> restriction = thursdayFallbackService.checkThursdayApiRestriction("서버 목록 조회");
         if (restriction != null) {
+            log.error("목요일 API 제한으로 인해 서버 목록 조회 불가: {}", restriction.get("message"));
             throw new RuntimeException("목요일 API 제한: " + restriction.get("message"));
         }
         
-        // 실제 API 호출
+        // 3차: DFO API 호출
+        log.info("3차: DFO API 호출 시작");
         String url = UriComponentsBuilder
                 .fromHttpUrl(baseUrl + "/servers")
                 .queryParam("apikey", apiKey)
                 .build()
                 .toUriString();
 
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        log.info("API URL: {}", url);
         
-
+        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        log.info("API 응답 상태: {}", response.getStatusCode());
         
         JsonNode root = objectMapper.readTree(response.getBody());
         JsonNode rows = root.path("rows");
@@ -143,12 +174,33 @@ public class DfoApiService {
             }
         }
 
+        log.info("API에서 서버 목록 조회 성공: {}개 서버", servers.size());
+        
+        // 4차: DB에 서버 정보 저장
+        try {
+            log.info("4차: DB에 서버 정보 저장 시도");
+            for (ServerDto server : servers) {
+                Server serverEntity = new Server();
+                serverEntity.setServerId(server.getServerId());
+                serverEntity.setServerName(server.getServerName());
+                serverRepository.save(serverEntity);
+            }
+            log.info("DB에 서버 정보 저장 완료");
+        } catch (Exception e) {
+            log.warn("DB 저장 실패 (무시하고 진행): {}", e.getMessage());
+        }
+        
+        log.info("=== 서버 목록 조회 완료 ===");
         return servers;
     }
 
     public List<CharacterDto> searchCharacters(String serverId, String characterName, 
                                             String jobId, String jobGrowId, 
                                             boolean isAllJobGrow, int limit, String wordType) throws Exception {
+        log.info("=== 캐릭터 검색 시작 ===");
+        log.info("검색 파라미터: serverId={}, characterName={}, jobId={}, jobGrowId={}, isAllJobGrow={}, limit={}, wordType={}", 
+                serverId, characterName, jobId, jobGrowId, isAllJobGrow, limit, wordType);
+        
         try {
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(baseUrl + "/servers/" + serverId + "/characters")
@@ -166,18 +218,12 @@ public class DfoApiService {
         }
 
         String url = builder.build().toUriString();
-            System.out.println("=== DFO API 호출 ===");
-            System.out.println("URL: " + url);
-            System.out.println("Server ID: " + serverId);
-            System.out.println("Character Name: " + characterName);
-            System.out.println("==================");
+            log.info("DFO API URL: {}", url);
+            log.info("API 호출 시작: serverId={}, characterName={}", serverId, characterName);
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-            
-            System.out.println("=== DFO API 응답 ===");
-            System.out.println("Status: " + response.getStatusCode());
-            System.out.println("Body: " + response.getBody());
-            System.out.println("===================");
+            log.info("API 응답 상태: {}", response.getStatusCode());
+            log.debug("API 응답 본문: {}", response.getBody());
 
         JsonNode root = objectMapper.readTree(response.getBody());
         JsonNode rows = root.path("rows");
@@ -201,9 +247,8 @@ public class DfoApiService {
             }
         }
 
-            System.out.println("=== 검색 결과 ===");
-            System.out.println("캐릭터 수: " + characters.size());
-            System.out.println("================");
+            log.info("캐릭터 검색 완료: {}개 캐릭터 발견", characters.size());
+            log.debug("검색된 캐릭터들: {}", characters.stream().map(CharacterDto::getCharacterName).collect(Collectors.toList()));
 
         return characters;
             
@@ -220,28 +265,30 @@ public class DfoApiService {
     }
 
     public CharacterDetailDto getCharacterDetail(String serverId, String characterId) throws Exception {
+        log.info("=== 캐릭터 상세 정보 조회 시작 ===");
+        log.info("조회 파라미터: serverId={}, characterId={}", serverId, characterId);
+        
         String url = UriComponentsBuilder
                 .fromHttpUrl(baseUrl + "/servers/" + serverId + "/characters/" + characterId)
                 .queryParam("apikey", apiKey)
                 .build()
                 .toUriString();
+        
+        log.info("DFO API URL: {}", url);
+        log.info("API 호출 시작: serverId={}, characterId={}", serverId, characterId);
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        JsonNode root = objectMapper.readTree(response.getBody());
+        log.info("API 응답 상태: {}", response.getStatusCode());
+        log.debug("API 응답 본문: {}", response.getBody());
         
-        // DFO API 응답 로깅 (이미지 URL 확인용)
-        System.out.println("=== DFO API 캐릭터 상세 응답 ===");
-        System.out.println("Character ID: " + characterId);
-        System.out.println("Response Body: " + response.getBody());
-        System.out.println("============================");
+        JsonNode root = objectMapper.readTree(response.getBody());
 
         String adventureName = root.path("adventureName").asText();
-        System.out.println("=== DFO API에서 추출된 모험단 정보 ===");
-        System.out.println("Character Name: " + root.path("characterName").asText());
-        System.out.println("Adventure Name: '" + adventureName + "'");
-        System.out.println("Adventure Name isEmpty: " + adventureName.isEmpty());
-        System.out.println("Adventure Name isNull: " + (adventureName == null));
-        System.out.println("=====================================");
+        log.info("=== DFO API에서 추출된 모험단 정보 ===");
+        log.info("Character Name: {}", root.path("characterName").asText());
+        log.info("Adventure Name: '{}'", adventureName);
+        log.info("Adventure Name isEmpty: {}", adventureName.isEmpty());
+        log.info("Adventure Name isNull: {}", (adventureName == null));
 
         CharacterDetailDto characterDetail = new CharacterDetailDto(
             serverId,
@@ -274,11 +321,11 @@ public class DfoApiService {
         characterDetail.setCharacterImageUrl(characterImageUrl);
         characterDetail.setAvatarImageUrl(avatarImageUrl);
         
-        System.out.println("=== 추출된 이미지 URL ===");
-        System.out.println("Character Image URL: " + characterImageUrl);
-        System.out.println("Avatar Image URL: " + avatarImageUrl);
-        System.out.println("=======================");
-
+        log.info("=== 추출된 이미지 URL ===");
+        log.info("Character Image URL: {}", characterImageUrl);
+        log.info("Avatar Image URL: {}", avatarImageUrl);
+        
+        log.info("=== 캐릭터 상세 정보 조회 완료 ===");
         return characterDetail;
     }
 

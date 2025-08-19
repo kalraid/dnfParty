@@ -276,15 +276,6 @@
                 <div class="action-cell">
                   <div class="action-label">던담초기화</div>
                   <div class="dundam-actions">
-                    <!-- 셀레니움 버전 (비활성화됨) -->
-                    <button class="action-btn dundam-sync-btn disabled" 
-                            disabled
-                            title="K8s 환경에서 셀레니움 크롤링 실패로 인해 비활성화됨">
-                      <span class="button-content">
-                        <span class="button-icon">🚫</span>
-                      </span>
-                    </button>
-                    
                     <!-- Playwright 버전 (활성화됨) -->
                     <button @click="syncCharacterFromDundamPlaywright(character)" 
                             class="action-btn dundam-sync-btn playwright-enabled" 
@@ -450,11 +441,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
-import { dfApiService } from '../services/dfApi';
-// import websocketService, { type RealtimeEvent } from '../services/websocketService';
-import { type RealtimeEvent } from '../services/websocketService';
+import { useRoute } from 'vue-router';
+import sseService, { type RealtimeEvent } from '../services/sseService';
 import { type Character } from '../types';
-import { apiFetch, createWebSocket } from '../config/api';
+import { apiFetch } from '../config/api';
+
+// 라우터 정보 가져오기
+const route = useRoute();
 
 // 반응형 데이터
 const searchQuery = ref(''); // 모험단 검색어
@@ -618,48 +611,7 @@ const hardPartyCharacters = ref<Set<string>>(new Set()); // 하드 파티로 가
 const sortField = ref<string>('fame');
 const sortOrder = ref<'asc' | 'desc'>('desc');
 
-// WebSocket 연결
-const connectWebSocket = () => {
-  try {
-    const ws = createWebSocket('/ws');
-    
-    ws.onopen = () => {
-      console.log('WebSocket 연결됨');
-      
-      // character-updates 토픽 구독
-      ws.send(JSON.stringify({
-        type: 'SUBSCRIBE',
-        topic: 'character-updates'
-      }));
-    };
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('WebSocket 메시지 수신:', data);
-        
-        // 캐릭터 업데이트 처리
-        if (data.type === 'CHARACTER_UPDATED') {
-          handleCharacterUpdate(data);
-        }
-      } catch (error) {
-        console.error('WebSocket 메시지 파싱 오류:', error);
-      }
-    };
-    
-    ws.onclose = () => {
-      console.log('WebSocket 연결 끊어짐');
-      // 재연결 시도
-      setTimeout(connectWebSocket, 5000);
-    };
-    
-    ws.onerror = (error) => {
-      console.error('WebSocket 오류:', error);
-    };
-  } catch (error) {
-    console.error('WebSocket 연결 실패:', error);
-  }
-};
+
 
 
 
@@ -926,11 +878,20 @@ const restoreFilterCondition = () => {
 onMounted(async () => {
   loadRecentSearchedAdventures(); // 최근 검색 모험단 로드
   restoreDundamSyncState(); // 던담 동기화 상태 복원
-  await initializeWebSocket();
-  connectWebSocket();
+  await initializeSSE();
   
   // 저장된 필터 조건 복원
   restoreFilterCondition();
+  
+  // URL 파라미터에서 adventure 값 확인
+  const adventureParam = route.query.adventure as string;
+  if (adventureParam) {
+    console.log('URL 파라미터에서 모험단 발견:', adventureParam);
+    selectedAdventure.value = adventureParam;
+    searchQuery.value = adventureParam;
+    // 해당 모험단으로 자동 검색
+    await searchAdventure();
+  }
   
   // 10초마다 제한시간 초과된 동기화 상태 체크
   syncCheckTimer = window.setInterval(() => {
@@ -955,8 +916,8 @@ watch(syncingCharacters, (newValue) => {
 }, { deep: true });
 
 onUnmounted(() => {
-  // websocketService.removeAllEventListeners(); // 임시 비활성화
-  // websocketService.disconnect(); // 임시 비활성화
+  sseService.removeAllEventListeners();
+  sseService.disconnect();
   
   // 타이머 정리
   if (syncCheckTimer) {
@@ -1243,46 +1204,47 @@ const initializeSyncTimes = () => {
   });
 };
 
-// 웹소켓 초기화
-const initializeWebSocket = async () => {
+// SSE 초기화
+const initializeSSE = async () => {
   try {
-    // websocketService.connect(); // 임시 비활성화
-    // isConnected.value = websocketService.getConnectionStatus().value; // 임시 비활성화
+    await sseService.connect();
+    isConnected.value = sseService.getConnectionStatus().value;
     
-    // 실시간 이벤트 리스너 등록 // 임시 비활성화
-    // websocketService.addEventListener('CHARACTER_UPDATED', handleCharacterUpdate); // 임시 비활성화
-    // websocketService.addEventListener('SYSTEM_NOTIFICATION', handleSystemNotification); // 임시 비활성화
+    // 실시간 이벤트 리스너 등록
+    sseService.addEventListener('CHARACTER_UPDATED', handleCharacterUpdate);
+    sseService.addEventListener('SYSTEM_NOTIFICATION', handleSystemNotification);
     
-    console.log('웹소켓 연결 완료 (임시 비활성화)');
+    console.log('SSE 연결 완료');
   } catch (err) {
-    console.error('웹소켓 연결 실패:', err);
+    console.error('SSE 연결 실패:', err);
     error.value = '실시간 업데이트 연결에 실패했습니다.';
   }
 };
 
-// 캐릭터 업데이트 이벤트 처리 (WebSocket + 기존 통합)
-const handleCharacterUpdate = (data: any) => {
+// 캐릭터 업데이트 이벤트 처리 (SSE)
+const handleCharacterUpdate = (event: RealtimeEvent) => {
   try {
-    // WebSocket 메시지 처리
-    if (data.data && data.data.updateType === 'dundam_sync') {
-      const { characterId, updateResult } = data.data;
+    if (event.type === 'CHARACTER_UPDATED' && event.data) {
+      const { characterId, serverId, updateResult, characterInfo } = event.data;
       
-      if (updateResult.success) {
+      if (updateResult && updateResult.success) {
         // 해당 캐릭터 찾아서 업데이트
         const characterIndex = characters.value.findIndex(c => c.characterId === characterId);
         if (characterIndex !== -1) {
           const character = characters.value[characterIndex];
           
-                  // 스탯 업데이트
-        if (updateResult.characterInfo) {
-          // 기존 값이 있으면 유지, 없으면 업데이트
-          if (updateResult.characterInfo.totalDamage !== undefined && updateResult.characterInfo.totalDamage !== null) {
-            character.totalDamage = updateResult.characterInfo.totalDamage;
+          // 스탯 업데이트
+          if (characterInfo) {
+            if (characterInfo.totalDamage !== undefined && characterInfo.totalDamage !== null) {
+              character.totalDamage = characterInfo.totalDamage;
+            }
+            if (characterInfo.buffPower !== undefined && characterInfo.buffPower !== null) {
+              character.buffPower = characterInfo.buffPower;
+            }
+            if (characterInfo.combatPower !== undefined && characterInfo.combatPower !== null) {
+              character.combatPower = characterInfo.combatPower;
+            }
           }
-          if (updateResult.characterInfo.buffPower !== undefined && updateResult.characterInfo.buffPower !== null) {
-            character.buffPower = updateResult.characterInfo.buffPower;
-          }
-        }
           
           // 성공 메시지 표시
           successMessage.value = `${character.characterName}의 던담 동기화가 완료되었습니다.`;
@@ -1291,38 +1253,12 @@ const handleCharacterUpdate = (data: any) => {
         }
       }
     }
-    // 기존 RealtimeEvent 처리 (임시 비활성화)
-    else if (data.data) {
-      const updatedCharacter = data.data;
-      
-      // 현재 캐릭터 목록에서 해당 캐릭터 업데이트
-      const index = characters.value.findIndex(c => c.characterId === updatedCharacter.characterId);
-      if (index !== -1) {
-        characters.value[index] = { ...characters.value[index], ...updatedCharacter };
-      }
-      
-      // 진행률 업데이트
-      if (updatedCharacter.progress) {
-        updateProgress.value = updatedCharacter.progress;
-      }
-      
-      successMessage.value = `${updatedCharacter.characterName} 정보가 업데이트되었습니다.`;
-      
-      // 완료 시 상태 초기화
-      if (updatedCharacter.completed) {
-        setTimeout(() => {
-          updating.value = false;
-          updateProgress.value = 0;
-          updateStatus.value = '';
-        }, 1000);
-      }
-    }
   } catch (error) {
     console.error('캐릭터 업데이트 처리 오류:', error);
   }
 };
 
-// 시스템 알림 이벤트 처리 // 임시 비활성화
+// 시스템 알림 이벤트 처리
 const handleSystemNotification = (event: RealtimeEvent) => {
   updateStatus.value = event.message;
   
@@ -1341,7 +1277,7 @@ const handleSystemNotification = (event: RealtimeEvent) => {
     }
   }
   
-  // 알림을 배열에 추가 (최근 5개만 유지) // 임시 비활성화
+  // 알림을 배열에 추가 (최근 5개만 유지)
   realtimeNotifications.value.unshift(event);
   if (realtimeNotifications.value.length > 5) {
     realtimeNotifications.value = realtimeNotifications.value.slice(0, 5);
@@ -1685,10 +1621,7 @@ const saveManualInput = async () => {
   }
 };
 
-// 던담 동기화 함수 (셀레니움 - 비활성화됨)
-const syncCharacterFromDundam = async (character: Character) => {
-  error.value = '셀레니움 동기화는 K8s 환경에서 실패하여 비활성화되었습니다. Playwright 동기화를 사용하세요.';
-};
+
 
 // 던담 동기화 함수 (Playwright)
 const syncCharacterFromDundamPlaywright = async (character: Character) => {

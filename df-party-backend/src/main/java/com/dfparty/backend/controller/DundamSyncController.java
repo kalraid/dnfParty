@@ -47,6 +47,16 @@ public class DundamSyncController {
     private void updateSyncTime(String characterKey) {
         lastSyncTime.put(characterKey, LocalDateTime.now());
     }
+    
+    // 클라이언트 IP 주소 가져오기
+    private String getClientIpAddress() {
+        try {
+            // HttpServletRequest를 가져오는 방법이 제한적이므로 기본값 반환
+            return "unknown";
+        } catch (Exception e) {
+            return "error";
+        }
+    }
 
     /**
      * 특정 캐릭터의 던담 정보 동기화 (통합 API)
@@ -61,6 +71,8 @@ public class DundamSyncController {
         try {
             log.info("=== 던담 동기화 시작 (메서드: {}) ===", method);
             log.info("서버: {}, 캐릭터 ID: {}", serverId, characterId);
+            log.info("요청 시간: {}", LocalDateTime.now());
+            log.info("클라이언트 IP: {}", getClientIpAddress());
             
             // 2분 제한 확인
             String characterKey = serverId + "_" + characterId;
@@ -132,7 +144,7 @@ public class DundamSyncController {
             Map<String, Object> characterInfo = (Map<String, Object>) dundamResult.get("characterInfo");
             Map<String, Object> updateResult = characterService.updateCharacterFromDundam(serverId, characterId, characterInfo);
             
-            // WebSocket으로 실시간 업데이트 전송
+            // SSE로 실시간 업데이트 전송
             if ((Boolean) updateResult.get("success")) {
                 try {
                     Map<String, Object> wsData = new HashMap<>();
@@ -140,6 +152,7 @@ public class DundamSyncController {
                     wsData.put("serverId", serverId);
                     wsData.put("updateType", "dundam_sync_" + method.toLowerCase());
                     wsData.put("updateResult", updateResult);
+                    wsData.put("characterInfo", characterInfo); // 던담에서 가져온 원본 정보 추가
                     wsData.put("timestamp", LocalDateTime.now());
                     
                     realtimeEventService.sendEventToTopic("character-updates", 
@@ -154,9 +167,9 @@ public class DundamSyncController {
                             .build()
                     );
                     
-                    log.info("WebSocket으로 실시간 업데이트 전송 완료");
+                    log.info("SSE로 실시간 업데이트 전송 완료");
                 } catch (Exception e) {
-                    log.warn("WebSocket 전송 실패: {}", e.getMessage());
+                    log.warn("SSE 전송 실패: {}", e.getMessage());
                 }
             }
             

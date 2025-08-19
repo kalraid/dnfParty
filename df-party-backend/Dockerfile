@@ -11,7 +11,8 @@ RUN apk add --no-cache --virtual .build-deps \
 	&& rm -rf /var/cache/apk/*
 
 # Increase Gradle memory and set encoding to avoid OOM during bootJar
-ENV GRADLE_OPTS="-Xmx2048m -Dfile.encoding=UTF-8"
+ENV GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+ENV JAVA_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=512m"
 
 # Copy gradle wrapper files (not required when using system gradle, but keep structure consistent)
 COPY gradle/ gradle/
@@ -22,8 +23,12 @@ COPY build.gradle ./
 # Copy source code
 COPY src/ src/
 
-# Build the application using system gradle (wrapper not required inside container)
-RUN gradle clean build -x test --no-daemon -Dorg.gradle.workers.max=1 \
+# Build the application with optimized settings
+RUN gradle clean build -x test --no-daemon \
+	-Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=512m" \
+	-Dorg.gradle.workers.max=2 \
+	-Dorg.gradle.parallel=true \
+	-Dorg.gradle.caching=true \
 	&& ls -la build/libs/
 
 # Production stage (Playwright with browsers preinstalled)
@@ -33,6 +38,14 @@ WORKDIR /app
 
 # Headless by default
 ENV PLAYWRIGHT_HEADLESS=true
+
+# Set Playwright cache and browser paths for Kubernetes
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_CACHE_DIR=/tmp/.playwright
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /ms-playwright /tmp/.playwright && \
+    chmod 755 /ms-playwright /tmp/.playwright
 
 # Copy built jar from build stage
 COPY --from=build-stage /app/build/libs/*.jar app.jar

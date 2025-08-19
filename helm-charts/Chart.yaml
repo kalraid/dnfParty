@@ -20,8 +20,8 @@ dependencies:
   - name: frontend
     version: 1.0.0
     condition: frontend.enabled
-    repository: "file://frontend"
+    repository: "file://./frontend"
   - name: backend
     version: 1.0.0
     condition: backend.enabled
-    repository: "file://backend"
+    repository: "file://./backend"

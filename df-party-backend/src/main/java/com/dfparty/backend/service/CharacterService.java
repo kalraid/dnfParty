@@ -317,34 +317,9 @@ public class CharacterService {
                         log.info("조건 불만족: 기존 모험단 정보 사용 - '{}'", currentAdventureName);
                     }
                     
-                    // 던담에서 버프력/전투력 정보 조회 (DB에 없거나 0인 경우)
-                    Long currentBuffPower = (Long) character.get("buffPower");
-                    Long currentTotalDamage = (Long) character.get("totalDamage");
-                    
-                    if ((currentBuffPower == null || currentBuffPower == 0L) || 
-                        (currentTotalDamage == null || currentTotalDamage == 0L)) {
-                        try {
-                            log.info("던담에서 버프력/전투력 조회 시작: characterId={}", charId);
-                            Map<String, Object> dundamInfo = dundamService.getCharacterInfo(serverIdChar, charId);
-                            
-                            if (dundamInfo != null && Boolean.TRUE.equals(dundamInfo.get("success"))) {
-                                Long buffPower = (Long) dundamInfo.get("buffPower");
-                                Long totalDamage = (Long) dundamInfo.get("totalDamage");
-                                
-                                if (buffPower != null && buffPower > 0) {
-                                    character.put("buffPower", buffPower);
-                                    log.info("던담에서 버프력 업데이트: characterId={}, buffPower={}", charId, buffPower);
-                                }
-                                
-                                if (totalDamage != null && totalDamage > 0) {
-                                    character.put("totalDamage", totalDamage);
-                                    log.info("던담에서 전투력 업데이트: characterId={}, totalDamage={}", charId, totalDamage);
-                                }
-                            }
-                        } catch (Exception e) {
-                            log.warn("던담 정보 조회 실패: characterId={}, error={}", charId, e.getMessage());
-                        }
-                    }
+                    // 던담에서 버프력/전투력 정보 조회는 프론트엔드에서 별도로 처리
+                    // (검색 완료 후 사용자가 확인할 수 있도록)
+                    log.info("검색 완료: characterId={}, 기본 정보만 반환 (던담 동기화는 프론트엔드에서 처리)", charId);
                     
                     // DFO API 타임라인에서 던전 클리어 정보 조회 (항상 최신화)
                     try {
@@ -926,9 +901,10 @@ public class CharacterService {
         // Dundam에서 캐릭터 스펙 정보 조회 및 업데이트
         try {
             // DFO API에서 가져온 직업 정보를 함께 전달
-            Map<String, Object> dundamInfo = dundamService.getCharacterInfoWithSelenium(
+            Map<String, Object> dundamInfo = dundamService.getCharacterInfoWithMethod(
                 character.getServerId(), 
-                character.getCharacterId()
+                character.getCharacterId(),
+                "playwright"
             );
             
             if (dundamInfo != null && dundamInfo.get("success") == Boolean.TRUE) {
@@ -1005,8 +981,8 @@ public class CharacterService {
             log.info("모험단 관계 설정 시작: character={}, adventureName={}", 
                 character.getCharacterName(), adventureName);
             
-            // 모험단을 DB에서 조회
-            Optional<Adventure> adventureOpt = adventureRepository.findByAdventureName(adventureName);
+            // 모험단을 DB에서 조회 (서버별로 조회)
+            Optional<Adventure> adventureOpt = adventureRepository.findByAdventureNameAndServerId(adventureName, character.getServerId());
             if (adventureOpt.isPresent()) {
                 Adventure adventure = adventureOpt.get();
                 character.setAdventure(adventure);
@@ -1015,9 +991,10 @@ public class CharacterService {
             } else {
                 log.info("모험단 {}이 DB에 없으므로 새로 생성합니다", adventureName);
                 
-                // 모험단이 없으면 새로 생성
+                // 모험단이 없으면 새로 생성 (serverId 포함)
                 Adventure newAdventure = Adventure.builder()
                     .adventureName(adventureName)
+                    .serverId(character.getServerId())
                     .build();
                 Adventure savedAdventure = adventureRepository.save(newAdventure);
                 character.setAdventure(savedAdventure);
@@ -2027,7 +2004,7 @@ public class CharacterService {
             
             log.info("하드 나벨 대상자 여부 업데이트 완료: characterId={}, isEligible={}", characterId, isEligible);
             
-            // WebSocket으로 실시간 업데이트 알림
+                            // SSE로 실시간 업데이트 알림
             Map<String, Object> eventData = new HashMap<>();
             eventData.put("characterId", characterId);
             eventData.put("isHardNabelEligible", isEligible);
@@ -2623,6 +2600,13 @@ public class CharacterService {
             }
             
             if (updated) {
+                // 나벨 자격 업데이트 (총딜/버프력 변경 후)
+                character.updateNabelEligibility();
+                log.info("나벨 자격 업데이트 완료: 하드={}, 일반={}, 매칭={}", 
+                    character.getIsHardNabelEligible(), 
+                    character.getIsNormalNabelEligible(), 
+                    character.getIsMatchingNabelEligible());
+                
                 character.setLastStatsUpdate(LocalDateTime.now());
                 characterRepository.save(character);
                 log.info("캐릭터 정보 업데이트 완료");
@@ -2631,7 +2615,12 @@ public class CharacterService {
                     "success", true,
                     "message", "캐릭터 정보가 성공적으로 업데이트되었습니다.",
                     "characterName", character.getCharacterName(),
-                    "updatedFields", dundamInfo.keySet()
+                    "updatedFields", dundamInfo.keySet(),
+                    "nabelEligibility", Map.of(
+                        "isHardNabelEligible", character.getIsHardNabelEligible(),
+                        "isNormalNabelEligible", character.getIsNormalNabelEligible(),
+                        "isMatchingNabelEligible", character.getIsMatchingNabelEligible()
+                    )
                 );
             } else {
                 log.info("업데이트할 정보가 없음");

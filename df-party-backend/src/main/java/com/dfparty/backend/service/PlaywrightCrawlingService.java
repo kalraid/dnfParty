@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.dfparty.backend.entity.Character;
 import com.dfparty.backend.repository.CharacterRepository;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -37,51 +39,104 @@ public class PlaywrightCrawlingService {
     private static volatile boolean isInitializing = false;
 
     /**
+     * 서비스 시작 시 Playwright 드라이버 미리 초기화
+     */
+    @PostConstruct
+    public void initializePlaywrightDriver() {
+        log.info("=== Playwright 드라이버 사전 초기화 시작 ===");
+        try {
+            initializeSharedBrowser();
+            log.info("=== Playwright 드라이버 사전 초기화 완료 ===");
+        } catch (Exception e) {
+            log.error("=== Playwright 드라이버 사전 초기화 실패 ===");
+            log.error("에러: {}", e.getMessage());
+            // 초기화 실패해도 서비스는 계속 실행
+        }
+    }
+
+    /**
      * 공유 브라우저 인스턴스 초기화
      */
     private void initializeSharedBrowser() {
         try {
-            if (sharedBrowser != null && sharedBrowser.isConnected()) {
-                log.info("=== 공유 브라우저 사용 중 (구간 1,2,3 생략) ===");
-                return;
-            }
+        if (sharedBrowser != null && sharedBrowser.isConnected()) {
+            log.info("=== 공유 브라우저 사용 중 (구간 1,2,3 생략) ===");
+            return;
+        }
 
-            synchronized (browserLock) {
-                if (isInitializing) {
-                    log.info("다른 스레드에서 브라우저 초기화 중, 대기...");
-                    while (isInitializing) {
-                        try {
-                            browserLock.wait();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
-                    }
-                    if (sharedBrowser != null && sharedBrowser.isConnected()) {
-                        log.info("다른 스레드에서 초기화 완료, 공유 브라우저 사용");
+        synchronized (browserLock) {
+            if (isInitializing) {
+                log.info("다른 스레드에서 브라우저 초기화 중, 대기...");
+                while (isInitializing) {
+                    try {
+                        browserLock.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         return;
                     }
                 }
+                if (sharedBrowser != null && sharedBrowser.isConnected()) {
+                    log.info("다른 스레드에서 초기화 완료, 공유 브라우저 사용");
+                    return;
+                }
+            }
 
-                isInitializing = true;
+            isInitializing = true;
+            try {
+                log.info("=== 공유 브라우저 인스턴스 초기화 시작 ===");
+
+                // Playwright 인스턴스 생성
+                log.info("=== 구간 1: Playwright 인스턴스 생성 시작 ===");
                 try {
-                    log.info("=== 공유 브라우저 인스턴스 초기화 시작 ===");
-
-                    // Playwright 인스턴스 생성
-                    log.info("=== 구간 1: Playwright 인스턴스 생성 시작 ===");
-                    try {
-                        sharedPlaywright = Playwright.create();
-                        log.info("=== 구간 1: Playwright 인스턴스 생성 완료 ===");
-                    } catch (Exception e) {
-                        log.error("Playwright 인스턴스 생성 실패: {}", e.getMessage(), e);
-                        log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
-                        return;
+                    log.info("Playwright.create() 호출 시작");
+                sharedPlaywright = Playwright.create();
+                log.info("=== 구간 1: Playwright 인스턴스 생성 완료 ===");
+                } catch (Exception e) {
+                    log.error("=== Playwright 인스턴스 생성 실패 상세 분석 ===");
+                    log.error("에러 타입: {}", e.getClass().getName());
+                    log.error("에러 메시지: {}", e.getMessage());
+                    log.error("에러 원인: {}", e.getCause() != null ? e.getCause().getMessage() : "원인 없음");
+                    
+                    // 스택 트레이스 상세 분석
+                    StackTraceElement[] stackTrace = e.getStackTrace();
+                    log.error("스택 트레이스 (최대 10개):");
+                    for (int i = 0; i < Math.min(stackTrace.length, 10); i++) {
+                        StackTraceElement element = stackTrace[i];
+                        log.error("  {}: {}.{}({}:{})", 
+                            i, element.getClassName(), element.getMethodName(), 
+                            element.getFileName(), element.getLineNumber());
                     }
+                    
+                    // 시스템 정보 로깅
+                    log.error("=== 시스템 정보 ===");
+                    log.error("Java 버전: {}", System.getProperty("java.version"));
+                    log.error("OS: {} {}", System.getProperty("os.name"), System.getProperty("os.version"));
+                    log.error("아키텍처: {}", System.getProperty("os.arch"));
+                    log.error("사용자 홈: {}", System.getProperty("user.home"));
+                    log.error("임시 디렉토리: {}", System.getProperty("java.io.tmpdir"));
+                    log.error("Playwright 브라우저 경로: {}", System.getenv("PLAYWRIGHT_BROWSERS_PATH"));
+                    log.error("Playwright 캐시 디렉토리: {}", System.getenv("PLAYWRIGHT_CACHE_DIR"));
+                    
+                    // 디렉토리 권한 확인
+                    try {
+                        String tmpDir = System.getProperty("java.io.tmpdir");
+                        File tmpFile = new File(tmpDir);
+                        log.error("임시 디렉토리 쓰기 권한: {}", tmpFile.canWrite());
+                        log.error("임시 디렉토리 읽기 권한: {}", tmpFile.canRead());
+                        log.error("임시 디렉토리 실행 권한: {}", tmpFile.canExecute());
+                    } catch (Exception dirEx) {
+                        log.error("디렉토리 권한 확인 실패: {}", dirEx.getMessage());
+                    }
+                    
+                    log.error("=== Playwright 인스턴스 생성 실패 상세 분석 완료 ===");
+                    log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
+                    return;
+                }
 
                     // Chromium 브라우저 시작 (더 안전한 옵션)
-                    log.info("=== 구간 2: Chromium 브라우저 시작 중 ===");
+                log.info("=== 구간 2: Chromium 브라우저 시작 중 ===");
                     BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
-                        .setHeadless(true)
+                    .setHeadless(true)
                         .setArgs(Arrays.asList(
                             "--no-sandbox",
                             "--disable-dev-shm-usage",
@@ -96,32 +151,105 @@ public class PlaywrightCrawlingService {
                         ));
                     
                     try {
+                        log.info("Chromium 브라우저 시작 옵션: {}", launchOptions.toString());
                         sharedBrowser = sharedPlaywright.chromium().launch(launchOptions);
-                        log.info("=== 구간 2: Chromium 브라우저 시작 완료 ===");
+                log.info("=== 구간 2: Chromium 브라우저 시작 완료 ===");
                     } catch (Exception e) {
-                        log.error("Chromium 브라우저 시작 실패: {}", e.getMessage(), e);
+                        log.error("=== Chromium 브라우저 시작 실패 상세 분석 ===");
+                        log.error("에러 타입: {}", e.getClass().getName());
+                        log.error("에러 메시지: {}", e.getMessage());
+                        log.error("에러 원인: {}", e.getCause() != null ? e.getCause().getMessage() : "원인 없음");
+                        
+                        // 스택 트레이스 상세 분석
+                        StackTraceElement[] stackTrace = e.getStackTrace();
+                        log.error("스택 트레이스 (최대 10개):");
+                        for (int i = 0; i < Math.min(stackTrace.length, 10); i++) {
+                            StackTraceElement element = stackTrace[i];
+                            log.error("  {}: {}.{}({}:{})", 
+                                i, element.getClassName(), element.getMethodName(), 
+                                element.getFileName(), element.getLineNumber());
+                        }
+                        
                         // fallback: 더 간단한 옵션으로 재시도
                         log.info("=== fallback: 간단한 옵션으로 브라우저 시작 재시도 ===");
-                        BrowserType.LaunchOptions fallbackOptions = new BrowserType.LaunchOptions()
-                            .setHeadless(true)
-                            .setArgs(Arrays.asList(
-                                "--no-sandbox",
-                                "--disable-dev-shm-usage"
-                            ));
-                        
-                        sharedBrowser = sharedPlaywright.chromium().launch(fallbackOptions);
-                        log.info("=== fallback: 브라우저 시작 성공 ===");
+                        try {
+                            BrowserType.LaunchOptions fallbackOptions = new BrowserType.LaunchOptions()
+                                .setHeadless(true)
+                                .setArgs(Arrays.asList(
+                                    "--no-sandbox",
+                                    "--disable-dev-shm-usage"
+                                ));
+                            
+                            log.info("Fallback 옵션으로 브라우저 시작 시도");
+                            sharedBrowser = sharedPlaywright.chromium().launch(fallbackOptions);
+                            log.info("=== fallback: 브라우저 시작 성공 ===");
+                        } catch (Exception fallbackEx) {
+                            log.error("=== Fallback 브라우저 시작도 실패 ===");
+                            log.error("Fallback 에러 타입: {}", fallbackEx.getClass().getName());
+                            log.error("Fallback 에러 메시지: {}", fallbackEx.getMessage());
+                            log.error("Fallback 에러 원인: {}", fallbackEx.getCause() != null ? fallbackEx.getCause().getMessage() : "원인 없음");
+                            throw fallbackEx;
+                        }
                     }
 
-                    log.info("=== 공유 브라우저 인스턴스 초기화 완료 ===");
+                log.info("=== 공유 브라우저 인스턴스 초기화 완료 ===");
 
-                } catch (Exception e) {
-                    log.error("공유 브라우저 초기화 실패: {}", e.getMessage(), e);
-                    cleanupSharedBrowser();
-                    log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
-                } finally {
-                    isInitializing = false;
-                    browserLock.notifyAll();
+            } catch (Exception e) {
+                log.error("=== 공유 브라우저 초기화 실패 상세 분석 ===");
+                log.error("에러 타입: {}", e.getClass().getName());
+                log.error("에러 메시지: {}", e.getMessage());
+                log.error("에러 원인: {}", e.getCause() != null ? e.getCause().getMessage() : "원인 없음");
+                
+                // 스택 트레이스 상세 분석
+                StackTraceElement[] stackTrace = e.getStackTrace();
+                log.error("스택 트레이스 (최대 15개):");
+                for (int i = 0; i < Math.min(stackTrace.length, 15); i++) {
+                    StackTraceElement element = stackTrace[i];
+                    log.error("  {}: {}.{}({}:{})", 
+                        i, element.getClassName(), element.getMethodName(), 
+                        element.getFileName(), element.getLineNumber());
+                }
+                
+                // 시스템 리소스 상태 확인
+                log.error("=== 시스템 리소스 상태 ===");
+                Runtime runtime = Runtime.getRuntime();
+                log.error("사용 가능한 메모리: {} MB", (runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory()) / 1024 / 1024);
+                log.error("총 메모리: {} MB", runtime.totalMemory() / 1024 / 1024);
+                log.error("최대 메모리: {} MB", runtime.maxMemory() / 1024 / 1024);
+                log.error("사용 중인 메모리: {} MB", (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024);
+                
+                // 디렉토리 상태 확인
+                try {
+                    String[] dirsToCheck = {
+                        System.getProperty("java.io.tmpdir"),
+                        System.getenv("PLAYWRIGHT_BROWSERS_PATH"),
+                        System.getenv("PLAYWRIGHT_CACHE_DIR")
+                    };
+                    
+                    for (String dirPath : dirsToCheck) {
+                        if (dirPath != null) {
+                            File dir = new File(dirPath);
+                            log.error("디렉토리 '{}' 상태:", dirPath);
+                            log.error("  존재: {}", dir.exists());
+                            if (dir.exists()) {
+                                log.error("  디렉토리: {}", dir.isDirectory());
+                                log.error("  읽기 권한: {}", dir.canRead());
+                                log.error("  쓰기 권한: {}", dir.canWrite());
+                                log.error("  실행 권한: {}", dir.canExecute());
+                                log.error("  크기: {} bytes", dir.length());
+                            }
+                        }
+                    }
+                } catch (Exception dirEx) {
+                    log.error("디렉토리 상태 확인 실패: {}", dirEx.getMessage());
+                }
+                
+                log.error("=== 공유 브라우저 초기화 실패 상세 분석 완료 ===");
+                cleanupSharedBrowser();
+                log.warn("Playwright 기능을 사용할 수 없습니다. 기본 크롤링으로 대체합니다.");
+            } finally {
+                isInitializing = false;
+                browserLock.notifyAll();
                 }
             }
         } catch (Exception e) {
@@ -195,9 +323,9 @@ public class PlaywrightCrawlingService {
     private Map<String, Object> extractBuffPower(Page page) {
         Map<String, Object> result = new HashMap<>();
         try {
-            log.info("버프력 추출 시작 - 다양한 방법으로 시도");
+            log.info("버프력 추출 시작 - 다양한 방법으로 시도 (3초 타임아웃)");
             
-            // 1차: React 전용 선택자로 시도
+            // 1차: React 전용 선택자로 시도 (3초 타임아웃)
                         String[] reactSelectors = {
                             ".dvtit.buff.secend:has-text('4인 점수') + .dval.secend",
                             ".dvtit.buff.secend:has-text('3인 점수') + .dval.secend",
@@ -210,7 +338,10 @@ public class PlaywrightCrawlingService {
                         String buffPower = null;
             for (String selector : reactSelectors) {
                             try {
-                                buffPower = page.textContent(selector);
+                    // 3초 타임아웃으로 버프력 추출
+                    page.locator(selector).waitFor(new Locator.WaitForOptions().setTimeout(3000));
+                    buffPower = page.locator(selector).textContent();
+                                
                                 if (buffPower != null && !buffPower.trim().isEmpty()) {
                                     log.info("✅ React 선택자로 버프력 추출 성공: {} (선택자: {})", buffPower, selector);
                                     break;
@@ -275,7 +406,7 @@ public class PlaywrightCrawlingService {
             // 모든 총딜 값을 찾아서 가장 큰 값(최신값) 선택
             Set<Long> totalDamageValues = new HashSet<>(); // 중복 제거를 위해 Set 사용
             
-            // 1. CSS 셀렉터로 총딜 값들 찾기 (우선순위 높음)
+            // 1. CSS 셀렉터로 총딜 값들 찾기 (우선순위 높음, 3초 타임아웃)
             try {
                 String[] primarySelectors = {
                         ".dvtit:has-text('총딜') + .dval",
@@ -289,7 +420,10 @@ public class PlaywrightCrawlingService {
                     if (totalDamageValues.size() >= 2) break; // 2개 이상이면 충분
                     
                     try {
-                        List<ElementHandle> elements = page.querySelectorAll(selector);
+                        // 3초 타임아웃으로 요소 대기
+                        page.locator(selector).waitFor(new Locator.WaitForOptions().setTimeout(3000));
+                        List<ElementHandle> elements = page.locator(selector).elementHandles();
+                            
                         for (ElementHandle element : elements) {
                             try {
                                 String text = element.textContent();
@@ -468,13 +602,17 @@ public class PlaywrightCrawlingService {
         log.info("=== 구간 1: 새 브라우저 컨텍스트 및 페이지 생성 완료 ===");
 
         try {
+            // 전체 크롤링에 30초 타임아웃 설정
+            long startTime = System.currentTimeMillis();
+            long timeoutMs = 30000; // 30초
+            
             // 던담.xyz 캐릭터 페이지로 이동
             log.info("=== 구간 2: 던담 URL로 이동 시작 ===");
             String dundamUrl = String.format("https://dundam.xyz/character?server=%s&key=%s", serverId, characterId);
             log.info("던담 URL: {}", dundamUrl);
 
             // 페이지 로딩 타임아웃 설정
-            page.setDefaultTimeout(60000); // 1분으로 단축
+            page.setDefaultTimeout(5000); // 5초로 단축
             
             try {
                 page.navigate(dundamUrl);
@@ -488,32 +626,39 @@ public class PlaywrightCrawlingService {
             // 페이지 로딩 대기 (단순화된 버전)
             log.info("=== 구간 3: 페이지 로딩 대기 시작 ===");
             
-            // 1. DOM 로드 완료 대기 (30초로 단축)
+            // 타임아웃 체크
+            if (System.currentTimeMillis() - startTime > timeoutMs) {
+                log.error("=== 크롤링 타임아웃 발생 (구간 3) ===");
+                return buildErrorResult("크롤링이 30초를 초과했습니다.", "Crawling Timeout");
+            }
+            
+            // 1. DOM 로드 완료 대기 (3초로 단축)
             try {
-                page.waitForLoadState(LoadState.DOMCONTENTLOADED, new Page.WaitForLoadStateOptions().setTimeout(30000));
+                page.waitForLoadState(LoadState.DOMCONTENTLOADED, new Page.WaitForLoadStateOptions().setTimeout(3000));
                 log.info("✅ DOM 콘텐츠 로드 완료");
-            } catch (Exception e) {
+                } catch (Exception e) {
                 log.warn("DOM 로드 대기 실패, 계속 진행: {}", e.getMessage());
             }
             
-            // 2. JavaScript 실행 완료 대기 (30초로 단축)
+            // 2. JavaScript 실행 완료 대기 (3초로 단축)
             try {
-                page.waitForFunction("() => document.readyState === 'complete'", null, new Page.WaitForFunctionOptions().setTimeout(30000));
+                page.waitForFunction("() => document.readyState === 'complete'", null, new Page.WaitForFunctionOptions().setTimeout(3000));
                 log.info("✅ Document readyState 완료");
             } catch (Exception e) {
                 log.warn("Document readyState 대기 실패, 계속 진행: {}", e.getMessage());
             }
             
-            // 3. React 앱 마운트 확인 (10초로 단축)
-            try {
-                page.waitForFunction("() => window.React !== undefined || document.querySelector('[data-reactroot]') !== null", null, new Page.WaitForFunctionOptions().setTimeout(10000));
-                log.info("✅ React 앱 마운트 확인 완료");
-                } catch (Exception e) {
-                log.warn("React 앱 마운트 확인 실패, 계속 진행: {}", e.getMessage());
-            }
+            // 3. React 앱 마운트 확인 (10초로 단축) - 주석처리됨
+            // try {
+            //     page.waitForFunction("() => window.React !== undefined || document.querySelector('[data-reactroot]') !== null", null, new Page.WaitForFunctionOptions().setTimeout(10000));
+            //     log.info("✅ React 앱 마운트 확인 완료");
+            // } catch (Exception e) {
+            //     log.warn("React 앱 마운트 확인 실패, 계속 진행: {}", e.getMessage());
+            // }
+            log.info("React 앱 마운트 확인 단계를 건너뜁니다.");
             
-            // 4. 안정화 대기 (2초)
-            page.waitForTimeout(2000);
+            // 4. 안정화 대기 (0.5초로 단축)
+            page.waitForTimeout(500);
             log.info("✅ 안정화 대기 완료");
             
             log.info("=== 구간 3: 페이지 로딩 대기 완료 ===");
@@ -532,6 +677,12 @@ public class PlaywrightCrawlingService {
             log.info("=== 페이지 텍스트 내용 크기: {} 문자 ===", pageText != null ? pageText.length() : 0);
             log.info("=== 구간 4: 페이지 내용 분석 완료 ===");
 
+            // 타임아웃 체크
+            if (System.currentTimeMillis() - startTime > timeoutMs) {
+                log.error("=== 크롤링 타임아웃 발생 (구간 5) ===");
+                return buildErrorResult("크롤링이 30초를 초과했습니다.", "Crawling Timeout");
+            }
+            
             // 캐릭터 정보 추출
             log.info("=== 구간 5: 캐릭터 정보 추출 시작 ===");
             Map<String, Object> characterInfo = new HashMap<>();
@@ -543,6 +694,19 @@ public class PlaywrightCrawlingService {
                 characterInfo.putAll(buffResult);
                 characterInfo.put("totalDamage", 0L); // 버퍼는 총딜 0
                 log.info("=== 구간 5-1: 버퍼용 버프력 추출 완료 ===");
+                
+                // 버프력이 구해졌으면 바로 리턴
+                if (characterInfo.get("buffPower") != null) {
+                    log.info("버퍼 캐릭터 버프력 추출 성공, 바로 리턴");
+            Map<String, Object> successResult = new HashMap<>();
+            successResult.put("success", true);
+                    successResult.put("message", "던담 크롤링 성공 (버퍼)");
+            successResult.put("characterInfo", characterInfo);
+                    return successResult;
+                } else {
+                    log.warn("버퍼 캐릭터의 버프력을 추출하지 못했습니다.");
+                    return buildErrorResult("버퍼 캐릭터의 버프력을 추출할 수 없습니다.", "Buff Power Extraction Failed");
+                }
             } else {
                 // 딜러: 총딜만 추출
                 log.info("=== 구간 5-1: 딜러용 총딜 추출 시작 ===");
@@ -550,31 +714,20 @@ public class PlaywrightCrawlingService {
                 characterInfo.putAll(damageResult);
                 characterInfo.put("buffPower", 0L); // 딜러는 버프력 0
                 log.info("=== 구간 5-1: 딜러용 총딜 추출 완료 ===");
-            }
-
-            log.info("=== 구간 5: 캐릭터 정보 추출 완료 ===");
-            log.info("추출된 정보: {}", characterInfo);
-
-            // 크롤링 결과 확인
-            if (isBuffer && characterInfo.get("buffPower") == null) {
-                log.warn("버퍼 캐릭터의 버프력을 추출하지 못했습니다.");
-                return buildErrorResult("버퍼 캐릭터의 버프력을 추출할 수 없습니다.", "Buff Power Extraction Failed");
-            } else if (!isBuffer && characterInfo.get("totalDamage") == null) {
-                log.warn("딜러 캐릭터의 총딜을 추출하지 못했습니다.");
-                return buildErrorResult("딜러 캐릭터의 총딜을 추출할 수 없습니다.", "Total Damage Extraction Failed");
-            }
-
-            // 성공 결과 반환
-            log.info("=== 구간 6: 결과 정리 및 반환 ===");
-            Map<String, Object> successResult = new HashMap<>();
-            successResult.put("success", true);
-            successResult.put("message", "던담 크롤링 성공");
-            successResult.put("characterInfo", characterInfo);
-
-            log.info("=== Playwright 던담 크롤링 완료 ===");
-            log.info("최종 결과: {}", successResult);
-
+                
+                // 총딜이 구해졌으면 바로 리턴
+                if (characterInfo.get("totalDamage") != null) {
+                    log.info("딜러 캐릭터 총딜 추출 성공, 바로 리턴");
+                    Map<String, Object> successResult = new HashMap<>();
+                    successResult.put("success", true);
+                    successResult.put("message", "던담 크롤링 성공 (딜러)");
+                    successResult.put("characterInfo", characterInfo);
             return successResult;
+                } else {
+                    log.warn("딜러 캐릭터의 총딜을 추출하지 못했습니다.");
+                    return buildErrorResult("딜러 캐릭터의 총딜을 추출할 수 없습니다.", "Total Damage Extraction Failed");
+                }
+            }
 
         } catch (Exception e) {
             log.error("=== Playwright 크롤링 중 오류 발생 ===");

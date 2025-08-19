@@ -8,6 +8,20 @@ target/
 */target/*
 */classes/*
 
+# Backend Build Files
+df-party-backend/.gradle/
+df-party-backend/build/
+df-party-backend/target/
+df-party-backend/*.class
+df-party-backend/src/main/**/build/
+df-party-backend/src/test/**/build/
+
+# Frontend Build Files
+df-party-frontend/dist/
+df-party-frontend/node_modules/
+df-party-frontend/.vite/
+df-party-frontend/coverage/
+
 
 # IntelliJ IDEA
 .idea/

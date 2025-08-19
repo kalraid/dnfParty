@@ -31,10 +31,6 @@
       
       <!-- 던담 동기화 버튼들 -->
       <div class="dundam-sync-controls" v-if="selectedAdventure">
-        <!-- 셀레니움 버전 (비활성화됨) -->
-        <button class="dundam-sync-button selenium-disabled" disabled title="K8s 환경에서 셀레니움 크롤링 실패로 인해 비활성화됨">
-          🚫 셀레니움 동기화
-        </button>
         
         <!-- Playwright 버전 (활성화됨) -->
         <button @click="syncAdventureFromDundamPlaywright" class="dundam-sync-button playwright-enabled" :disabled="isSyncing">
@@ -42,7 +38,6 @@
         </button>
         
         <span class="sync-status">
-          셀레니움은 K8s 환경에서 실패하여 비활성화, Playwright로 대체
         </span>
       </div>
     </div>
@@ -52,14 +47,34 @@
     <!-- 검색 결과 카드 -->
     <div v-if="searchResults.length > 0" class="search-results">
       <h3>{{ searchMode === 'adventure' ? '모험단 캐릭터' : '검색 결과' }} ({{ searchResults.length }}개)</h3>
+        
+                        <!-- 전체 던담 동기화 진행바 -->
+                <div v-if="isAutoSyncing" class="dundam-sync-progress">
+                  <div class="progress-header">
+                    <h4>🔄 던담 동기화 진행 중...</h4>
+                    <span class="progress-text">{{ syncedCount }}/{{ searchResults.length }} 완료</span>
+                  </div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" :style="{ width: syncProgress + '%' }"></div>
+                  </div>
+                  <div class="progress-info">
+                    <div class="current-syncing">
+                      현재 동기화 중: {{ currentSyncingCharacter?.characterName || '대기 중...' }}
+                    </div>
+                    <div class="countdown-timer">
+                      예상 대기시간: {{ Math.max(0, Math.ceil((20 - (syncProgress / 90 * 19)))) }}초
+                    </div>
+                  </div>
+                  <div v-if="syncProgress >= 90 && !isCompleted" class="waiting-message">
+                    ⏳ 조금만 더 기다려주세요...
+                  </div>
+                </div>
+        
       <div class="results-grid">
         <div 
           v-for="character in searchResults" 
           :key="character.characterId" 
           class="dundam-character-card"
-          :class="{ 'selected': selectedCharacter?.characterId === character.characterId }"
-          @click="goToCharacterDetail(character)"
-          @contextmenu.prevent="showContextMenuForCharacter($event, character)"
         >
           <div class="character-avatar">
             <div class="avatar-image">
@@ -86,8 +101,14 @@
             </div>
             
             <!-- 모험단 정보 개선 -->
-            <div class="adventure-name">
-              {{ character.adventureName && character.adventureName !== 'N/A' ? character.adventureName : '모험단 정보 없음' }}
+            <div class="adventure-name clickable-adventure" 
+                 v-if="character.adventureName && character.adventureName !== 'N/A'"
+                 @click="goToDungeonStatus(character.adventureName)"
+                 :title="`${character.adventureName} 모험단의 던전 클리어 현황 보기`">
+              {{ character.adventureName }}
+            </div>
+            <div v-else class="adventure-name no-adventure">
+              모험단 정보 없음
             </div>
             
             <!-- 던전 클리어 상태 - "남은 숙제" 타이틀 추가, 상태 반전 -->
@@ -137,6 +158,18 @@
             
             <div class="job-info">
                               <span class="job-name">{{ formatJobName(character.jobGrowName || character.jobName || '') }}</span>
+            </div>
+            
+            <!-- 던담 동기화 버튼 -->
+            <div class="dundam-sync-section">
+              <button 
+                @click.stop="syncCharacterDundam(character)" 
+                class="dundam-sync-btn"
+                :disabled="character.isSyncing"
+                :title="`${character.characterName}의 전투력/버프력 정보를 던담에서 동기화합니다`"
+              >
+                {{ character.isSyncing ? '🔄 동기화 중...' : '🔄 던담 동기화' }}
+              </button>
             </div>
           </div>
         </div>
@@ -246,65 +279,6 @@
       </div>
     </div>
 
-    <!-- 선택된 캐릭터 상세 정보 -->
-    <div v-if="selectedCharacter" class="character-detail">
-      <div class="detail-header">
-        <h3>{{ selectedCharacter.characterName }} 상세 정보</h3>
-        <button @click="closeDetail" class="close-btn">×</button>
-      </div>
-      
-      <div class="detail-content">
-        <div class="detail-section">
-          <h4>기본 정보</h4>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">서버:</span>
-              <span class="value">{{ getServerName(selectedCharacter.serverId) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">모험단:</span>
-              <span class="value">{{ selectedCharacter.adventureName || 'N/A' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">레벨:</span>
-              <span class="value">{{ selectedCharacter.level || 'N/A' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">직업:</span>
-              <span class="value">{{ selectedCharacter.jobName || 'N/A' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">명성:</span>
-              <span class="value">{{ formatNumber(selectedCharacter.fame) }}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="detail-section" v-if="selectedCharacter.buffPower || selectedCharacter.totalDamage">
-          <h4>스펙 정보</h4>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">버프력:</span>
-              <span class="value">{{ formatNumber(selectedCharacter.buffPower) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">총딜:</span>
-              <span class="value">{{ formatNumber(selectedCharacter.totalDamage) }}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="detail-actions">
-          <button @click="saveCharacterToDB(selectedCharacter)" class="save-btn">
-            DB에 저장
-          </button>
-
-        </div>
-      </div>
-    </div>
-
-
-
     <!-- 에러 메시지 -->
     <div v-if="error" class="error-message">
       {{ error }}
@@ -323,12 +297,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { dfApiService, type Server } from '../services/dfApi';
 import { apiFetch } from '../config/api';
+import sseService from '../services/sseService';
 
 const router = useRouter()
+
+// 모험단 클릭 시 던전 클리어현황으로 이동
+const goToDungeonStatus = (adventureName: string) => {
+  console.log(`${adventureName} 모험단의 던전 클리어 현황으로 이동합니다.`);
+  
+  // 던전 클리어현황 페이지로 이동하면서 모험단 이름 전달
+  router.push({
+    name: 'dungeon-status',
+    query: { adventure: adventureName }
+  });
+};
 
 // 반응형 데이터
 const selectedServer = ref('');
@@ -379,8 +365,76 @@ const isSyncing = ref(false);
 const syncStatusMessage = ref('');
 const selectedAdventure = ref<string | null>(null);
 
-// 컴포넌트 마운트 시 서버 목록 로드
+// 던담 동기화 관련 (자동 + 수동 동기화)
+const isAutoSyncing = ref(false);
+const syncedCount = ref(0);
+const syncProgress = ref(0);
+const currentSyncingCharacter = ref<any>(null);
+const isCompleted = ref(false);
+
+// WebSocket 이벤트 리스너 등록
+const handleCharacterUpdated = (event: any) => {
+  console.log('캐릭터 업데이트 이벤트 수신:', event);
+  
+  if (event.type === 'CHARACTER_UPDATED' && event.data) {
+    const { characterId, serverId, updateResult, characterInfo } = event.data;
+    
+    // 현재 검색 결과에서 해당 캐릭터 찾기
+    const characterIndex = searchResults.value.findIndex(
+      char => char.characterId === characterId && char.serverId === serverId
+    );
+    
+    if (characterIndex !== -1) {
+      // 캐릭터 정보 업데이트
+      const character = searchResults.value[characterIndex];
+      
+      // characterInfo에서 직접 값 가져오기 (백엔드에서 추가된 필드)
+      if (characterInfo) {
+        if (characterInfo.buffPower !== undefined) {
+          character.buffPower = characterInfo.buffPower;
+          console.log(`${character.characterName} 버프력 업데이트:`, characterInfo.buffPower);
+        }
+        if (characterInfo.totalDamage !== undefined) {
+          character.totalDamage = characterInfo.totalDamage;
+          console.log(`${character.characterName} 총딜 업데이트:`, characterInfo.totalDamage);
+        }
+        if (characterInfo.combatPower !== undefined) {
+          character.combatPower = characterInfo.combatPower;
+          console.log(`${character.characterName} 전투력 업데이트:`, characterInfo.combatPower);
+        }
+      }
+      
+      // updateResult에서도 확인 (기존 로직 유지)
+      if (updateResult && updateResult.characterInfo) {
+        const { buffPower, totalDamage, combatPower } = updateResult.characterInfo;
+        if (buffPower !== undefined) character.buffPower = buffPower;
+        if (totalDamage !== undefined) character.totalDamage = totalDamage;
+        if (combatPower !== undefined) character.combatPower = combatPower;
+      }
+      
+      console.log(`${character.characterName} 정보가 SSE로 업데이트되었습니다.`);
+      
+      // UI 강제 업데이트를 위해 배열 재할당
+      searchResults.value = [...searchResults.value];
+    }
+  }
+};
+
+  // 컴포넌트 마운트 시 서버 목록 로드 및 SSE 연결
 onMounted(async () => {
+    // SSE 연결
+    try {
+      await sseService.connect();
+      
+      // CHARACTER_UPDATED 이벤트 리스너 등록
+      sseService.addEventListener('CHARACTER_UPDATED', handleCharacterUpdated);
+      
+      console.log('SSE 연결 및 이벤트 리스너 등록 완료');
+    } catch (error) {
+      console.error('SSE 연결 실패:', error);
+      console.log('SSE 연결 실패로 인해 실시간 업데이트가 비활성화됩니다. 던담 동기화는 정상 작동합니다.');
+    }
+  
   // 저장된 검색 상태 복원
   const urlParams = new URLSearchParams(window.location.search)
   if (urlParams.get('restore') === 'true') {
@@ -405,14 +459,131 @@ onMounted(async () => {
   await loadServers()
 })
 
+// 컴포넌트 언마운트 시 SSE 연결 해제
+onUnmounted(() => {
+  sseService.removeEventListener('CHARACTER_UPDATED', handleCharacterUpdated);
+  sseService.disconnect();
+  console.log('SSE 연결 해제 완료');
+})
+
 // 검색 버튼 비활성화 상태
 const isSearchDisabled = computed(() => {
   return searching.value || !searchMode.value || searchMode.value === '';
 });
 
-// 던담 동기화 메서드 (셀레니움 - 비활성화됨)
-const syncAdventureFromDundam = async () => {
-  error.value = '임시 점검중';
+
+
+
+
+// 자동 던담 동기화 메서드
+const startAutoDundamSync = async () => {
+  if (searchResults.value.length === 0) {
+    return;
+  }
+  
+  try {
+    isAutoSyncing.value = true;
+    syncedCount.value = 0;
+    syncProgress.value = 0;
+    error.value = '';
+    
+    console.log('자동 던담 동기화 시작:', searchResults.value.length, '개 캐릭터');
+    
+    // 카운트다운 진행바 설정 (30초 → 1초)
+    const maxWaitTime = 30000; // 30초
+    const minWaitTime = 1000;  // 1초
+    const countdownInterval = 100; // 100ms마다 업데이트
+    let currentWaitTime = maxWaitTime;
+    
+    // 카운트다운 진행바 시작
+    const countdownTimer = setInterval(() => {
+      if (currentWaitTime > minWaitTime) {
+        currentWaitTime -= countdownInterval;
+        // 진행률 계산: 30초에서 1초로 줄어들면서 0%에서 90%까지
+        const progressRatio = (maxWaitTime - currentWaitTime) / (maxWaitTime - minWaitTime);
+        syncProgress.value = progressRatio * 90;
+      }
+    }, countdownInterval);
+    
+    for (let i = 0; i < searchResults.value.length; i++) {
+      const character = searchResults.value[i];
+      currentSyncingCharacter.value = character;
+      
+      // 현재 캐릭터를 동기화 중 상태로 설정
+      character.isSyncing = true;
+      
+      try {
+        console.log(`캐릭터 ${i + 1}/${searchResults.value.length} 동기화 중:`, character.characterName);
+        
+        // 던담 동기화 API 호출
+        const response = await apiFetch(`/dundam-sync/character/${character.serverId}/${character.characterId}?method=playwright`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // 성공 시 캐릭터 정보 업데이트 (WebSocket으로 실시간 업데이트됨)
+            if (result.characterInfo) {
+              if (result.characterInfo.buffPower !== undefined) {
+                character.buffPower = result.characterInfo.buffPower;
+              }
+              if (result.characterInfo.totalDamage !== undefined) {
+                character.totalDamage = result.characterInfo.totalDamage;
+              }
+              if (result.characterInfo.combatPower !== undefined) {
+                character.combatPower = result.characterInfo.combatPower;
+              }
+            }
+            syncedCount.value++;
+            console.log(`${character.characterName} 동기화 성공`);
+          } else {
+            console.warn(`${character.characterName} 동기화 실패:`, result.message);
+          }
+        } else {
+          console.warn(`${character.characterName} 동기화 요청 실패:`, response.status);
+        }
+        
+        // 1초 대기 (API 제한 고려)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (err) {
+        console.error(`${character.characterName} 동기화 중 오류:`, err);
+      } finally {
+        // 동기화 완료 후 상태 해제
+        character.isSyncing = false;
+      }
+    }
+    
+    // 카운트다운 타이머 정리
+    clearInterval(countdownTimer);
+    
+    // 성공 시 급격하게 100%로 채우기
+    syncProgress.value = 100;
+    isCompleted.value = true;
+    
+    // 진행바에서 성공 메시지 표시
+    successMessage.value = `완료되었습니다! 던담 동기화: ${syncedCount.value}/${searchResults.value.length} 성공`;
+    console.log('자동 던담 동기화 완료');
+    
+    // WebSocket으로 실시간 데이터 업데이트 대기 (3초 후 진행바 숨김)
+    setTimeout(() => {
+      // 진행바와 메시지 숨김
+      successMessage.value = '';
+      isAutoSyncing.value = false;
+      currentSyncingCharacter.value = null;
+      isCompleted.value = false;
+    }, 3000);
+    
+  } catch (err) {
+    console.error('자동 던담 동기화 실패:', err);
+    error.value = '던담 동기화 중 오류가 발생했습니다.';
+    isAutoSyncing.value = false;
+    currentSyncingCharacter.value = null;
+  }
 };
 
 // 던담 동기화 메서드 (Playwright)
@@ -457,6 +628,58 @@ const syncAdventureFromDundamPlaywright = async () => {
   }
 };
 
+/**
+ * 개별 캐릭터의 던담 동기화
+ */
+const syncCharacterDundam = async (character: any) => {
+  try {
+    // 동기화 상태 설정
+    character.isSyncing = true;
+    
+    console.log('캐릭터 던담 동기화 시작:', character.characterName);
+    
+    // 던담 동기화 API 호출
+    const response = await apiFetch(`/dundam-sync/character/${character.serverId}/${character.characterId}?method=playwright`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        // 성공 시 캐릭터 정보 업데이트
+        if (result.characterInfo) {
+          if (result.characterInfo.buffPower !== undefined) {
+            character.buffPower = result.characterInfo.buffPower;
+          }
+          if (result.characterInfo.totalDamage !== undefined) {
+            character.totalDamage = result.characterInfo.totalDamage;
+          }
+          if (result.characterInfo.combatPower !== undefined) {
+            character.combatPower = result.characterInfo.combatPower;
+          }
+        }
+        
+        successMessage.value = `${character.characterName}의 던담 정보 동기화가 완료되었습니다.`;
+        console.log('캐릭터 던담 동기화 완료:', result);
+      } else {
+        error.value = `${character.characterName}의 던담 동기화에 실패했습니다: ${result.message || '알 수 없는 오류'}`;
+      }
+    } else {
+      error.value = `${character.characterName}의 던담 동기화 요청이 실패했습니다.`;
+    }
+    
+  } catch (err) {
+    console.error('캐릭터 던담 동기화 실패:', err);
+    error.value = `${character.characterName}의 던담 동기화 중 오류가 발생했습니다.`;
+  } finally {
+    // 동기화 상태 해제
+    character.isSyncing = false;
+  }
+};
+
 // 서버 목록 로드
 const loadServers = async () => {
   try {
@@ -470,22 +693,7 @@ const loadServers = async () => {
 
 
 
-// 캐릭터 선택
-const selectCharacter = (character: any) => {
-  selectedCharacter.value = character;
-  // 상세 정보를 아래로 스크롤
-  setTimeout(() => {
-    const detailElement = document.querySelector('.character-detail');
-    if (detailElement) {
-      detailElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, 100);
-};
 
-// 상세 정보 닫기
-const closeDetail = () => {
-  selectedCharacter.value = null;
-};
 
 // 캐릭터 검색
 const searchCharacters = async () => {
@@ -538,6 +746,17 @@ const searchCharacters = async () => {
           
         // 검색 기록을 localStorage에 저장
         saveToSearchHistory(searchResults.value);
+        
+        // 검색 완료 후 자동 던담 동기화 시작
+        if (searchResults.value.length > 0) {
+          successMessage.value = `검색 완료! ${searchResults.value.length}개 캐릭터를 찾았습니다. 던담 동기화를 시작합니다...`;
+          
+          // DOM 렌더링 완료 후 자동 동기화 시작
+          console.log('검색 완료, DOM 렌더링 대기 중...');
+          await nextTick();
+          console.log('DOM 렌더링 완료, 던담 동기화 시작');
+          await startAutoDundamSync();
+        }
       } else {
         // 백엔드에서 반환한 에러 메시지 사용
         error.value = data.message || '캐릭터 검색에 실패했습니다.';
@@ -667,8 +886,8 @@ const toggleDungeonFavorite = async (dungeonType: string, event: Event) => {
   try {
           const response = await apiFetch(
         `/characters/${contextCharacter.value.characterId}/favorite/${dungeonType}?isFavorite=${isFavorite}`,
-        { method: 'POST' }
-      );
+      { method: 'POST' }
+    );
     
     if (response.ok) {
       const result = await response.json();
@@ -1133,6 +1352,23 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   font-size: 14px;
   color: #7f8c8d;
   margin: 0;
+}
+
+.clickable-adventure {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.clickable-adventure:hover {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.no-adventure {
+  color: #6c757d;
+  font-style: italic;
 }
 
 .stats-info {
@@ -2453,26 +2689,44 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
 }
 
 .dundam-sync-button:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
   opacity: 0.6;
+  cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
-/* 셀레니움 버튼 (비활성화됨) */
-.dundam-sync-button.selenium-disabled {
-  background: #f5f5f5;
-  border: 2px solid #ddd;
-  color: #999;
-  box-shadow: none;
+/* 캐릭터 카드 내 던담 동기화 버튼 */
+.dundam-sync-section {
+  margin-top: 12px;
+  text-align: center;
 }
 
-.dundam-sync-button.selenium-disabled:hover {
-  background: #f5f5f5;
-  transform: none;
-  box-shadow: none;
+.dundam-sync-btn {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  width: 100%;
 }
+
+.dundam-sync-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.dundam-sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  background: #6c757d;
+}
+
+
 
 /* Playwright 버튼 (활성화됨) */
 .dundam-sync-button.playwright-enabled {
@@ -2493,5 +2747,82 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   text-align: center;
   max-width: 300px;
   word-wrap: break-word;
+}
+
+/* 자동 던담 동기화 진행바 스타일 */
+.dundam-sync-progress {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.progress-header h4 {
+  margin: 0;
+  color: #495057;
+  font-size: 16px;
+}
+
+.progress-text {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 12px;
+  background-color: #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.current-syncing {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.countdown-timer {
+  color: #dc3545;
+  font-size: 14px;
+  font-weight: 600;
+  background: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.waiting-message {
+  color: #856404;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
 }
 </style> 

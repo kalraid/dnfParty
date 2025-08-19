@@ -16,6 +16,12 @@ public interface AdventureRepository extends JpaRepository<Adventure, Long> {
     // 기본 조회 메서드
     Optional<Adventure> findByAdventureName(String adventureName);
     
+    // 서버별 모험단 조회 메서드
+    Optional<Adventure> findByAdventureNameAndServerId(String adventureName, String serverId);
+    
     // 존재 여부 확인
     boolean existsByAdventureName(String adventureName);
+    
+    // 서버별 모험단 존재 여부 확인
+    boolean existsByAdventureNameAndServerId(String adventureName, String serverId);
 }

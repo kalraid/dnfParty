@@ -101,7 +101,7 @@ export const dfApiService = {
     }
   },
 
-  async getCharacterDetail(serverId: string, characterId: string): Promise<{success: boolean, data: CharacterDetail, message: string}> {
+  async getCharacterDetail(serverId: string, characterId: string): Promise<CharacterDetail> {
     try {
       const response = await dfApiClient.get(`/dfo/characters/${serverId}/${characterId}`);
       return response.data;

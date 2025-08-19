@@ -5,7 +5,7 @@ dfoApiKey: ""
 
 image:
   repository: kimrie92/dfo-party-backend
-  tag: playwright-jre-1
+  tag: latest
   pullPolicy: Always
 
 imagePullSecrets: []
@@ -20,9 +20,19 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext: {}
+podSecurityContext:
+  fsGroup: 1000
+  runAsGroup: 1000
+  runAsUser: 1000
 
-securityContext: {}
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
 
 service:
   type: ClusterIP
@@ -50,7 +60,7 @@ env:
         name: dfo-api-secret
         key: api-key
   - name: DF_API_BASE_URL
-    value: "https://api.neople.co.kr"
+    value: "https://api.neople.co.kr/df"
   - name: DF_API_RATE_LIMIT
     value: "100"
   - name: DF_API_RATE_LIMIT_WINDOW
@@ -71,6 +81,11 @@ env:
         key: mariadb-root-password
   - name: SHOW_SQL
     value: "false"
+  # Playwright Configuration for Kubernetes
+  - name: PLAYWRIGHT_BROWSERS_PATH
+    value: "/ms-playwright"
+  - name: PLAYWRIGHT_CACHE_DIR
+    value: "/tmp/.playwright"
 
 # Init Container - 실제 MySQL 연결 확인
 initContainers:
@@ -99,11 +114,11 @@ initContainers:
 
 resources:
   limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
     cpu: 1000m
     memory: 1Gi
-  requests:
-    cpu: 500m
-    memory: 512Mi
 
 # Health Check 설정 - HTTP probe로 변경
 livenessProbe:

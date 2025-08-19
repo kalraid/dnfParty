@@ -15,7 +15,6 @@ public class DundamService {
 
     // 새로운 크롤링 서비스들
     private final HtmlCrawlingService htmlCrawlingService;
-    private final SeleniumCrawlingService seleniumCrawlingService;
     private final PlaywrightCrawlingService playwrightCrawlingService;
     
     /**
@@ -25,10 +24,7 @@ public class DundamService {
         log.info("=== 던담 크롤링 시작 (메서드: {}) ===", method);
             log.info("serverId: {}, characterId: {}", serverId, characterId);
             
-        if ("selenium".equalsIgnoreCase(method)) {
-            // 셀레니움 크롤링 서비스 호출
-            return seleniumCrawlingService.getCharacterInfoWithSelenium(serverId, characterId);
-        } else if ("playwright".equalsIgnoreCase(method)) {
+        if ("playwright".equalsIgnoreCase(method)) {
             // Playwright 크롤링 서비스 호출
             return playwrightCrawlingService.getCharacterInfoWithPlaywright(serverId, characterId);
         } else if ("html".equalsIgnoreCase(method)) {
@@ -56,13 +52,7 @@ public class DundamService {
         return getCharacterInfoWithMethod(serverId, characterId, "playwright");
     }
     
-    /**
-     * 셀레니움 던담 크롤링
-     */
-    public Map<String, Object> getCharacterInfoWithSelenium(String serverId, String characterId) {
-        log.info("셀레니움 던담 크롤링 호출");
-        return getCharacterInfoWithMethod(serverId, characterId, "selenium");
-    }
+
     
     /**
      * Playwright 던담 크롤링
@@ -80,21 +70,7 @@ public class DundamService {
         return getCharacterInfoWithMethod(serverId, characterId, "playwright");
     }
     
-    /**
-     * WebDriver 던담 크롤링
-     */
-    public Map<String, Object> getCharacterInfoWithWebDriver(String serverId, String characterId) {
-        log.info("WebDriver 던담 크롤링 호출 - 셀레니움 사용");
-        return getCharacterInfoWithMethod(serverId, characterId, "selenium");
-    }
-    
-    /**
-     * CSS 선택자 찾기 (셀레니움 사용)
-     */
-    public Map<String, Object> findCssSelectorsWithSelenium(String serverId, String characterId) {
-        log.info("CSS 선택자 찾기 호출 - 셀레니움 사용");
-        return seleniumCrawlingService.findCssSelectorsWithSelenium(serverId, characterId);
-    }
+
 
     @PreDestroy
     public void destroy() {

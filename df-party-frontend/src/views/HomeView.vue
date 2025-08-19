@@ -29,6 +29,15 @@ import { RouterLink } from 'vue-router'
           <p>자동/수동 파티 구성 및 최적화</p>
           <RouterLink to="/party-formation" class="feature-link">바로가기</RouterLink>
         </div>
+        
+        <div class="feature-card">
+          <h3>📝 건의사항</h3>
+          <p>수정이나 에러나 기타 건의사항 다는곳</p>
+          <a href="https://docs.google.com/spreadsheets/d/1ehHEGMsI8v16-j7BvseDq_lTBLZm59U1FdksI3nQD_I/edit?usp=sharing" 
+             target="_blank" 
+             rel="noopener noreferrer" 
+             class="feature-link">건의사항 작성</a>
+        </div>
       </div>
     </div>
 

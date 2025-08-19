@@ -4,6 +4,9 @@ import com.dfparty.backend.service.CharacterService;
 import com.dfparty.backend.service.DundamService;
 import com.dfparty.backend.service.DungeonClearService;
 import com.dfparty.backend.dto.ManualStatsUpdateDto;
+
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,11 +35,26 @@ public class CharacterController {
             @PathVariable String serverId,
             @PathVariable String characterName) {
         
+        System.out.println("=== API 호출: getCompleteCharacterInfo ===");
+        System.out.println("서버 ID: " + serverId);
+        System.out.println("캐릭터명: " + characterName);
+        
         try {
+            System.out.println("서비스 호출 시작...");
             Map<String, Object> result = characterService.getCompleteCharacterInfo(serverId, characterName);
+            System.out.println("서비스 호출 성공, 결과 반환");
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
+            System.out.println("=== API 에러 발생 ===");
+            System.out.println("에러 타입: " + e.getClass().getName());
+            System.out.println("에러 메시지: " + e.getMessage());
+            System.out.println("에러 원인: " + (e.getCause() != null ? e.getCause().getMessage() : "원인 없음"));
+            
+            // 스택 트레이스 출력
+            System.out.println("스택 트레이스:");
+            e.printStackTrace();
+            
             Map<String, Object> error = Map.of(
                 "success", false,
                 "message", "캐릭터 정보 조회 중 오류가 발생했습니다: " + e.getMessage()
@@ -175,21 +193,7 @@ public class CharacterController {
     /**
      * 셀레니움으로 CSS 셀렉터 찾기 (디버깅용)
      */
-    @PostMapping("/{characterId}/dundam-css-finder")
-    public ResponseEntity<Map<String, Object>> findCssSelectors(
-            @PathVariable String characterId,
-            @RequestParam String serverId) {
-        try {
-            Map<String, Object> result = dundamService.findCssSelectorsWithSelenium(serverId, characterId);
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            Map<String, Object> error = Map.of(
-                "success", false,
-                "message", "CSS 셀렉터 찾기 중 오류가 발생했습니다: " + e.getMessage()
-            );
-            return ResponseEntity.internalServerError().body(error);
-        }
-    }
+
 
     /**
      * 빠른 Playwright 크롤링 (CSS 셀렉터 기반)
@@ -210,24 +214,7 @@ public class CharacterController {
         }
     }
 
-    /**
-     * WebDriver를 사용한 Dundam 크롤링 테스트
-     */
-    @PostMapping("/{characterId}/dundam-webdriver")
-    public ResponseEntity<Map<String, Object>> testDundamWebDriver(
-            @PathVariable String characterId,
-            @RequestParam String serverId) {
-        try {
-            Map<String, Object> result = dundamService.getCharacterInfoWithWebDriver(serverId, characterId);
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            Map<String, Object> error = Map.of(
-                "success", false,
-                "message", "WebDriver 크롤링 테스트 중 오류가 발생했습니다: " + e.getMessage()
-            );
-            return ResponseEntity.internalServerError().body(error);
-        }
-    }
+
 
     /**
      * Playwright를 사용한 Dundam 크롤링 테스트

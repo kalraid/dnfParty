@@ -442,9 +442,23 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import sseService, { type RealtimeEvent } from '../services/sseService';
-import { type Character } from '../types';
-import { apiFetch } from '../config/api';
+import { useCharacterStore } from '../stores/character'
+import { usePartyStore } from '../stores/party'
+import sseService from '../services/sseService'
+import { getApiUrl } from '../config/api'
+import type { Character } from '../types'
+
+// RealtimeEvent 타입 정의
+interface RealtimeEvent {
+  id: string
+  type: 'CHARACTER_UPDATED' | 'CHARACTER_DELETED' | 'PARTY_CREATED' | 'PARTY_UPDATED' | 'PARTY_DELETED' | 'PARTY_OPTIMIZED' | 'RECOMMENDATION_GENERATED' | 'USER_JOINED' | 'USER_LEFT' | 'SYSTEM_NOTIFICATION'
+  targetId?: string
+  userId: string
+  data?: Record<string, any>
+  timestamp: string
+  message: string
+  broadcast: boolean
+}
 
 // 라우터 정보 가져오기
 const route = useRoute();
@@ -634,7 +648,7 @@ const searchAdventure = async () => {
     successMessage.value = '';
     
     console.log('API 호출 시작:', `/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
-    const response = await apiFetch(`/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
+          const response = await fetch(`${getApiUrl('characters/adventure')}/${encodeURIComponent(searchQuery.value)}`);
     
     console.log('API 응답 상태:', response.status);
     
@@ -916,7 +930,9 @@ watch(syncingCharacters, (newValue) => {
 }, { deep: true });
 
 onUnmounted(() => {
-  sseService.removeAllEventListeners();
+      // 이벤트 리스너 제거
+    sseService.removeEventListener('CHARACTER_UPDATED', handleCharacterUpdate)
+    sseService.removeEventListener('SYSTEM_NOTIFICATION', handleSystemNotification)
   sseService.disconnect();
   
   // 타이머 정리
@@ -1207,19 +1223,39 @@ const initializeSyncTimes = () => {
 // SSE 초기화
 const initializeSSE = async () => {
   try {
-    await sseService.connect();
-    isConnected.value = sseService.getConnectionStatus().value;
+    console.log('🚀 === SSE 초기화 시작 ===')
     
-    // 실시간 이벤트 리스너 등록
-    sseService.addEventListener('CHARACTER_UPDATED', handleCharacterUpdate);
-    sseService.addEventListener('SYSTEM_NOTIFICATION', handleSystemNotification);
+    // 이미 연결되어 있으면 연결하지 않음
+    if (sseService.getConnectionStatus.value) {
+      console.log('🔗 SSE 이미 연결됨, 이벤트 리스너만 등록')
+      console.log('📊 현재 연결 상태:', sseService.getConnectionInfo())
+    } else {
+      console.log('🔄 SSE 새 연결 시도...')
+      await sseService.connect()
+      isConnected.value = sseService.getConnectionStatus.value
+      console.log('✅ SSE 연결 완료')
+      console.log('📊 연결 후 상태:', sseService.getConnectionInfo())
+    }
     
-    console.log('SSE 연결 완료');
+    // 실시간 이벤트 리스너 등록 (중복 등록 방지)
+    console.log('👂 이벤트 리스너 등록 시작...')
+    
+    sseService.removeEventListener('CHARACTER_UPDATED', handleCharacterUpdate)
+    sseService.removeEventListener('SYSTEM_NOTIFICATION', handleSystemNotification)
+    
+    sseService.addEventListener('CHARACTER_UPDATED', handleCharacterUpdate)
+    sseService.addEventListener('SYSTEM_NOTIFICATION', handleSystemNotification)
+    
+    console.log('✅ 이벤트 리스너 등록 완료')
+    console.log('📊 최종 연결 상태:', sseService.getConnectionInfo())
+    console.log('=== SSE 초기화 완료 ===')
+    
   } catch (err) {
-    console.error('SSE 연결 실패:', err);
-    error.value = '실시간 업데이트 연결에 실패했습니다.';
+    console.error('❌ SSE 연결 실패:', err)
+    console.log('📊 연결 실패 시 상태:', sseService.getConnectionInfo())
+    error.value = '실시간 업데이트 연결에 실패했습니다.'
   }
-};
+}
 
 // 캐릭터 업데이트 이벤트 처리 (SSE)
 const handleCharacterUpdate = (event: RealtimeEvent) => {
@@ -1939,6 +1975,46 @@ const refreshDungeonStatus = async (character: Character) => {
     }
   }
 };
+
+// SSE 연결 해제
+const disconnectSSE = () => {
+  console.log('🔌 SSE 연결 해제 시작...')
+  
+  // 이벤트 리스너 제거
+  sseService.removeEventListener('CHARACTER_UPDATED', handleCharacterUpdate)
+  sseService.removeEventListener('SYSTEM_NOTIFICATION', handleSystemNotification)
+  
+  // SSE 연결 해제
+  sseService.disconnect()
+  isConnected.value = false
+  
+  console.log('✅ SSE 연결 해제 완료')
+}
+
+// SSE 연결 상태 표시
+const getSSEStatusText = computed(() => {
+  const status = sseService.getConnectionStatus.value
+  switch (status) {
+    case 'connected': return '연결됨'
+    case 'connecting': return '연결 중...'
+    case 'reconnecting': return '재연결 중...'
+    case 'error': return '연결 오류'
+    case 'disconnected': return '연결 끊김'
+    default: return '알 수 없음'
+  }
+})
+
+const getSSEStatusClass = computed(() => {
+  const status = sseService.getConnectionStatus.value
+  switch (status) {
+    case 'connected': return 'text-green-600'
+    case 'connecting': return 'text-yellow-600'
+    case 'reconnecting': return 'text-orange-600'
+    case 'error': return 'text-red-600'
+    case 'disconnected': return 'text-gray-600'
+    default: return 'text-gray-600'
+  }
+})
 </script>
 
 <style scoped>

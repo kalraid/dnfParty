@@ -257,13 +257,8 @@ public class Character {
         this.dundamSource = source;
         this.lastStatsUpdate = LocalDateTime.now();
         
-        // 하드 나벨 대상자 여부 업데이트
-        updateHardNabelEligibility();
-        // 일반/매칭 나벨 대상자 여부도 함께 업데이트
-        updateNormalNabelEligibility();
+        updateMatchingNabelEligibility();
     }
-    
-
     
     // 수동 스탯 업데이트 메서드
     public void updateManualStats(Long buffPower, Long totalDamage, String updatedBy) {
@@ -272,42 +267,37 @@ public class Character {
         this.manualUpdatedAt = LocalDateTime.now();
         this.manualUpdatedBy = updatedBy;
         
-        // 하드 나벨 대상자 여부 업데이트
-        updateHardNabelEligibility();
-        // 일반/매칭 나벨 대상자 여부도 함께 업데이트
-        updateNormalNabelEligibility();
+        updateMatchingNabelEligibility();
     }
     
     public void updateNabelEligibility(){
-        updateHardNabelEligibility();
-    }
+        updateMatchingNabelEligibility();
 
-    // 하드 나벨 대상자 여부 업데이트
-    private void updateHardNabelEligibility() {
-        // 명성 47,684 이상 + 스펙컷 확인
-        if (fame != null && fame >= 47684L) {
-            if (isBuffer()) {
-                // 버퍼: 버프력 500만 이상
-                this.isHardNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 50000000L);
-            } else {
-                // 딜러: 총딜 100억 이상
-                this.isHardNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 10000000000L);
-            }
-        } else {
-            this.isHardNabelEligible = false;
-        }
-        
-        // 일반 나벨 대상자 여부도 함께 업데이트
-        updateNormalNabelEligibility();
     }
     
+    // 매칭 나벨 대상자 여부 업데이트 (명성만 초과할 때)
+    private void updateMatchingNabelEligibility() {
+
+        // 명성 47,684 이상이면 매칭 가능 (스펙컷 없음)
+        this.isMatchingNabelEligible = (fame != null && fame >= 47684L);
+        
+        // 매칭 가능하면 일반 체크
+        if (this.isMatchingNabelEligible) {
+            updateNormalNabelEligibility();
+        } else {
+            // 매칭도 안되면 일반/하드도 false
+            this.isNormalNabelEligible = false;
+            this.isHardNabelEligible = false;
+        }
+    }
+
     // 일반 나벨 대상자 여부 업데이트
     private void updateNormalNabelEligibility() {
         // 명성 47,684 이상 + 스펙컷 확인
         if (fame != null && fame >= 47684L) {
             if (isBuffer()) {
                 // 버퍼: 버프력 400만 이상
-                this.isNormalNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 40000000L);
+                this.isNormalNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 4000000L);
             } else {
                 // 딜러: 총딜 30억 이상
                 this.isNormalNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 3000000000L);
@@ -316,16 +306,35 @@ public class Character {
             this.isNormalNabelEligible = false;
         }
         
-        // 매칭 나벨 대상자 여부도 함께 업데이트
-        updateMatchingNabelEligibility();
+        // 일반 가능하면 하드 체크
+        if (this.isNormalNabelEligible) {
+            updateHardNabelEligibility();
+        } else {
+            // 일반도 안되면 하드도 false
+            this.isHardNabelEligible = false;
+        }
     }
     
-    // 매칭 나벨 대상자 여부 업데이트 (명성만 초과할 때)
-    private void updateMatchingNabelEligibility() {
-        // 명성 47,684 이상이면 매칭 가능 (스펙컷 없음)
-        this.isMatchingNabelEligible = (fame != null && fame >= 47684L);
+    
+    
+    // 하드 나벨 대상자 여부 업데이트
+    private void updateHardNabelEligibility() {
+        // 명성 47,684 이상 + 스펙컷 확인
+        if (fame != null && fame >= 47684L) {
+            if (isBuffer()) {
+                // 버퍼: 버프력 500만 이상
+                this.isHardNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 5000000L);
+            } else {
+                // 딜러: 총딜 100억 이상
+                this.isHardNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 10000000000L);
+            }
+        } else {
+            this.isHardNabelEligible = false;
+        }
+        
     }
     
+
     // 버퍼 여부 판단
     private boolean isBuffer() {
         if (jobGrowName == null) return false;
@@ -345,13 +354,6 @@ public class Character {
         return manualTotalDamage != null ? manualTotalDamage : totalDamage;
     }
     
-
-    
-
-    
-
-    
-
     
     @PrePersist
     protected void onCreate() {

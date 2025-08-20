@@ -1,6 +1,20 @@
 # Server Configuration
 server:
   port: 8080
+  # SSE 연결 타임아웃 설정
+  servlet:
+    async:
+      request-timeout: 300000  # 5분 (밀리초)
+  # Tomcat 설정
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 300000  # 5분으로 증가
+    max-connections: 8192
+    # SSE 연결 유지를 위한 추가 설정
+    max-http-form-post-size: 10MB
+
 
 # Database Configuration
 spring:
@@ -124,4 +138,67 @@ playwright:
   skip-browser-download: false
   browsers-path: /ms-playwright
   chromium-executable-path: /usr/bin/chromium-browser
+
+
+
+---
+spring:
+  config:
+    activate:
+      on-profile: kubernetes
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:dfparty}
+    password: ${DB_PASSWORD:dfparty-password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+# Production DFO API settings
+df:
+  api:
+    base-url: https://api.neople.co.kr/df
+    key: ${DF_API_KEY:your_dfo_api_key_here}
+    rate-limit: 100
+    rate-limit-window: 60000
+
+# Dundam crawling configuration
+dundam:
+  crawling:
+    enabled: true  # 던담 크롤링 활성화
+    timeout: 30000  # 30초 타임아웃
+    retry-count: 3  # 재시도 횟수
+
+# Logging configuration
+logging:
+  level:
+    com.dfparty.backend.service.DundamService: DEBUG  # 던담 서비스 상세 로그
+    com.dfparty.backend.service.CharacterService: DEBUG  # 캐릭터 서비스 상세 로그
+    org.springframework.web: INFO
+    org.hibernate: INFO
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+
+# DFO API Configuration (기본값 - 프로필별 설정으로 오버라이드됨)
+
+# Playwright 설정
+playwright:
+  headless: true
+  browser:
+    type: chromium
+  skip-browser-download: false
+  browsers-path: /ms-playwright
+  chromium-executable-path: /usr/bin/chromium-browser
+
 

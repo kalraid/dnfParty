@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "adventures")
+@Table(name = "adventures", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"adventure_name", "server_id"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,7 +23,7 @@ public class Adventure {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "adventure_name", unique = true, nullable = false)
+    @Column(name = "adventure_name", nullable = false)
     private String adventureName;
     
     @Column(name = "server_id", nullable = false)

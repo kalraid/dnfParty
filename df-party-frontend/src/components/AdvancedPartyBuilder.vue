@@ -649,6 +649,251 @@ const onDragLeave = () => {
   justify-content: center;
 }
 
+/* ========================================
+   반응형 디자인 - 글자 크기 포함 완전 최적화
+   ======================================== */
+
+/* 태블릿 (1024px 이하) */
+@media screen and (max-width: 1024px) {
+  .builder-content {
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .character-pool {
+    padding: 1.25rem;
+  }
+  
+  .builder-header {
+    padding: 1.25rem;
+  }
+  
+  .builder-header h3 {
+    font-size: 1.3rem;
+  }
+}
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .builder-content {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    min-height: auto;
+  }
+  
+  .builder-header {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .builder-header h3 {
+    font-size: 1.2rem;
+  }
+  
+  .builder-controls {
+    justify-content: center;
+  }
+  
+  .character-pool {
+    padding: 1rem;
+  }
+  
+  .character-pool h4 {
+    font-size: 1.1rem;
+  }
+  
+  .search-input, .role-filter {
+    font-size: 0.85rem;
+    padding: 0.4rem;
+  }
+  
+  .character-list {
+    max-height: 300px;
+  }
+  
+  .character-item {
+    padding: 0.6rem;
+    gap: 0.6rem;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .builder-content {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .builder-header {
+    padding: 0.75rem;
+  }
+  
+  .builder-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .character-pool {
+    padding: 0.75rem;
+  }
+  
+  .character-pool h4 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .pool-filters {
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .search-input, .role-filter {
+    font-size: 0.8rem;
+    padding: 0.35rem;
+  }
+  
+  .character-list {
+    max-height: 250px;
+    gap: 0.4rem;
+  }
+  
+  .character-item {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .character-avatar {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .builder-content {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .builder-header {
+    padding: 0.5rem;
+  }
+  
+  .builder-header h3 {
+    font-size: 1rem;
+  }
+  
+  .character-pool {
+    padding: 0.5rem;
+  }
+  
+  .character-pool h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .pool-filters {
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .search-input, .role-filter {
+    font-size: 0.75rem;
+    padding: 0.3rem;
+  }
+  
+  .character-list {
+    max-height: 200px;
+    gap: 0.3rem;
+  }
+  
+  .character-item {
+    padding: 0.4rem;
+    gap: 0.4rem;
+  }
+  
+  .character-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .character-name {
+    font-size: 0.8rem;
+  }
+  
+  .character-role {
+    font-size: 0.7rem;
+  }
+  
+  .character-fame {
+    font-size: 0.7rem;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .builder-content {
+    padding: 0.4rem;
+    gap: 0.4rem;
+  }
+  
+  .builder-header {
+    padding: 0.4rem;
+  }
+  
+  .builder-header h3 {
+    font-size: 0.9rem;
+  }
+  
+  .character-pool {
+    padding: 0.4rem;
+  }
+  
+  .character-pool h4 {
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .pool-filters {
+    gap: 0.25rem;
+    margin-bottom: 0.4rem;
+  }
+  
+  .search-input, .role-filter {
+    font-size: 0.7rem;
+    padding: 0.25rem;
+  }
+  
+  .character-list {
+    max-height: 180px;
+    gap: 0.25rem;
+  }
+  
+  .character-item {
+    padding: 0.3rem;
+    gap: 0.3rem;
+  }
+  
+  .character-avatar {
+    width: 25px;
+    height: 25px;
+  }
+  
+  .character-name {
+    font-size: 0.7rem;
+  }
+  
+  .character-role {
+    font-size: 0.6rem;
+  }
+  
+  .character-fame {
+    font-size: 0.6rem;
+  }
+}
+
 .job-icon {
   width: 24px;
   height: 24px;

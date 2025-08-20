@@ -698,6 +698,290 @@ onMounted(async () => {
   position: absolute;
   top: 5px;
   right: 5px;
+}
+
+/* ========================================
+   반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 태블릿 (1024px 이하) */
+@media screen and (max-width: 1024px) {
+  .party-recommendation {
+    padding: 15px;
+  }
+  
+  .selection-section {
+    gap: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  
+  .character-card {
+    padding: 12px;
+  }
+}
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .party-recommendation {
+    padding: 12px;
+  }
+  
+  .header {
+    margin-bottom: 25px;
+  }
+  
+  .header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .header p {
+    font-size: 16px;
+  }
+  
+  .selection-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .server-selection select {
+    padding: 8px;
+    font-size: 14px;
+  }
+  
+  .character-list {
+    max-height: 300px;
+    padding: 12px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  
+  .character-card {
+    padding: 10px;
+  }
+  
+  .dungeon-settings {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .strategy-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .party-recommendation {
+    padding: 10px;
+  }
+  
+  .header {
+    margin-bottom: 20px;
+  }
+  
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  
+  .header p {
+    font-size: 14px;
+  }
+  
+  .selection-section {
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .server-selection h3,
+  .character-selection h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  
+  .server-selection select {
+    padding: 6px;
+    font-size: 13px;
+  }
+  
+  .character-list {
+    max-height: 250px;
+    padding: 10px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  
+  .character-card {
+    padding: 8px;
+  }
+  
+  .character-name {
+    font-size: 0.9rem;
+  }
+  
+  .character-job,
+  .character-fame {
+    font-size: 0.8rem;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .party-recommendation {
+    padding: 8px;
+  }
+  
+  .header {
+    margin-bottom: 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.4rem;
+  }
+  
+  .header p {
+    font-size: 13px;
+  }
+  
+  .selection-section {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .server-selection h3,
+  .character-selection h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+  
+  .server-selection select {
+    padding: 5px;
+    font-size: 12px;
+  }
+  
+  .character-list {
+    max-height: 200px;
+    padding: 8px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+  }
+  
+  .character-card {
+    padding: 6px;
+  }
+  
+  .character-name {
+    font-size: 0.8rem;
+  }
+  
+  .character-job,
+  .character-fame {
+    font-size: 0.7rem;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .party-recommendation {
+    padding: 5px;
+  }
+  
+  .header {
+    margin-bottom: 12px;
+  }
+  
+  .header h1 {
+    font-size: 1.2rem;
+  }
+  
+  .header p {
+    font-size: 12px;
+  }
+  
+  .selection-section {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .server-selection h3,
+  .character-selection h3 {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  
+  .server-selection select {
+    padding: 4px;
+    font-size: 11px;
+  }
+  
+  .character-list {
+    max-height: 180px;
+    padding: 6px;
+  }
+  
+  .character-grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  
+  .character-card {
+    padding: 5px;
+  }
+  
+  .character-name {
+    font-size: 0.75rem;
+  }
+  
+  .character-job,
+  .character-fame {
+    font-size: 0.65rem;
+  }
+  
+  /* 추가 글자 크기 최적화 */
+  .selection-info {
+    font-size: 0.7rem;
+  }
+  
+  .dungeon-section h3 {
+    font-size: 0.9rem;
+  }
+  
+  .dungeon-select label,
+  .party-size-select label {
+    font-size: 0.8rem;
+  }
+  
+  .radio-group label {
+    font-size: 0.7rem;
+  }
+  
+  .strategy-section h3 {
+    font-size: 0.9rem;
+  }
+  
+  .strategy-card h4 {
+    font-size: 0.8rem;
+  }
+  
+  .strategy-card p {
+    font-size: 0.7rem;
+  }
+}
   background-color: #f39c12;
   color: white;
   padding: 2px 6px;

@@ -197,6 +197,11 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* ========================================
+   반응형 디자인 - 글자 크기 포함 완전 최적화
+   ======================================== */
+
+/* 태블릿 (768px 이하) */
 @media (max-width: 768px) {
   .thursday-restriction-notice {
     position: fixed;
@@ -205,6 +210,173 @@ onMounted(() => {
     right: 10px;
     width: auto;
     max-width: none;
+    padding: 16px;
+  }
+  
+  .notice-header {
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+  
+  .notice-icon {
+    font-size: 18px;
+    margin-right: 8px;
+  }
+  
+  .notice-title {
+    font-size: 16px;
+  }
+  
+  .notice-content p {
+    margin: 6px 0;
+    line-height: 1.3;
+  }
+  
+  .restriction-time,
+  .reset-time {
+    font-size: 13px;
+  }
+  
+  .reason {
+    font-size: 12px;
+  }
+  
+  .status-btn,
+  .dismiss-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media (max-width: 600px) {
+  .thursday-restriction-notice {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    padding: 14px;
+  }
+  
+  .notice-header {
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  
+  .notice-icon {
+    font-size: 16px;
+    margin-right: 6px;
+  }
+  
+  .notice-title {
+    font-size: 15px;
+  }
+  
+  .notice-content p {
+    margin: 5px 0;
+    line-height: 1.2;
+  }
+  
+  .restriction-time,
+  .reset-time {
+    font-size: 12px;
+  }
+  
+  .reason {
+    font-size: 11px;
+  }
+  
+  .status-btn,
+  .dismiss-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media (max-width: 480px) {
+  .thursday-restriction-notice {
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    padding: 12px;
+  }
+  
+  .notice-header {
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  
+  .notice-icon {
+    font-size: 14px;
+    margin-right: 5px;
+  }
+  
+  .notice-title {
+    font-size: 14px;
+  }
+  
+  .notice-content p {
+    margin: 4px 0;
+    line-height: 1.1;
+  }
+  
+  .restriction-time,
+  .reset-time {
+    font-size: 11px;
+  }
+  
+  .reason {
+    font-size: 10px;
+  }
+  
+  .status-btn,
+  .dismiss-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media (max-width: 320px) {
+  .thursday-restriction-notice {
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    padding: 10px;
+  }
+  
+  .notice-header {
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  
+  .notice-icon {
+    font-size: 12px;
+    margin-right: 4px;
+  }
+  
+  .notice-title {
+    font-size: 13px;
+  }
+  
+  .notice-content p {
+    margin: 3px 0;
+    line-height: 1.1;
+  }
+  
+  .restriction-time,
+  .reset-time {
+    font-size: 10px;
+  }
+  
+  .reason {
+    font-size: 9px;
+  }
+  
+  .status-btn,
+  .dismiss-btn {
+    padding: 3px 6px;
+    font-size: 10px;
   }
 }
 </style>

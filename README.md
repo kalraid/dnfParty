@@ -2,6 +2,26 @@
 
 DFO Party Management Application을 위한 Kubernetes 기반 배포 시스템입니다.
 
+## 🛠️ 개발 환경
+
+### Backend
+- **Java**: 17 (OpenJDK)
+- **Spring Boot**: 3.2.1
+- **Gradle**: 8.4 (Wrapper 사용)
+- **Build Tool**: Gradle Wrapper (`./gradlew`)
+
+### Frontend
+- **Node.js**: 18+ (LTS 권장)
+- **Vue.js**: 3.x (Composition API)
+- **Build Tool**: Vite 7.1.2
+- **Package Manager**: npm
+
+### Infrastructure
+- **Kubernetes**: 1.24+
+- **Helm**: 3.12+
+- **Database**: MariaDB 10.11
+- **Proxy**: Nginx 1.25
+
 ## 아키텍처
 
 이 프로젝트는 **Infrastructure**와 **Application** 두 개의 독립적인 Helm 차트로 구성되어 있습니다:
@@ -44,6 +64,47 @@ helm upgrade --install df-party-application ./helm-charts -n dfo --create-namesp
 
 # 2. Application 배포
 .\deploy-application.ps1
+```
+
+## 🚀 개발 환경 설정
+
+### Backend 개발 환경
+
+```bash
+# Gradle Wrapper 권한 설정 (Linux/Mac)
+chmod +x gradlew
+
+# 의존성 다운로드
+./gradlew dependencies
+
+# 애플리케이션 실행
+./gradlew bootRun
+
+# 빌드
+./gradlew clean build -x test
+```
+
+### Frontend 개발 환경
+
+```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+
+# 빌드
+npm run build
+```
+
+### Docker 개발 환경
+
+```bash
+# Backend 이미지 빌드
+docker build -t df-party-backend:dev ./df-party-backend
+
+# Frontend 이미지 빌드
+docker build -t df-party-frontend:dev ./df-party-frontend
 ```
 
 ## 개발 워크플로우
@@ -125,6 +186,15 @@ game/
 3. **이미지 업데이트 문제**
    - `pullPolicy: Always` 설정 확인
    - Docker 이미지 푸시 상태 확인
+
+4. **Gradle 빌드 문제**
+   - Lombok 어노테이션 처리 실패
+   - Gradle Wrapper 사용 확인 (`./gradlew` 사용)
+   - 의존성 캐시 클리어: `./gradlew clean --no-daemon`
+
+5. **Docker 빌드 문제**
+   - Gradle Wrapper 권한 확인: `chmod +x gradlew`
+   - 시스템 Gradle 대신 프로젝트 Gradle Wrapper 사용
 
 ### 로그 확인
 

@@ -2248,19 +2248,152 @@ const debugLocalStorage = async () => {
   align-items: center;
 }
 
-/* 반응형 디자인 */
-@media (max-width: 1024px) {
+/* ========================================
+   세밀한 반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 대형 데스크탑 (1920px 이상) */
+@media screen and (min-width: 1920px) {
+  .party-formation-container {
+    max-width: 1600px;
+    padding: 30px;
+  }
+  
+  .party-slots {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 25px;
+  }
+  
+  .dungeon-btn {
+    padding: 18px 30px;
+    font-size: 18px;
+    min-width: 120px;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+  }
+}
+
+/* 데스크탑 (1600px ~ 1919px) */
+@media screen and (min-width: 1600px) and (max-width: 1919px) {
+  .party-formation-container {
+    max-width: 1400px;
+    padding: 25px;
+  }
+  
+  .party-slots {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 22px;
+  }
+}
+
+/* 노트북 (1200px ~ 1599px) */
+@media screen and (min-width: 1200px) and (max-width: 1599px) {
+  .party-formation-container {
+    max-width: 1200px;
+    padding: 20px;
+  }
+  
+  .party-slots {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 18px;
+  }
+}
+
+/* 태블릿 가로 (1024px ~ 1199px) */
+@media screen and (min-width: 1024px) and (max-width: 1199px) {
+  .party-formation-container {
+    padding: 18px;
+  }
+  
   .main-content {
     flex-direction: column;
+    gap: 25px;
+  }
+  
+  .party-slots {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  
+  .dungeon-selection-row {
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+  
+  .dungeon-btn {
+    padding: 14px 24px;
+    font-size: 15px;
+    min-width: 100px;
+  }
+  
+  .top-bar {
+    flex-direction: row;
+    gap: 25px;
+  }
+  
+  .first-row {
+    flex-direction: row;
+    gap: 20px;
+  }
+  
+  .search-section, .adventures-section {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .selected-adventures-section {
+    width: 100%;
+  }
+  
+  .party-controls {
+    flex-direction: row;
+    gap: 25px;
+  }
+  
+  .control-buttons {
+    justify-content: flex-start;
+  }
+  
+  .party-info {
+    margin-right: 20px;
+    margin-bottom: 0;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* 태블릿 세로 (768px ~ 1023px) */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .party-formation-container {
+    padding: 15px;
+  }
+  
+  .main-content {
+    flex-direction: column;
+    gap: 20px;
   }
   
   .party-slots {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
   
   .dungeon-selection-row {
     flex-wrap: wrap;
     gap: 10px;
+    justify-content: center;
   }
   
   .dungeon-btn {
@@ -2301,19 +2434,124 @@ const debugLocalStorage = async () => {
     margin-right: 0;
     margin-bottom: 20px;
   }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 15px;
+  }
 }
 
-@media (max-width: 768px) {
-  .top-bar {
-    flex-direction: column;
+/* 중형 모바일 (600px ~ 767px) */
+@media screen and (min-width: 600px) and (max-width: 767px) {
+  .party-formation-container {
+    padding: 12px;
   }
   
   .party-slots {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  
+  .dungeon-btn {
+    padding: 11px 18px;
+    font-size: 13px;
+    min-width: 70px;
   }
   
   .character-list {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+  }
+}
+
+/* 소형 모바일 (480px ~ 599px) */
+@media screen and (min-width: 480px) and (max-width: 599px) {
+  .party-formation-container {
+    padding: 10px;
+  }
+  
+  .party-slots {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .dungeon-btn {
+    padding: 10px 16px;
+    font-size: 12px;
+    min-width: 60px;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+  }
+}
+
+/* 초소형 모바일 (320px ~ 479px) */
+@media screen and (min-width: 320px) and (max-width: 479px) {
+  .party-formation-container {
+    padding: 8px;
+  }
+  
+  .party-slots {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .dungeon-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+    min-width: 50px;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+}
+
+/* 매우 작은 화면 (400px 이하) 추가 최적화 */
+@media screen and (max-width: 400px) {
+  .party-formation-container {
+    padding: 5px;
+  }
+  
+  .party-slots {
+    gap: 10px;
+  }
+  
+  .dungeon-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+    min-width: 45px;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+  }
+  
+  .main-content {
+    gap: 15px;
+  }
+  
+  .top-bar {
+    gap: 15px;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .dungeon-btn {
+    min-height: 44px;
+  }
+  
+  .character-item {
+    min-height: 44px;
+  }
+  
+  .control-button {
+    min-height: 44px;
   }
 }
 </style> 

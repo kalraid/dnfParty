@@ -448,6 +448,261 @@ const toggleFavorite = async (dungeonType: string, event: Event) => {
   color: #e67e22;
 }
 
+/* ========================================
+   반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 태블릿 (1024px 이하) */
+@media screen and (max-width: 1024px) {
+  .character-detail-page {
+    padding: 15px;
+  }
+  
+  .page-header {
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
+  }
+  
+  .basic-info-section,
+  .stats-section,
+  .dungeon-section,
+  .favorites-section {
+    padding: 20px;
+  }
+  
+  .info-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+  }
+}
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .character-detail-page {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .page-header h1 {
+    font-size: 22px;
+  }
+  
+  .back-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .basic-info-section,
+  .stats-section,
+  .dungeon-section,
+  .favorites-section {
+    padding: 16px;
+  }
+  
+  .basic-info-section h2,
+  .stats-section h2,
+  .dungeon-section h2,
+  .favorites-section h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .stat-value {
+    font-size: 28px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .character-detail-page {
+    padding: 10px;
+  }
+  
+  .page-header {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  
+  .page-header h1 {
+    font-size: 20px;
+  }
+  
+  .back-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .basic-info-section,
+  .stats-section,
+  .dungeon-section,
+  .favorites-section {
+    padding: 14px;
+  }
+  
+  .basic-info-section h2,
+  .stats-section h2,
+  .dungeon-section h2,
+  .favorites-section h2 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .info-item {
+    padding: 10px 12px;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .character-detail-page {
+    padding: 8px;
+  }
+  
+  .page-header {
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .page-header h1 {
+    font-size: 18px;
+  }
+  
+  .back-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  
+  .basic-info-section,
+  .stats-section,
+  .dungeon-section,
+  .favorites-section {
+    padding: 12px;
+  }
+  
+  .basic-info-section h2,
+  .stats-section h2,
+  .dungeon-section h2,
+  .favorites-section h2 {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .info-item {
+    padding: 8px 10px;
+  }
+  
+  .stat-card {
+    padding: 14px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .character-detail-page {
+    padding: 5px;
+  }
+  
+  .page-header {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .page-header h1 {
+    font-size: 16px;
+  }
+  
+  .back-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .basic-info-section,
+  .stats-section,
+  .dungeon-section,
+  .favorites-section {
+    padding: 10px;
+  }
+  
+  .basic-info-section h2,
+  .stats-section h2,
+  .dungeon-section h2,
+  .favorites-section h2 {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .info-item {
+    padding: 6px 8px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  /* 추가 글자 크기 최적화 */
+  .info-label,
+  .info-value {
+    font-size: 0.8rem;
+  }
+  
+  .stat-card h3 {
+    font-size: 0.9rem;
+  }
+  
+  .dungeon-item {
+    font-size: 0.8rem;
+  }
+  
+  .favorite-item label {
+    font-size: 0.8rem;
+  }
+}
+
 .edit-btn {
   background: #007bff;
   color: white;

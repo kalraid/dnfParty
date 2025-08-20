@@ -1048,6 +1048,231 @@ watch(() => parties.value, () => {
   color: #2c3e50;
 }
 
+/* ========================================
+   반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 태블릿 (1024px 이하) */
+@media screen and (max-width: 1024px) {
+  .advanced-party-optimization {
+    padding: 15px;
+  }
+  
+  .config-card,
+  .selection-card,
+  .optimization-card,
+  .results-card,
+  .performance-card {
+    padding: 20px;
+  }
+  
+  .form-row {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+}
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .advanced-party-optimization {
+    padding: 12px;
+  }
+  
+  .header {
+    margin-bottom: 25px;
+  }
+  
+  .header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .config-card,
+  .selection-card,
+  .optimization-card,
+  .results-card,
+  .performance-card {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .config-card h3,
+  .selection-card h3,
+  .optimization-card h3,
+  .results-card h3,
+  .performance-card h3 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .advanced-party-optimization {
+    padding: 10px;
+  }
+  
+  .header {
+    margin-bottom: 20px;
+  }
+  
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .config-card,
+  .selection-card,
+  .optimization-card,
+  .results-card,
+  .performance-card {
+    padding: 14px;
+    margin-bottom: 15px;
+  }
+  
+  .config-card h3,
+  .selection-card h3,
+  .optimization-card h3,
+  .results-card h3,
+  .performance-card h3 {
+    font-size: 1.1em;
+    margin-bottom: 12px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 8px;
+    font-size: 13px;
+  }
+  
+  .strategy-info {
+    padding: 12px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .advanced-party-optimization {
+    padding: 8px;
+  }
+  
+  .header {
+    margin-bottom: 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.4rem;
+  }
+  
+  .subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .config-card,
+  .selection-card,
+  .optimization-card,
+  .results-card,
+  .performance-card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .config-card h3,
+  .selection-card h3,
+  .optimization-card h3,
+  .results-card h3,
+  .performance-card h3 {
+    font-size: 1em;
+    margin-bottom: 10px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .strategy-info {
+    padding: 10px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .advanced-party-optimization {
+    padding: 5px;
+  }
+  
+  .header {
+    margin-bottom: 12px;
+  }
+  
+  .header h1 {
+    font-size: 1.2rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .config-card,
+  .selection-card,
+  .optimization-card,
+  .results-card,
+  .performance-card {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 5px;
+    font-size: 11px;
+  }
+  
+  .strategy-info {
+    padding: 8px;
+  }
+  
+  /* 추가 글자 크기 최적화 */
+  .form-group label {
+    font-size: 0.8rem;
+  }
+  
+  .strategy-info h4 {
+    font-size: 0.9rem;
+  }
+  
+  .strategy-info p {
+    font-size: 0.7rem;
+  }
+  
+  .character-count-display {
+    font-size: 0.8rem;
+  }
+  
+  .character-count-display .count {
+    font-size: 1.2rem;
+  }
+}
+
 .strategy-info p {
   margin: 0;
   color: #7f8c8d;

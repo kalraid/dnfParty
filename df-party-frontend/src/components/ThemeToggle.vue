@@ -100,6 +100,11 @@ watch(currentTheme, (newTheme) => {
   font-weight: 600;
 }
 
+/* ========================================
+   반응형 디자인 - 글자 크기 포함 완전 최적화
+   ======================================== */
+
+/* 태블릿 (768px 이하) */
 @media (max-width: 768px) {
   .theme-btn {
     padding: 6px 10px;
@@ -108,6 +113,46 @@ watch(currentTheme, (newTheme) => {
   
   .label {
     display: none;
+  }
+  
+  .icon {
+    font-size: 14px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media (max-width: 600px) {
+  .theme-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  
+  .icon {
+    font-size: 12px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media (max-width: 480px) {
+  .theme-btn {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+  
+  .icon {
+    font-size: 10px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media (max-width: 320px) {
+  .theme-btn {
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+  
+  .icon {
+    font-size: 8px;
   }
 }
 </style>

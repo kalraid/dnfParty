@@ -90,6 +90,7 @@ header {
   margin-top: auto;
 }
 
+/* 태블릿 (768px 이하) */
 @media (max-width: 768px) {
   .header-content {
     padding: 0 10px;
@@ -106,6 +107,86 @@ header {
   .nav-link {
     padding: 0.4rem 0.8rem;
     font-size: 0.9rem;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media (max-width: 600px) {
+  .header-content {
+    padding: 0 8px;
+  }
+  
+  .site-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  .main-nav {
+    gap: 0.4rem;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .nav-link {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .main-content {
+    padding: 15px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media (max-width: 480px) {
+  .header-content {
+    padding: 0 5px;
+  }
+  
+  .site-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .main-nav {
+    gap: 0.3rem;
+  }
+  
+  .nav-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .main-content {
+    padding: 10px;
+  }
+  
+  .footer {
+    padding: 0.8rem 0;
+    font-size: 0.9rem;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media (max-width: 320px) {
+  .header-content {
+    padding: 0 3px;
+  }
+  
+  .site-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .nav-link {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  
+  .main-content {
+    padding: 8px;
   }
 }
 </style>

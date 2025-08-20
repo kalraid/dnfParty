@@ -398,6 +398,198 @@ onUnmounted(() => {
 }
 
 .notification-data {
+  background: #e9ecef;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+/* ========================================
+   반응형 디자인 - 글자 크기 포함 완전 최적화
+   ======================================== */
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .realtime-notification {
+    top: 15px;
+    right: 15px;
+    left: 15px;
+    width: auto;
+    max-width: none;
+  }
+  
+  .connection-status {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .notification-list {
+    max-height: 250px;
+    padding: 6px;
+  }
+  
+  .notification-item {
+    padding: 10px;
+    margin-bottom: 6px;
+  }
+  
+  .notification-type {
+    font-size: 11px;
+  }
+  
+  .notification-time {
+    font-size: 10px;
+  }
+  
+  .notification-message {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  
+  .notification-data {
+    padding: 6px;
+    font-size: 11px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .realtime-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .connection-status {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 6px;
+  }
+  
+  .notification-list {
+    max-height: 200px;
+    padding: 5px;
+  }
+  
+  .notification-item {
+    padding: 8px;
+    margin-bottom: 5px;
+  }
+  
+  .notification-type {
+    font-size: 10px;
+  }
+  
+  .notification-time {
+    font-size: 9px;
+  }
+  
+  .notification-message {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+  
+  .notification-data {
+    padding: 5px;
+    font-size: 10px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .realtime-notification {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+  }
+  
+  .connection-status {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .notification-list {
+    max-height: 180px;
+    padding: 4px;
+  }
+  
+  .notification-item {
+    padding: 6px;
+    margin-bottom: 4px;
+  }
+  
+  .notification-type {
+    font-size: 9px;
+  }
+  
+  .notification-time {
+    font-size: 8px;
+  }
+  
+  .notification-message {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  
+  .notification-data {
+    padding: 4px;
+    font-size: 9px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .realtime-notification {
+    top: 5px;
+    right: 5px;
+    left: 5px;
+  }
+  
+  .connection-status {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  
+  .status-dot {
+    width: 5px;
+    height: 5px;
+    margin-right: 4px;
+  }
+  
+  .notification-list {
+    max-height: 150px;
+    padding: 3px;
+  }
+  
+  .notification-item {
+    padding: 5px;
+    margin-bottom: 3px;
+  }
+  
+  .notification-type {
+    font-size: 8px;
+  }
+  
+  .notification-time {
+    font-size: 7px;
+  }
+  
+  .notification-message {
+    font-size: 10px;
+    margin-bottom: 3px;
+  }
+  
+  .notification-data {
+    padding: 3px;
+    font-size: 8px;
+  }
+}
   font-size: 11px;
   color: #6c757d;
   background: #e9ecef;

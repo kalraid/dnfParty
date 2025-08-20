@@ -3519,4 +3519,359 @@ const getSSEStatusClass = computed(() => {
   box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
   background: linear-gradient(135deg, #ee5a24, #ff6b6b);
 }
+
+/* ========================================
+   세밀한 반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 대형 데스크탑 (1920px 이상) */
+@media screen and (min-width: 1920px) {
+  .dungeon-status-container {
+    max-width: 1600px;
+    padding: 30px;
+  }
+  
+  .status-header h1 {
+    font-size: 3.5rem;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 25px;
+  }
+  
+  .difficulty-filters {
+    gap: 15px;
+  }
+  
+  .difficulty-btn {
+    padding: 15px 25px;
+    font-size: 16px;
+  }
+}
+
+/* 데스크탑 (1600px ~ 1919px) */
+@media screen and (min-width: 1600px) and (max-width: 1919px) {
+  .dungeon-status-container {
+    max-width: 1400px;
+    padding: 25px;
+  }
+  
+  .status-header h1 {
+    font-size: 3.2rem;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+  }
+}
+
+/* 노트북 (1200px ~ 1599px) */
+@media screen and (min-width: 1200px) and (max-width: 1599px) {
+  .dungeon-status-container {
+    max-width: 1200px;
+    padding: 20px;
+  }
+  
+  .status-header h1 {
+    font-size: 3rem;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+/* 태블릿 가로 (1024px ~ 1199px) */
+@media screen and (min-width: 1024px) and (max-width: 1199px) {
+  .dungeon-status-container {
+    padding: 18px;
+  }
+  
+  .status-header {
+    flex-direction: row;
+    gap: 20px;
+    text-align: left;
+  }
+  
+  .status-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .recent-adventure-select {
+    width: auto;
+    min-width: 250px;
+  }
+  
+  .difficulty-filters {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  
+  .difficulty-btn {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  
+  .selected-adventure-display {
+    flex-direction: row;
+    gap: 20px;
+    text-align: left;
+  }
+}
+
+/* 태블릿 세로 (768px ~ 1023px) */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .dungeon-status-container {
+    padding: 15px;
+  }
+  
+  .status-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .status-header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .recent-adventure-select {
+    width: 100%;
+    max-width: 300px;
+    font-size: 16px;
+    padding: 14px;
+  }
+  
+  .difficulty-filters {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .difficulty-btn {
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .character-card {
+    padding: 16px;
+  }
+  
+  .character-info h3 {
+    font-size: 1.1rem;
+  }
+  
+  .selected-adventure-display {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+}
+
+/* 중형 모바일 (600px ~ 767px) */
+@media screen and (min-width: 600px) and (max-width: 767px) {
+  .dungeon-status-container {
+    padding: 12px;
+  }
+  
+  .status-header h1 {
+    font-size: 2rem;
+  }
+  
+  .recent-adventure-select {
+    width: 100%;
+    font-size: 16px;
+    padding: 13px;
+  }
+  
+  .difficulty-filters {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .difficulty-btn {
+    width: 100%;
+    padding: 13px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  
+  .character-card {
+    padding: 14px;
+  }
+  
+  .character-info h3 {
+    font-size: 1rem;
+  }
+}
+
+/* 소형 모바일 (480px ~ 599px) */
+@media screen and (min-width: 480px) and (max-width: 599px) {
+  .dungeon-status-container {
+    padding: 10px;
+  }
+  
+  .status-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .recent-adventure-select {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+  }
+  
+  .difficulty-filters {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .difficulty-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .character-card {
+    padding: 12px;
+  }
+  
+  .character-info h3 {
+    font-size: 1rem;
+  }
+  
+  .selected-adventure-display {
+    padding: 12px;
+  }
+  
+  .selected-adventure-name {
+    font-size: 16px;
+    padding: 6px 10px;
+  }
+  
+  .change-adventure-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+/* 초소형 모바일 (320px ~ 479px) */
+@media screen and (min-width: 320px) and (max-width: 479px) {
+  .dungeon-status-container {
+    padding: 8px;
+  }
+  
+  .status-header h1 {
+    font-size: 1.6rem;
+  }
+  
+  .recent-adventure-select {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
+  }
+  
+  .difficulty-filters {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .difficulty-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .character-card {
+    padding: 10px;
+    min-height: 100px;
+  }
+  
+  .character-info h3 {
+    font-size: 0.9rem;
+  }
+  
+  .selected-adventure-display {
+    padding: 10px;
+  }
+  
+  .selected-adventure-name {
+    font-size: 14px;
+    padding: 5px 8px;
+  }
+  
+  .change-adventure-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+  }
+}
+
+/* 매우 작은 화면 (400px 이하) 추가 최적화 */
+@media screen and (max-width: 400px) {
+  .dungeon-status-container {
+    padding: 5px;
+  }
+  
+  .status-header h1 {
+    font-size: 1.4rem;
+  }
+  
+  .character-card {
+    padding: 8px;
+    min-height: 80px;
+  }
+  
+  .character-info h3 {
+    font-size: 0.8rem;
+  }
+  
+  .difficulty-btn {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .difficulty-btn {
+    min-height: 44px;
+  }
+  
+  .change-adventure-btn {
+    min-height: 44px;
+  }
+  
+  .recent-adventure-select {
+    min-height: 44px;
+  }
+}
 </style>

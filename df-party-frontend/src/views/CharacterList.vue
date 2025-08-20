@@ -599,6 +599,193 @@ defineExpose({
   font-size: 1.1rem;
 }
 
+/* ========================================
+   반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 태블릿 (1024px 이하) */
+@media screen and (max-width: 1024px) {
+  .character-list {
+    padding: 15px;
+  }
+  
+  .search-history-section,
+  .adventure-selection {
+    padding: 15px;
+  }
+  
+  .characters-table th,
+  .characters-table td {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+}
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .character-list {
+    padding: 12px;
+  }
+  
+  .search-history-section,
+  .adventure-selection {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .search-history-list {
+    gap: 8px;
+  }
+  
+  .search-record {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  .adventure-filters {
+    gap: 10px;
+  }
+  
+  .characters-table {
+    font-size: 14px;
+  }
+  
+  .characters-table th,
+  .characters-table td {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  
+  .dungeon-clear-status {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .character-list {
+    padding: 10px;
+  }
+  
+  .search-history-section,
+  .adventure-selection {
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .search-history-list {
+    gap: 6px;
+  }
+  
+  .search-record {
+    padding: 6px;
+    width: 100%;
+  }
+  
+  .adventure-filters {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .characters-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .characters-table th,
+  .characters-table td {
+    padding: 6px 4px;
+    font-size: 12px;
+    min-width: 80px;
+  }
+  
+  .dungeon-clear-status {
+    font-size: 0.8rem;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .character-list {
+    padding: 8px;
+  }
+  
+  .search-history-section,
+  .adventure-selection {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .search-record {
+    padding: 5px;
+  }
+  
+  .characters-table th,
+  .characters-table td {
+    padding: 5px 3px;
+    font-size: 11px;
+    min-width: 70px;
+  }
+  
+  .dungeon-clear-status {
+    font-size: 0.75rem;
+  }
+  
+  .load-btn,
+  .remove-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .character-list {
+    padding: 5px;
+  }
+  
+  .search-history-section,
+  .adventure-selection {
+    padding: 5px;
+    margin-bottom: 10px;
+  }
+  
+  .characters-table th,
+  .characters-table td {
+    padding: 4px 2px;
+    font-size: 10px;
+    min-width: 60px;
+  }
+  
+  .dungeon-clear-status {
+    font-size: 0.7rem;
+  }
+  
+  /* 추가 글자 크기 최적화 */
+  .search-history-section h3,
+  .adventure-selection h3,
+  .characters-section h3 {
+    font-size: 1rem;
+  }
+  
+  .search-record {
+    font-size: 0.8rem;
+  }
+  
+  .adventure-checkbox {
+    font-size: 0.8rem;
+  }
+  
+  .load-btn,
+  .remove-btn {
+    font-size: 0.7rem;
+  }
+}
+
 .dungeon-item.cleared .clear-status {
   color: #28a745;
 }

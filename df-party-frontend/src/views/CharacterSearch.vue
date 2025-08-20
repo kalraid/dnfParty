@@ -1185,11 +1185,94 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   padding: 20px;
 }
 
+/* 작은 화면에서 컨테이너 조정 */
+@media screen and (max-width: 600px) {
+  .character-search {
+    padding: 10px;
+  }
+  
+  .character-search h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+}
+
+/* 400px 이하 컨테이너 특별 최적화 */
+@media screen and (max-width: 400px) {
+  .character-search {
+    padding: 5px;
+  }
+  
+  .character-search h2 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+  
+  .search-results h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+}
+
 .search-form {
   background: #f8f9fa;
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 30px;
+}
+
+/* 작은 화면에서 검색 폼 조정 */
+@media screen and (max-width: 600px) {
+  .search-form {
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 12px;
+  }
+  
+  .form-group label {
+    font-size: 14px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 8px;
+    font-size: 14px;
+  }
+  
+  .search-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* 400px 이하 검색 폼 특별 최적화 */
+@media screen and (max-width: 400px) {
+  .search-form {
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .form-group {
+    margin-bottom: 8px;
+  }
+  
+  .form-group label {
+    font-size: 12px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .search-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
 }
 
 .form-group {
@@ -1238,9 +1321,73 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   margin-top: 15px;
+}
+
+/* 작은 화면에서 그리드 조정 */
+@media screen and (max-width: 600px) {
+  .results-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* 400px 이하 특별 최적화 */
+@media screen and (max-width: 400px) {
+  .results-grid {
+    gap: 10px;
+  }
+  
+  .dundam-character-card {
+    padding: 8px;
+    min-height: 80px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .character-avatar {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+  
+  .avatar-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .character-info {
+    width: 100%;
+  }
+  
+  .character-header {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+  
+  .character-name {
+    font-size: 0.9rem;
+  }
+  
+  .server-name, .level-display {
+    font-size: 0.8rem;
+  }
+  
+  /* 추가 글자 크기 최적화 */
+  .character-stats {
+    font-size: 0.75rem;
+  }
+  
+  .adventure-name {
+    font-size: 0.8rem;
+  }
+  
+  .nabel-eligibility {
+    font-size: 0.7rem;
+  }
 }
 
 /* 던담 스타일 캐릭터 카드 */
@@ -1256,6 +1403,15 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
   overflow: hidden;
+  min-height: 120px;
+}
+
+/* 작은 화면에서 카드 크기 조정 */
+@media screen and (max-width: 600px) {
+  .dundam-character-card {
+    padding: 12px;
+    min-height: 100px;
+  }
 }
 
 .dundam-character-card:hover {
@@ -1285,6 +1441,19 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   overflow: hidden;
   border: 2px solid #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 작은 화면에서 아바타 크기 조정 */
+@media screen and (max-width: 600px) {
+  .avatar-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+  }
+  
+  .character-avatar {
+    margin-right: 12px;
+  }
 }
 
 .character-img {
@@ -2759,6 +2928,44 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 400px 이하에서 진행바 최적화 */
+@media screen and (max-width: 400px) {
+  .dundam-sync-progress {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .progress-header {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .progress-header h4 {
+    font-size: 14px;
+  }
+  
+  .progress-text {
+    font-size: 12px;
+  }
+  
+  .progress-info {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .current-syncing,
+  .countdown-timer {
+    font-size: 12px;
+  }
+  
+  .waiting-message {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
 .progress-header {
   display: flex;
   justify-content: space-between;
@@ -2824,5 +3031,268 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   text-align: center;
   font-size: 14px;
   font-weight: 500;
+}
+
+/* ========================================
+   세밀한 반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 대형 데스크탑 (1920px 이상) */
+@media screen and (min-width: 1920px) {
+  .search-container {
+    max-width: 1600px;
+    padding: 30px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 25px;
+  }
+  
+  .search-input {
+    font-size: 18px;
+    padding: 18px;
+  }
+  
+  .search-button {
+    padding: 18px 30px;
+    font-size: 18px;
+  }
+}
+
+/* 데스크탑 (1600px ~ 1919px) */
+@media screen and (min-width: 1600px) and (max-width: 1919px) {
+  .search-container {
+    max-width: 1400px;
+    padding: 25px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+  }
+}
+
+/* 노트북 (1200px ~ 1599px) */
+@media screen and (min-width: 1200px) and (max-width: 1599px) {
+  .search-container {
+    max-width: 1200px;
+    padding: 20px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+/* 태블릿 가로 (1024px ~ 1199px) */
+@media screen and (min-width: 1024px) and (max-width: 1199px) {
+  .search-container {
+    padding: 18px;
+  }
+  
+  .search-form {
+    flex-direction: row;
+    gap: 12px;
+  }
+  
+  .search-button {
+    width: auto;
+    padding: 12px 24px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+/* 태블릿 세로 (768px ~ 1023px) */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .search-container {
+    padding: 15px;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .search-input {
+    font-size: 16px;
+    padding: 14px;
+  }
+  
+  .search-button {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .character-card {
+    padding: 16px;
+  }
+  
+  .character-info h3 {
+    font-size: 1.1rem;
+  }
+  
+  .dundam-sync-progress {
+    padding: 16px;
+  }
+}
+
+/* 중형 모바일 (600px ~ 767px) */
+@media screen and (min-width: 600px) and (max-width: 767px) {
+  .search-container {
+    padding: 12px;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .search-input {
+    font-size: 16px;
+    padding: 13px;
+  }
+  
+  .search-button {
+    width: 100%;
+    padding: 13px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  
+  .character-card {
+    padding: 14px;
+  }
+  
+  .character-info h3 {
+    font-size: 1rem;
+  }
+}
+
+/* 소형 모바일 (480px ~ 599px) */
+@media screen and (min-width: 480px) and (max-width: 599px) {
+  .search-container {
+    padding: 10px;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .search-input {
+    font-size: 16px;
+    padding: 12px;
+  }
+  
+  .search-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .character-card {
+    padding: 12px;
+  }
+  
+  .character-info h3 {
+    font-size: 1rem;
+  }
+  
+  .character-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .dundam-sync-progress {
+    padding: 12px;
+  }
+  
+  .progress-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .progress-info {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* 초소형 모바일 (320px ~ 479px) */
+@media screen and (min-width: 320px) and (max-width: 479px) {
+  .search-container {
+    padding: 8px;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .search-input {
+    font-size: 16px;
+    padding: 10px;
+  }
+  
+  .search-button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .character-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .character-card {
+    padding: 10px;
+  }
+  
+  .character-info h3 {
+    font-size: 0.9rem;
+  }
+  
+  .dundam-sync-progress {
+    padding: 10px;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .search-button {
+    min-height: 44px;
+  }
+  
+  .character-card {
+    min-height: 120px;
+  }
+  
+  .dundam-sync-button {
+    min-height: 44px;
+  }
 }
 </style> 

@@ -2,11 +2,13 @@
 .gradle/
 build/
 target/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Gradle Wrapper는 절대 무시하면 안됨! (팀원들이 동일한 Gradle 버전 사용)
+# gradlew, gradlew.bat, gradle/wrapper/ 폴더는 Git에 포함되어야 함
+# 빌드 결과물은 무시 (팀원마다 다르게 생성됨)
 */target/*
 */classes/*
+**/src/main/**/build/
+**/src/test/**/build/
 
 # Backend Build Files
 df-party-backend/.gradle/

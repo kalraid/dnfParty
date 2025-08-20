@@ -749,6 +749,253 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
+/* ========================================
+   반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 태블릿 (1024px 이하) */
+@media screen and (max-width: 1024px) {
+  .party-modification {
+    padding: 15px;
+  }
+  
+  .main-content {
+    gap: 20px;
+  }
+  
+  .party-section {
+    padding: 15px;
+  }
+  
+  .header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .dungeon-selector select {
+    min-width: 180px;
+    padding: 6px 10px;
+  }
+}
+
+/* 태블릿 (768px 이하) */
+@media screen and (max-width: 768px) {
+  .party-modification {
+    padding: 12px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+  }
+  
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  
+  .dungeon-selector {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .dungeon-selector select {
+    min-width: 200px;
+    padding: 8px 12px;
+  }
+  
+  .main-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    min-height: auto;
+  }
+  
+  .party-section {
+    padding: 15px;
+  }
+  
+  .party-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  
+  .party-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+/* 중형 모바일 (600px 이하) */
+@media screen and (max-width: 600px) {
+  .party-modification {
+    padding: 10px;
+  }
+  
+  .header {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+  }
+  
+  .header h1 {
+    font-size: 1.4rem;
+  }
+  
+  .dungeon-selector select {
+    min-width: 180px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .main-content {
+    gap: 15px;
+  }
+  
+  .party-section {
+    padding: 12px;
+  }
+  
+  .party-header {
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  
+  .party-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media screen and (max-width: 480px) {
+  .party-modification {
+    padding: 8px;
+  }
+  
+  .header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+  
+  .header h1 {
+    font-size: 1.2rem;
+  }
+  
+  .dungeon-selector select {
+    min-width: 160px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  
+  .main-content {
+    gap: 12px;
+  }
+  
+  .party-section {
+    padding: 10px;
+  }
+  
+  .party-header {
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+  
+  .party-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
+
+/* 초소형 모바일 (320px 이하) */
+@media screen and (max-width: 320px) {
+  .party-modification {
+    padding: 5px;
+  }
+  
+  .header {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+  
+  .header h1 {
+    font-size: 1rem;
+  }
+  
+  .dungeon-selector select {
+    min-width: 140px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+  
+  .main-content {
+    gap: 10px;
+  }
+  
+  .party-section {
+    padding: 8px;
+  }
+  
+  .party-header {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  
+  .party-header h2 {
+    font-size: 1rem;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  
+  /* 추가 글자 크기 최적화 */
+  .dungeon-selector label {
+    font-size: 0.8rem;
+  }
+  
+  .party-group h3 {
+    font-size: 0.9rem;
+  }
+  
+  .character-name {
+    font-size: 0.8rem;
+  }
+  
+  .character-role {
+    font-size: 0.7rem;
+  }
+  
+  .character-fame {
+    font-size: 0.7rem;
+  }
+  
+  .party-efficiency {
+    font-size: 0.8rem;
+  }
+}
+
 .btn-secondary {
   background: #6c757d;
   color: white;

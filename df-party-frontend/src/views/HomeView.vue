@@ -131,19 +131,267 @@ import { RouterLink } from 'vue-router'
 
 
 
-@media (max-width: 768px) {
+/* ========================================
+   세밀한 반응형 디자인 - 디바이스별 최적화
+   ======================================== */
+
+/* 대형 데스크탑 (1920px 이상) */
+@media screen and (min-width: 1920px) {
+  .home {
+    max-width: 1600px;
+    padding: 30px;
+  }
+  
   .hero-section h1 {
-    font-size: 2rem;
+    font-size: 4rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.5rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+  }
+}
+
+/* 데스크탑 (1600px ~ 1919px) */
+@media screen and (min-width: 1600px) and (max-width: 1919px) {
+  .home {
+    max-width: 1400px;
+    padding: 25px;
+  }
+  
+  .hero-section h1 {
+    font-size: 3.5rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+  }
+}
+
+/* 노트북 (1200px ~ 1599px) */
+@media screen and (min-width: 1200px) and (max-width: 1599px) {
+  .home {
+    max-width: 1200px;
+    padding: 20px;
+  }
+  
+  .hero-section h1 {
+    font-size: 3.2rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+}
+
+/* 태블릿 가로 (1024px ~ 1199px) */
+@media screen and (min-width: 1024px) and (max-width: 1199px) {
+  .home {
+    padding: 18px;
+  }
+  
+  .hero-section h1 {
+    font-size: 3rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .feature-card {
+    padding: 25px;
+  }
+}
+
+/* 태블릿 세로 (768px ~ 1023px) */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .home {
+    padding: 15px;
+  }
+  
+  .hero-section {
+    padding: 40px 15px;
+    margin-bottom: 30px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.8rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .features-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  
+  .feature-card {
+    padding: 22px 18px;
+  }
+  
+  .feature-card h3 {
+    font-size: 1.2rem;
+  }
+}
+
+/* 중형 모바일 (600px ~ 767px) */
+@media screen and (min-width: 600px) and (max-width: 767px) {
+  .home {
+    padding: 12px;
+  }
+  
+  .hero-section {
+    padding: 35px 15px;
+    margin-bottom: 28px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.4rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .features-section h2 {
+    font-size: 1.7rem;
+    margin-bottom: 22px;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .feature-card {
+    padding: 20px 16px;
+  }
+  
+  .feature-card h3 {
+    font-size: 1.1rem;
+  }
+}
+
+/* 소형 모바일 (480px ~ 599px) */
+@media screen and (min-width: 480px) and (max-width: 599px) {
+  .home {
+    padding: 10px;
+  }
+  
+  .hero-section {
+    padding: 30px 15px;
+    margin-bottom: 25px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.2rem;
   }
   
   .hero-subtitle {
     font-size: 1rem;
   }
   
-  .features-grid {
-    grid-template-columns: 1fr;
+  .features-section h2 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
   }
   
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .feature-card {
+    padding: 18px 15px;
+  }
+  
+  .feature-card h3 {
+    font-size: 1.1rem;
+  }
+  
+  .feature-card p {
+    font-size: 0.95rem;
+  }
+  
+  .feature-link {
+    padding: 9px 18px;
+    font-size: 0.95rem;
+  }
+}
 
+/* 초소형 모바일 (320px ~ 479px) */
+@media screen and (min-width: 320px) and (max-width: 479px) {
+  .home {
+    padding: 8px;
+  }
+  
+  .hero-section {
+    padding: 25px 12px;
+    margin-bottom: 20px;
+  }
+  
+  .hero-section h1 {
+    font-size: 1.8rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .features-section h2 {
+    font-size: 1.4rem;
+    margin-bottom: 18px;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .feature-card {
+    padding: 15px 12px;
+  }
+  
+  .feature-card h3 {
+    font-size: 1rem;
+  }
+  
+  .feature-card p {
+    font-size: 0.9rem;
+  }
+  
+  .feature-link {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  .feature-card:hover {
+    transform: none;
+  }
+  
+  .feature-link {
+    min-height: 44px; /* 터치 최소 크기 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 </style>
+

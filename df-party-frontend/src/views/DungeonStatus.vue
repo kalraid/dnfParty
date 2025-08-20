@@ -1903,6 +1903,7 @@ const refreshDungeonStatus = async (character: Character) => {
           char.dungeonClearNabel = result.clearStatus?.nabel || false;
           char.dungeonClearVenus = result.clearStatus?.venus || false;
           char.dungeonClearFog = result.clearStatus?.fog || false;
+          char.dungeonClearTwilight = result.clearStatus?.twilight || false;
           char.lastDungeonCheck = new Date().toISOString();
         }
         

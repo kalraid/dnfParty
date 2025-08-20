@@ -39,19 +39,14 @@ public class DungeonClearResetService {
                 character.setDungeonClearNabel(false);
                 character.setDungeonClearVenus(false);
                 character.setDungeonClearFog(false);
-                character.setDungeonClearNightmare(false);
-                character.setDungeonClearTemple(false);
-                character.setDungeonClearAzure(false);
-                character.setDungeonClearStorm(false);
+                character.setDungeonClearTwilight(false);
                 
-                // 업데이트 시간 설정
-                character.setUpdatedAt(LocalDateTime.now());
+                // 마지막 던전 체크 시간 업데이트
+                character.setLastDungeonCheck(LocalDateTime.now());
                 
-                resetCount++;
+                // 변경사항 저장
+                characterRepository.save(character);
             }
-            
-            // DB에 일괄 저장
-            characterRepository.saveAll(characters);
             
             log.info("던전 클리어 상태 초기화 완료: {}개 캐릭터", resetCount);
             

@@ -65,6 +65,16 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.projectreactor/reactor-core/3.6.1/a3be3c85954485cbb3751205fe56fa42ee9efa4c/reactor-core-3.6.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.projectreactor/reactor-core/3.6.1/101eddc87d80a27189b98d123dbeeca001bab4d7/reactor-core-3.6.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-core/10.1.17/5b9185ee002f9e194d2cb21ddcf8bc5f3d4a69da/tomcat-embed-core-10.1.17.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-core/10.1.17/4663ef49c5a6a057e08f94a7eaebe521a0355d8a/tomcat-embed-core-10.1.17-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.logging.log4j/log4j-to-slf4j/2.21.1/d77b2ba81711ed596cd797cc2b5b5bd7409d841c/log4j-to-slf4j-2.21.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.logging.log4j/log4j-to-slf4j/2.21.1/31272b58321454b5d5a565f1e782ed4448ab3312/log4j-to-slf4j-2.21.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
@@ -75,27 +85,22 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aspects/6.1.1/bfcb6682e205b4ef6ae7986ac7ea35eae29f31f4/spring-aspects-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aspects/6.1.1/4cc0eae4805b3c432c28d021e83590e42f86b52a/spring-aspects-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.microsoft.playwright/driver/1.53.0/95b0057052558ae20265418bc9b702a6aa5a7d1c/driver-1.53.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.microsoft.playwright/driver/1.53.0/cf597aa2740e8cf2993c03a894c3e25c12ed6cfd/driver-1.53.0-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-actuator/3.2.0/d5fbcd592486db01da12ae57dfd505d863ef639f/spring-boot-starter-actuator-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-actuator/3.2.0/3969693b14280d9884c7a57f6d114a1e685ab8e5/spring-boot-starter-actuator-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-messaging/6.1.2/4b2406212dac8cea63355fc352a983a31f258831/spring-messaging-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-messaging/6.1.2/93bfb3302dd423196768049a7404f8d90336eaaa/spring-messaging-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-commons/1.12.0/2436654d439bd4ff6aad6419519357be8ba4f0d/micrometer-commons-1.12.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-commons/1.12.0/3b7271c7ba1b7964ed63d751b62676f93103b5ec/micrometer-commons-1.12.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-webmvc/6.1.2/906ee995372076e22ef9666d8628845c75bf5c42/spring-webmvc-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-webmvc/6.1.2/89db1a6836931cffefb93e3b68f4aadf475debba/spring-webmvc-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-beans/6.1.1/6af88af13193acf2197bc0a42f0ec4e5c481bfe9/spring-beans-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-beans/6.1.1/7a48fcd36752a8702b29e15a222bce4372b72d06/spring-beans-6.1.1-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-context/6.1.1/610d7dd3f62d22d42b993a201e3110649b68e17/spring-context-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-context/6.1.1/649851d4c84070c32c10529e7925d48d5f672b38/spring-context-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-classic/1.4.14/d98bc162275134cdf1518774da4a2a17ef6fb94d/logback-classic-1.4.14.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-classic/1.4.14/1b0b0b96069e3ec3b4d8e5cbffc0a56e633063de/logback-classic-1.4.14-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -105,12 +110,17 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.integration/spring-integration-core/6.2.0/faa0ca7aabddb4ec0690c18a801e595dc46cbfa0/spring-integration-core-6.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.integration/spring-integration-core/6.2.0/6a20899fcd41ef487ad675256b7fb34318d467f/spring-integration-core-6.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-actuator/3.2.1/ca17ff67e80a230f04d40d73321d623b769e361d/spring-boot-starter-actuator-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-actuator/3.2.1/d7d87166178f1c9bc9db85cff75419f2199388e/spring-boot-starter-actuator-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-core/1.12.0/830b242b1617b1508098fc4568b71f47336012d3/micrometer-core-1.12.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-core/1.12.0/2ee6ad40d65b2ba301a93f4c9fda528261d6dcd8/micrometer-core-1.12.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator-autoconfigure/3.2.1/fe81034352a15731322fba326447ba70bfa3962/spring-boot-actuator-autoconfigure-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator-autoconfigure/3.2.1/8efbfea7ec0d1f9b66703feb8952b6dcfd8ea4f5/spring-boot-actuator-autoconfigure-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-web/6.1.2/f26b98778376cc39afb04fbb6fdd7543bef89f2/spring-web-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-web/6.1.2/495a085680f8fb9c5d53d6d3c0470df74e7f60fb/spring-web-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -125,12 +135,12 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.projectreactor/reactor-core/3.6.0/ac8c6923f46c0dff079133e010f0aa3132ccf1c2/reactor-core-3.6.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.projectreactor/reactor-core/3.6.0/45ddb713b381efd9e7f410f0749ef08eed34013d/reactor-core-3.6.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-tx/6.1.2/48b9ff81c43345320779b402f1bb33b9f46ec4e9/spring-tx-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-tx/6.1.2/8c0e703525c07e68807e5c4deb74e44554e61568/spring-tx-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-validation/3.2.0/eef38598ccf9bbcd541c644e934939144cf9fa85/spring-boot-starter-validation-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-validation/3.2.0/c8204e2e326dd24c6542446453bd95d5b0a2ca8b/spring-boot-starter-validation-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.aspectj/aspectjweaver/1.9.21/beaabaea95c7f3330f415c72ee0ffe79b51d172f/aspectjweaver-1.9.21.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.aspectj/aspectjweaver/1.9.21/41c22d4148730ea7882a6da48a4e4a384c8abaf1/aspectjweaver-1.9.21-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -140,17 +150,42 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.antlr/antlr4-runtime/4.13.0/5a02e48521624faaf5ff4d99afc88b01686af655/antlr4-runtime-4.13.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.antlr/antlr4-runtime/4.13.0/d0b2afd765be71b3dfed54c0c08b816efa05fa0d/antlr4-runtime-4.13.0-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.retry/spring-retry/2.0.5/6aa0cd18f611ee83dc1d8e5052485e9669088253/spring-retry-2.0.5.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.retry/spring-retry/2.0.5/9ddbd5d3010494955f6ba12cb8fc124eb50ce67c/spring-retry-2.0.5-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.slf4j/jul-to-slf4j/2.0.9/9ef7c70b248185845f013f49a33ff9ca65b7975/jul-to-slf4j-2.0.9.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.slf4j/jul-to-slf4j/2.0.9/2150c4d3cad9f73e902f7679ece60cad80dfb61/jul-to-slf4j-2.0.9-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.4.11/2f9f280219a9922a74200eaf7138c4c17fb87c0f/logback-core-1.4.11.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.4.11/9899e21389d8b800a9c093c9e43afefe7824dd62/logback-core-1.4.11-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jdbc/6.1.2/2c9b37e4cc9bfd7e413d4685f09b6c5447d75638/spring-jdbc-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jdbc/6.1.2/7b560be9af49b91ada2f06d9edaa1fff13ddc856/spring-jdbc-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-webmvc/6.1.1/76c4408b67828aa9656f5955dc2c1c4c0e1b6da3/spring-webmvc-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-webmvc/6.1.1/4996999900ea98fbd26b589221d03d396167ed08/spring-webmvc-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jcl/6.1.2/285eb725861c9eacf2a3e4965d4e897932e335ea/spring-jcl-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jcl/6.1.2/e2463038150aa50a8db7ac64cbb38786e64e7ea6/spring-jcl-6.1.2-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.4.14/4d3c2248219ac0effeb380ed4c5280a80bf395e8/logback-core-1.4.14.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-core/1.4.14/7d9dcce57ba091e1e4b4793b244508ea28f52b48/logback-core-1.4.14-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-jakarta9/1.12.1/2dc7257970669fa45e342b0b36902d868af2dbed/micrometer-jakarta9-1.12.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-jakarta9/1.12.1/2dbcf8d6cad3d38902a825bceff9b8baf6f2ec4c/micrometer-jakarta9-1.12.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-core/1.12.1/b72e9a2f26355ecb8ababa0148a5c3c4ac648f14/micrometer-core-1.12.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-core/1.12.1/27b90c9bc1905377cbe76acf0e128515d107ab1b/micrometer-core-1.12.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -160,47 +195,22 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter/3.2.0/4d0cc70617a9febbbc6ad81562e930d93f7b2665/spring-boot-starter-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter/3.2.0/16c9936add73ba60d7b3a8ffeec2b7fdcbbef1d2/spring-boot-starter-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-validation/3.2.1/54a35ea1de2c7de2c701e93740228240218cc9dd/spring-boot-starter-validation-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-validation/3.2.1/fc5848f4cb611707ab16d020a6ca40d8baddbc20/spring-boot-starter-validation-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot/3.2.0/4088ad23df91481bc7415cbfa068c423ccb7e54e/spring-boot-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot/3.2.0/d3330ca3e30614a67199a8dbfa08b65ec265d332/spring-boot-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-observation/1.12.1/fbd0e0e9b6a36effd53e0eee35b050ed1f548ae5/micrometer-observation-1.12.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-observation/1.12.1/18ef18718bb57e7aaca287530154a8275054091c/micrometer-observation-1.12.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-logging/3.2.0/54998ab18f16e8d3a6e46c3d326f2de41c0b1ce0/spring-boot-starter-logging-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-logging/3.2.0/b71b86840c8201606ee6d1093958ac8afe41b986/spring-boot-starter-logging-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-tomcat/3.2.1/d8efc48034015522958cb3fea5831b4cbcd4fcfb/spring-boot-starter-tomcat-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-tomcat/3.2.1/94c1387e17a3a479ae99f2d8d6afaf4c3532c9a2/spring-boot-starter-tomcat-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-jdbc/3.2.0/1ab4ef09c814142be2fafc6d40c9bc242921ca12/spring-boot-starter-jdbc-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-jdbc/3.2.0/d9e6d805fed4aff1d6029374b6fdfc206c69b744/spring-boot-starter-jdbc-3.2.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator-autoconfigure/3.2.0/9795fad75af563e062656b8b9417a3c3c56b0fd9/spring-boot-actuator-autoconfigure-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator-autoconfigure/3.2.0/2e628f733f898e630c242b19119ea8895c362ccb/spring-boot-actuator-autoconfigure-3.2.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-classic/1.4.11/54450c0c783e896a1a6d88c043bd2f1daba1c382/logback-classic-1.4.11.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/ch.qos.logback/logback-classic/1.4.11/633da78998a88874bb7d697f055e5f28b40b5d5c/logback-classic-1.4.11-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.hibernate.orm/hibernate-core/6.3.1.Final/1101d7e09e4853a110fd27a6f35c906f5709ac4f/hibernate-core-6.3.1.Final.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.hibernate.orm/hibernate-core/6.3.1.Final/7f46ccb21d7deab8e85fbc627c2a2c88be6e22f3/hibernate-core-6.3.1.Final-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-tx/6.1.1/100cf99c3e41b12eab810d780c0e6e3905c51c12/spring-tx-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-tx/6.1.1/831de15965e3022e5fc7792fa358b4ac74e09a0d/spring-tx-6.1.1-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.antlr/antlr4-runtime/4.10.1/10839f875928f59c622d675091d51a43ea0dc5f7/antlr4-runtime-4.10.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.antlr/antlr4-runtime/4.10.1/a5214c71b2fa1d776d69674bf75eeb3f1fee8a62/antlr4-runtime-4.10.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-expression/6.1.2/98786397734b27b7c8843a6b01a7fa34d40d6806/spring-expression-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-expression/6.1.2/f337e9c40d2496daf99b19e081b4c318183d7476/spring-expression-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -210,22 +220,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-web/6.1.1/4eeb5f2edb9f04d00357edcc56b59d3874b3b453/spring-web-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-web/6.1.1/9ca23e110965b376c724ab6f49b7aa0a24c6bfc6/spring-web-6.1.1-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-el/10.1.16/f057e54bfffe99df7f0d04cd4e688e55bf8a0da5/tomcat-embed-el-10.1.16.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-el/10.1.16/5ecc55f3dbaf5b11bf23169fd51468a6a62d8133/tomcat-embed-el-10.1.16-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-jakarta9/1.12.0/d44ea5a6e7f1c1de8a33827797d3f081f798d34/micrometer-jakarta9-1.12.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-jakarta9/1.12.0/7e675b153a5a72c5d26545fbd35f666de65c55b9/micrometer-jakarta9-1.12.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-core/6.1.1/22d73bef97aff8a74a992716fe1aafc8f8a8a68d/spring-core-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-core/6.1.1/2b89fdace7991bb2c50328f9076c1c7b3f85930c/spring-core-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.10.1/b3add478d4382b78ea20b1671390a858002feb6c/gson-2.10.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.10.1/982a90132e942f302e6fe79d6e78c4bc2e998569/gson-2.10.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -235,17 +230,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-websocket/6.1.1/2311543b6264393b65c0cc58fb0c332526629ef7/spring-websocket-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-websocket/6.1.1/3a1affdb425fa5076134bb354102f89d4c467c83/spring-websocket-6.1.1-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-integration/3.2.0/1a5bb851b2a4aeae0d1744435167dc6c8c3edf18/spring-boot-starter-integration-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-integration/3.2.0/6499d933c9fe30441eec21d6d44470c6b4a52bc4/spring-boot-starter-integration-3.2.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator/3.2.0/bf991f1c5b3bee22a93c22641bb5a079f0a42963/spring-boot-actuator-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator/3.2.0/6bff02aa1bdc7167a442de0e942e874501d60b08/spring-boot-actuator-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-jdbc/3.2.1/e3de1c46cd238d55f0c2a5f5ea416fadce000318/spring-boot-starter-jdbc-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-jdbc/3.2.1/733df6f1c9cf1f12d61c61a6df35a30219abb91d/spring-boot-starter-jdbc-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -255,7 +240,12 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jdbc/6.1.1/92f1f65c3d8ccee4a86cd8f85a446d99f2915833/spring-jdbc-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jdbc/6.1.1/fbdba039cb4797afdfb4959ede42b6d6b4f6a107/spring-jdbc-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.microsoft.playwright/playwright/1.53.0/835ee06c07e46a5c5e33c7f6b89283d83b4ad310/playwright-1.53.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.microsoft.playwright/playwright/1.53.0/6047df17c3f6bd37dd8cd0cc878d446055daf62/playwright-1.53.0-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aop/6.1.2/a247bd81df8fa9c6a002b95969692bfd146a70b2/spring-aop-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aop/6.1.2/2469e920761626631c5bd2183ecb12f432aa906b/spring-aop-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -265,7 +255,32 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-integration/3.2.1/19675fb4f1664f13e377633cf456015b1b712292/spring-boot-starter-integration-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-integration/3.2.1/e16222797e480da39b0de337aab36afbe744afdd/spring-boot-starter-integration-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter/3.2.1/bc03d7075fb9d9d4877218db48d5dae3dd72a65d/spring-boot-starter-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter/3.2.1/84f6cc62430f30efc533dee832a0fd77ec4b031d/spring-boot-starter-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-commons/3.2.1/5983faa6a0f8b3a11a0cfc2ce1fabd43379a02d2/spring-data-commons-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-commons/3.2.1/20274749a3d7c1c3997846fd4dc790b834d3f8f3/spring-data-commons-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/2.0.9/7cf2726fdcfbc8610f9a71fb3ed639871f315340/slf4j-api-2.0.9.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/2.0.9/97e46b94d70f47892145e09d685461245584d596/slf4j-api-2.0.9-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-json/3.2.1/ecda50de20ab6d3c49ea30df4c1982048f5d31ac/spring-boot-starter-json-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-json/3.2.1/405cb361d64986f22783c72d46f8429d04fbabef/spring-boot-starter-json-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-aop/3.2.1/e8daf5422a28d8b2e304a00090a8fe730bda0e6c/spring-boot-starter-aop-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-aop/3.2.1/f09b6dc5ebd46532cbde7659eaf2e0a331a0b817/spring-boot-starter-aop-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -280,17 +295,27 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot/3.2.1/faa2ce019bee68a8d17529d0a08ebc427f927e13/spring-boot-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot/3.2.1/b9c61bf839de72a061a8d51b91f5c81cd90cc66f/spring-boot-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-web/3.2.1/e27e36d4222fd4d589e634e1c7f5f09f0316147c/spring-boot-starter-web-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-web/3.2.1/4f4403088253d3f8d30997b062c974d6d559ca18/spring-boot-starter-web-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.hibernate.common/hibernate-commons-annotations/6.0.6.Final/77a5f94b56d49508e0ee334751db5b78e5ccd50c/hibernate-commons-annotations-6.0.6.Final.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.hibernate.common/hibernate-commons-annotations/6.0.6.Final/113904346d97dbdf52883c90ef1ccd0bb8ffb74d/hibernate-commons-annotations-6.0.6.Final-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-websocket/3.2.0/2565709914f89357face72875277532b077692b9/spring-boot-starter-websocket-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-websocket/3.2.0/9255bb3cddb33adc938db519a7f4ca358a1a9629/spring-boot-starter-websocket-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-orm/6.1.2/32d93c8762b828e9017429528879d5f57be83b8f/spring-orm-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-orm/6.1.2/135b4e873b15b18fb53e5d0c562a82efdb7ef9c5/spring-orm-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aop/6.1.1/66cb0e08770d4523ae3976b0b791cde767466c61/spring-aop-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aop/6.1.1/6e38793c6f2fb08afa6d8712a63be8bebd923065/spring-aop-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-autoconfigure/3.2.1/b100d2d21d45dddd740d496357ca6f3813d777d0/spring-boot-autoconfigure-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-autoconfigure/3.2.1/94badb4b6a3a94510470d256681c6c8733209840/spring-boot-autoconfigure-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -300,27 +325,12 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-core/10.1.16/176162fb3998856a90436826034ffe5d25beaeb9/tomcat-embed-core-10.1.16.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-core/10.1.16/b2f870096146485fd0698589b3e941938f67d588/tomcat-embed-core-10.1.16-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.glassfish.jaxb/jaxb-runtime/4.0.4/7180c50ef8bd127bb1dd645458b906cffcf6c2b5/jaxb-runtime-4.0.4.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.glassfish.jaxb/jaxb-runtime/4.0.4/75f0097e2178e16ce462e7aec38f49ea578b99e3/jaxb-runtime-4.0.4-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-observation/1.12.0/4f4981faa7968441d0092107df9b750e057374af/micrometer-observation-1.12.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-observation/1.12.0/f079a24e5081ab907c1fc27a01c22062f75927ae/micrometer-observation-1.12.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-commons/3.2.0/1c98c48b9fde0624337e19f3577fce20d19b78ea/spring-data-commons-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-commons/3.2.0/4c26d01c9324633e96966f3bdd7ffe1de4ac59e0/spring-data-commons-3.2.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/3.2.0/59e49a0eca3d02c3dc593e7a881c19b932641894/spring-data-jpa-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/3.2.0/9abcff07f6a0d7afc18546c217f6ba91c46f9992/spring-data-jpa-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-websocket/10.1.17/9ee2f34b51144b75878c9b42768e17de8fbdc74b/tomcat-embed-websocket-10.1.17.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-websocket/10.1.17/2dc3fdda444267b88446095beb24185ba2f6d5b9/tomcat-embed-websocket-10.1.17-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -350,22 +360,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-tomcat/3.2.0/fc758099e394fe5646d9e36883fab38da4b26e22/spring-boot-starter-tomcat-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-tomcat/3.2.0/546c20ae1a84e26307ca06285923870d2fbb8b61/spring-boot-starter-tomcat-3.2.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/jakarta.transaction/jakarta.transaction-api/2.0.1/51a520e3fae406abb84e2e1148e6746ce3f80a1a/jakarta.transaction-api-2.0.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/jakarta.transaction/jakarta.transaction-api/2.0.1/660c982b9f5a7c8a6613c84f6e1c8b9221a4c574/jakarta.transaction-api-2.0.1-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.retry/spring-retry/2.0.4/20e833c9da7894383c3bfed0855ecbce6c6e586/spring-retry-2.0.4.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.retry/spring-retry/2.0.4/b4d5617a232f752e1d1f79dd459ee21abd01b791/spring-retry-2.0.4-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-data-jpa/3.2.0/6a8ad077a37f8a0cef6949dcfd91a9b2115cade/spring-boot-starter-data-jpa-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-data-jpa/3.2.0/e968be99d8f203c8e9da1e121b00f64fef8f174e/spring-boot-starter-data-jpa-3.2.0-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -375,12 +370,12 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-websocket/10.1.16/5c372739ee9409b47c474d8d47d276a7cd9bc2b/tomcat-embed-websocket-10.1.16.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-websocket/10.1.16/385898717ea85a86edf32f8289cd699b1c1e9d7b/tomcat-embed-websocket-10.1.16-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.jsoup/jsoup/1.17.2/1e75b08d7019546a954f1e359477f916f537a34d/jsoup-1.17.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.jsoup/jsoup/1.17.2/40c83bbe7e07d1593facfac04b78775fa9368d24/jsoup-1.17.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.jsoup/jsoup/1.17.2/1e75b08d7019546a954f1e359477f916f537a34d/jsoup-1.17.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.jsoup/jsoup/1.17.2/40c83bbe7e07d1593facfac04b78775fa9368d24/jsoup-1.17.2-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.opentest4j/opentest4j/1.3.0/152ea56b3a72f655d4fd677fc0ef2596c3dd5e6e/opentest4j-1.3.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.opentest4j/opentest4j/1.3.0/afb8ff23cffb021c56f333953aebfe6e8818568e/opentest4j-1.3.0-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -390,12 +385,27 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-expression/6.1.1/807700a64cb055ed85af189d1fa0702bc0d2efba/spring-expression-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-expression/6.1.1/9b8a778ee7a384f017910bb10a7585a5d769a43d/spring-expression-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-logging/3.2.1/df8ec78dc87885298998ca3c9bd603ee7bfe5b8/spring-boot-starter-logging-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-logging/3.2.1/a6f38c3f1a64821a1bb2adde904d81c9849ce0e5/spring-boot-starter-logging-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-autoconfigure/3.2.0/29b231378146bd6606e75389297f3a7d55476b87/spring-boot-autoconfigure-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-autoconfigure/3.2.0/69f472d39b2b48b2a4c3159b00fe74fb07974683/spring-boot-autoconfigure-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-data-jpa/3.2.1/3d48124f433375cf0113aa69603021635b55a21a/spring-boot-starter-data-jpa-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-data-jpa/3.2.1/e183e6b4e7a229c5dbc1e16c6040c3e6d8a9f159/spring-boot-starter-data-jpa-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-beans/6.1.2/abf52f2254975a3b1e95b2b63fb8b01d891cdc51/spring-beans-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-beans/6.1.2/e9fb3e808e10972b60aabbfef75bd4da9a9b9543/spring-beans-6.1.2-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.integration/spring-integration-core/6.2.1/63e40fbf2f799f1a1ac31ba253611cf1b9c8ff05/spring-integration-core-6.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.integration/spring-integration-core/6.2.1/c549db97fbe6b1a8d6f98ad354af0ff9c265e3ae/spring-integration-core-6.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator/3.2.1/9089b9fff0c17eae54aabc466b78e010eac3a04f/spring-boot-actuator-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-actuator/3.2.1/97519108e2ae13e786b9fb7a58f15cdd49382292/spring-boot-actuator-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -405,7 +415,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.aspectj/aspectjweaver/1.9.20.1/33b0e41476658229933eec7134678cf336e66dd4/aspectjweaver-1.9.20.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.aspectj/aspectjweaver/1.9.20.1/92c96d3f7be6a80a3f1fc540b2ebee4c4af97bbd/aspectjweaver-1.9.20.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-commons/1.12.1/abcc6b294e60582afdfae6c559c94ad1d412ce2d/micrometer-commons-1.12.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/io.micrometer/micrometer-commons/1.12.1/1e5acd3096e33c6bf4d1ea8db6f9d0044cffb9b1/micrometer-commons-1.12.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -415,17 +425,22 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-devtools/3.2.0/b8a547cba9b5ea40c1b2b0257bc0f19ebe4a0e17/spring-boot-devtools-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-devtools/3.2.0/30014eccb1bce48bc2e825b5bc6298f057a2127c/spring-boot-devtools-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.microsoft.playwright/driver-bundle/1.53.0/f4ebaa5c78bbc8633c2d9907b45315914c56442a/driver-bundle-1.53.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/com.microsoft.playwright/driver-bundle/1.53.0/36dd0a2ac318872b8b1f8fc08e0b16b456d2f3e2/driver-bundle-1.53.0-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-web/3.2.0/e609f839e7c2ff9c90bc75d7c05dbcbb19315319/spring-boot-starter-web-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-web/3.2.0/d97057e9e5867f614b88a8cac57e4c7fac42bec9/spring-boot-starter-web-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-context/6.1.2/15df19852991220556b4462a366269b8e15278eb/spring-context-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-context/6.1.2/ba5bf19170bd8356467eb7b7a83231c7db324471/spring-context-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-json/3.2.0/e831483c03433b987cc9c72f8ea67757f9865191/spring-boot-starter-json-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-json/3.2.0/5f00f9f2bd0b0c33ec8403810dfa80d5534234d4/spring-boot-starter-json-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/3.2.1/230869eb3094a2eb1cb0b077f7990e7f47062f53/spring-data-jpa-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/3.2.1/912004da4bfcb8bae39f6467d180857822a4c84d/spring-data-jpa-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.hibernate.orm/hibernate-core/6.4.1.Final/3dcefddf6609e6491d37208bcc0cab1273598cbd/hibernate-core-6.4.1.Final.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.hibernate.orm/hibernate-core/6.4.1.Final/171ca1a8bf525d8a719edd23f919e8527bc8003/hibernate-core-6.4.1.Final-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -435,12 +450,17 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-messaging/6.1.1/bca2a80e797c8fcace3370d84fecc5892bf37996/spring-messaging-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-messaging/6.1.1/392f3290e5ba26b16a5fd3d1e2b9188bcaf6340c/spring-messaging-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.eclipse.angus/angus-activation/2.0.1/eaafaf4eb71b400e4136fc3a286f50e34a68ecb7/angus-activation-2.0.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.eclipse.angus/angus-activation/2.0.1/661e619dc11106d2ea38a9cebb28928ca2d8fa32/angus-activation-2.0.1-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.eclipse.angus/angus-activation/2.0.1/eaafaf4eb71b400e4136fc3a286f50e34a68ecb7/angus-activation-2.0.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.eclipse.angus/angus-activation/2.0.1/661e619dc11106d2ea38a9cebb28928ca2d8fa32/angus-activation-2.0.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-el/10.1.17/9ad7312421535d7d3aabe0f541e852baccb59726/tomcat-embed-el-10.1.17.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apache.tomcat.embed/tomcat-embed-el/10.1.17/37b0cbe98e32af5989dd703153bc32d6a3afe10e/tomcat-embed-el-10.1.17-sources.jar">
+		<attributes>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-core/6.1.2/e43c71a9eaca454654621f7d272f15b53c68d583/spring-core-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-core/6.1.2/9d073681d3819c3846aad37f0ac70efb69ab4c83/spring-core-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -450,17 +470,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-orm/6.1.1/e9672bb788f74ed12f9ad9e2bf12eb9e4d7c8695/spring-orm-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-orm/6.1.1/9f4d9e8320d5e9fe37df7004c247b6982b7e1842/spring-orm-6.1.1-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-aop/3.2.0/1c4e5498a0ae4c179d0c192e9b674ac656f3e0b9/spring-boot-starter-aop-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-aop/3.2.0/12cdc21e70ac8bb5268bdbd4cb6d22b1857d5484/spring-boot-starter-aop-3.2.0-sources.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jcl/6.1.1/69ebbf7bad707d34e81d00213c756bc6fcc31dd7/spring-jcl-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-jcl/6.1.1/642500afb47d63ba51348d2775a9067af6ec5f66/spring-jcl-6.1.1-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aspects/6.1.2/423247e0be90804888668ea16d7e7f0d9168a7b9/spring-aspects-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-aspects/6.1.2/9128b4acd149f6b7906689d52bb8210e5d33b1f2/spring-aspects-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
@@ -495,19 +505,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-test/6.1.1/e86044a9b56e7c6860d643dd11b7b44624cce4a/spring-test-6.1.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-test/6.1.1/46b881a4c3521c93f0eb0da455e959ad418b8f97/spring-test-6.1.1-sources.jar">
-		<attributes>
-			<attribute name="test" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apiguardian/apiguardian-api/1.1.2/a231e0d844d2721b0fa1b238006d15c6ded6842a/apiguardian-api-1.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.apiguardian/apiguardian-api/1.1.2/e0787a997746ac32639e0bf3cb27af8dce8a3428/apiguardian-api-1.1.2-sources.jar">
-		<attributes>
-			<attribute name="test" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-test/3.2.0/afe5dc428297302f6aefd118aedced224cf2b672/spring-boot-starter-test-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-test/3.2.0/494e8d8e2813217d12acafcc21c6bfee047de0b5/spring-boot-starter-test-3.2.0-sources.jar">
 		<attributes>
 			<attribute name="test" value="true"/>
 			<attribute name="gradle.buildServer" value="true"/>
@@ -525,6 +523,12 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test-autoconfigure/3.2.1/bfc34c523b3ab295fb01f46373e903f9729cdd43/spring-boot-test-autoconfigure-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test-autoconfigure/3.2.1/258e382cf56b98f7ef5304585d35dfa8916e724c/spring-boot-test-autoconfigure-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="test" value="true"/>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.mockito/mockito-junit-jupiter/5.7.0/ac2d6a3431747a7986b8f4abef465f72bf3a21ae/mockito-junit-jupiter-5.7.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.mockito/mockito-junit-jupiter/5.7.0/5d3de2c05dc223dbb76d5d57125e529fe3623fec/mockito-junit-jupiter-5.7.0-sources.jar">
 		<attributes>
 			<attribute name="test" value="true"/>
@@ -537,13 +541,19 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test-autoconfigure/3.2.0/4d096363d61b38f3a4151c3a4460e7cd92c52ca8/spring-boot-test-autoconfigure-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test-autoconfigure/3.2.0/f0fcbf4d3385b9a2cff4aef7cde11fdf2be0e6b6/spring-boot-test-autoconfigure-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/net.minidev/json-smart/2.5.0/57a64f421b472849c40e77d2e7cce3a141b41e99/json-smart-2.5.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/net.minidev/json-smart/2.5.0/7f51740e5d2aa84831af62084d5ae98a51fcb61d/json-smart-2.5.0-sources.jar">
 		<attributes>
 			<attribute name="test" value="true"/>
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/net.minidev/json-smart/2.5.0/57a64f421b472849c40e77d2e7cce3a141b41e99/json-smart-2.5.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/net.minidev/json-smart/2.5.0/7f51740e5d2aa84831af62084d5ae98a51fcb61d/json-smart-2.5.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test/3.2.1/142fbe3cfe3370c57d0ed55cca0d8d96e1d6f26e/spring-boot-test-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test/3.2.1/849c2e6a162270f5468821dd357b930a6a01dfac/spring-boot-test-3.2.1-sources.jar">
+		<attributes>
+			<attribute name="test" value="true"/>
+			<attribute name="gradle.buildServer" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-test/6.1.2/c393079051398e02c20d8b24e02822f365123719/spring-test-6.1.2.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework/spring-test/6.1.2/ab7f51c33d8fadc20b29276c0cba7295cfdb306/spring-test-6.1.2-sources.jar">
 		<attributes>
 			<attribute name="test" value="true"/>
 			<attribute name="gradle.buildServer" value="true"/>
@@ -597,13 +607,7 @@
 			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.opentest4j/opentest4j/1.3.0/152ea56b3a72f655d4fd677fc0ef2596c3dd5e6e/opentest4j-1.3.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.opentest4j/opentest4j/1.3.0/afb8ff23cffb021c56f333953aebfe6e8818568e/opentest4j-1.3.0-sources.jar">
-		<attributes>
-			<attribute name="test" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test/3.2.0/6233f2d662826923cb87e8b659224c75cac6ed78/spring-boot-test-3.2.0.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-test/3.2.0/bd33b3e9296721d33c0e3977312069340cd07414/spring-boot-test-3.2.0-sources.jar">
+	<classpathentry kind="lib" path="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-test/3.2.1/e6a20062864e3a9a0bba0ac3b0c5a819453045b9/spring-boot-starter-test-3.2.1.jar" sourcepath="C:/Users/kimri/.gradle/caches/modules-2/files-2.1/org.springframework.boot/spring-boot-starter-test/3.2.1/a8675627d64166cb424608abcb402ede9e0722ad/spring-boot-starter-test-3.2.1-sources.jar">
 		<attributes>
 			<attribute name="test" value="true"/>
 			<attribute name="gradle.buildServer" value="true"/>

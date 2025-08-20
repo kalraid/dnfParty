@@ -93,22 +93,6 @@ public class Character {
     @Builder.Default
     private Boolean dungeonClearTwilight = false;
     
-    @Column(name = "dungeon_clear_azure")
-    @Builder.Default
-    private Boolean dungeonClearAzure = false;
-    
-    @Column(name = "dungeon_clear_storm")
-    @Builder.Default
-    private Boolean dungeonClearStorm = false;
-    
-    @Column(name = "dungeon_clear_temple")
-    @Builder.Default
-    private Boolean dungeonClearTemple = false;
-    
-    @Column(name = "dungeon_clear_nightmare")
-    @Builder.Default
-    private Boolean dungeonClearNightmare = false;
-    
     // 던전별 안감/업둥 상태
     @Column(name = "is_excluded_nabel")
     @Builder.Default
@@ -250,12 +234,19 @@ public class Character {
     }
     
     // 던전 클리어 현황 업데이트
-    public void updateDungeonClearStatus(Boolean nabel, Boolean venus, Boolean fog, Boolean azure, Boolean storm) {
+    public void updateDungeonClearStatus(Boolean nabel, Boolean venus, Boolean fog) {
         this.dungeonClearNabel = nabel;
         this.dungeonClearVenus = venus;
         this.dungeonClearFog = fog;
-        this.dungeonClearAzure = azure;
-        this.dungeonClearStorm = storm;
+        this.lastDungeonCheck = LocalDateTime.now();
+    }
+    
+    // 던전 클리어 현황 업데이트 (황혼전 포함)
+    public void updateDungeonClearStatusWithTwilight(Boolean nabel, Boolean venus, Boolean fog, Boolean twilight) {
+        this.dungeonClearNabel = nabel;
+        this.dungeonClearVenus = venus;
+        this.dungeonClearFog = fog;
+        this.dungeonClearTwilight = twilight;
         this.lastDungeonCheck = LocalDateTime.now();
     }
     

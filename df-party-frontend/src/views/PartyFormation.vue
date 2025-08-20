@@ -1050,7 +1050,7 @@ const getDungeonClearStatus = (character: any): boolean => {
     case 'fog':
       return character.dungeonClearFog || false;
     case 'twilight':
-      return false; // 황혼전은 아직 클리어 데이터가 없음
+      return character.dungeonClearTwilight || false;
     default:
       return false;
   }

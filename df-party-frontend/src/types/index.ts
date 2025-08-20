@@ -21,14 +21,10 @@ export interface Character {
   createdAt?: string
   updatedAt?: string
   // 던전 클리어 상태
-  dungeonClearNabel?: boolean
-  dungeonClearVenus?: boolean
-  dungeonClearFog?: boolean
-  dungeonClearAzure?: boolean
-  dungeonClearStorm?: boolean
-  dungeonClearNightmare?: boolean
-  dungeonClearTemple?: boolean
-  dungeonClearTwilight?: boolean
+  dungeonClearNabel?: boolean;
+  dungeonClearVenus?: boolean;
+  dungeonClearFog?: boolean;
+  dungeonClearTwilight?: boolean;
   // 던전 제외 상태
   isExcludedNabel?: boolean
   isExcludedVenus?: boolean

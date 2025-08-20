@@ -7,6 +7,7 @@ metadata:
 data:
   init.sql: |
     -- DFO Party Management Application Database Initialization
+    -- 모든 엔티티 기준으로 통일된 스키마
     -- 환경변수에서 데이터베이스 정보를 가져와서 사용
     
     -- 기본 데이터베이스 생성 (백엔드에서 사용)
@@ -37,71 +38,132 @@ data:
     -- 권한 변경사항 적용
     FLUSH PRIVILEGES;
     
-    -- 기본 테이블 생성 (필요시)
-    -- CREATE TABLE IF NOT EXISTS users (
-    --     id INT AUTO_INCREMENT PRIMARY KEY,
-    --     username VARCHAR(50) NOT NULL UNIQUE,
-    --     email VARCHAR(100) NOT NULL UNIQUE,
-    --     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    -- );
-    
-    -- 초기 데이터 삽입 (필요시)
-    -- INSERT INTO users (username, email) VALUES ('admin', 'admin@dfparty.com');
-    
-    -- 캐릭터 정보 테이블
-    CREATE TABLE IF NOT EXISTS characters (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        character_id VARCHAR(255) NOT NULL UNIQUE,
-        character_name VARCHAR(255) NOT NULL,
-        server_id VARCHAR(100) NOT NULL,
-        job_id VARCHAR(100),
-        job_grow_id VARCHAR(100),
-        job_name VARCHAR(255),
-        job_grow_name VARCHAR(255),
-        level INTEGER,
-        adventure_name VARCHAR(255),
-        guild_name VARCHAR(255),
-        
-        -- 동적 정보 (주기적 업데이트 필요)
-        fame BIGINT,
-        dungeon_clear_nabel BOOLEAN DEFAULT FALSE,
-        dungeon_clear_venus BOOLEAN DEFAULT FALSE,
-        dungeon_clear_fog BOOLEAN DEFAULT FALSE,
-        dungeon_clear_azure BOOLEAN DEFAULT FALSE,
-        dungeon_clear_storm BOOLEAN DEFAULT FALSE,
-        dungeon_clear_nightmare BOOLEAN DEFAULT FALSE,
-        dungeon_clear_temple BOOLEAN DEFAULT FALSE,
-        last_dungeon_check TIMESTAMP NULL,
-        
-        -- 실시간 정보 (매번 새로 조회)
-        buff_power BIGINT,
-        total_damage BIGINT,
-        dundam_source TEXT,
-        last_stats_update TIMESTAMP NULL,
-        
-        -- 메타 정보
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        is_excluded BOOLEAN DEFAULT FALSE,
-        excluded_dungeons TEXT,
-        is_favorite BOOLEAN DEFAULT FALSE
-    );
-    
-    -- 모험단 정보 테이블
-    CREATE TABLE IF NOT EXISTS adventures (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        adventure_name VARCHAR(255) NOT NULL UNIQUE,
-        server_id VARCHAR(100) NOT NULL UNIQUE,
-        character_count INTEGER DEFAULT 0,
-        total_fame BIGINT DEFAULT 0,
-        average_level DOUBLE DEFAULT 0.0,
-        last_activity TIMESTAMP NULL,
+    -- 서버 정보 테이블
+    CREATE TABLE IF NOT EXISTS servers (
+        server_id VARCHAR(100) NOT NULL PRIMARY KEY,
+        server_name VARCHAR(255) NOT NULL,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
     
-    -- 공유 파티 테이블
+    -- 모험단 테이블 생성
+    CREATE TABLE IF NOT EXISTS adventures (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        adventure_name VARCHAR(255) NOT NULL UNIQUE,
+        server_id VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        -- 외래키 제약
+        FOREIGN KEY (server_id) REFERENCES servers(server_id) ON DELETE CASCADE
+    );
+    
+    -- 캐릭터 정보 테이블 (Character 엔티티 기준)
+    CREATE TABLE IF NOT EXISTS characters (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        character_id VARCHAR(255) NOT NULL UNIQUE,
+        character_name VARCHAR(255) NOT NULL,
+        server_id VARCHAR(100) NOT NULL,
+        adventure_id BIGINT,
+        level INTEGER,
+        fame BIGINT,
+        job_id VARCHAR(255),
+        job_name VARCHAR(255),
+        job_grow_id VARCHAR(255),
+        job_grow_name VARCHAR(255),
+        guild_name VARCHAR(255),
+        character_image_url TEXT,
+        avatar_image_url TEXT,
+        
+        -- 던전 클리어 상태
+        dungeon_clear_nabel BOOLEAN DEFAULT FALSE,
+        dungeon_clear_venus BOOLEAN DEFAULT FALSE,
+        dungeon_clear_fog BOOLEAN DEFAULT FALSE,
+        dungeon_clear_twilight BOOLEAN DEFAULT FALSE,
+        
+        -- 던전별 제외 상태
+        is_excluded_nabel BOOLEAN DEFAULT FALSE,
+        is_excluded_venus BOOLEAN DEFAULT FALSE,
+        is_excluded_fog BOOLEAN DEFAULT FALSE,
+        
+        -- 던전별 스킵 상태
+        is_skip_nabel BOOLEAN DEFAULT FALSE,
+        is_skip_venus BOOLEAN DEFAULT FALSE,
+        is_skip_fog BOOLEAN DEFAULT FALSE,
+        
+        -- 던전별 즐겨찾기
+        is_favorite_nabel BOOLEAN DEFAULT FALSE,
+        is_favorite_venus BOOLEAN DEFAULT FALSE,
+        is_favorite_fog BOOLEAN DEFAULT FALSE,
+        is_favorite_twilight BOOLEAN DEFAULT FALSE,
+        
+        -- 스탯 정보
+        buff_power BIGINT,
+        total_damage BIGINT,
+        buff_power_2p BIGINT,
+        buff_power_3p BIGINT,
+        buff_power_4p BIGINT,
+        total_damage_2p BIGINT,
+        total_damage_3p BIGINT,
+        total_damage_4p BIGINT,
+        
+        -- 수동 입력 스탯
+        manual_buff_power BIGINT,
+        manual_total_damage BIGINT,
+        manual_buff_power_2p BIGINT,
+        manual_buff_power_3p BIGINT,
+        manual_buff_power_4p BIGINT,
+        manual_total_damage_2p BIGINT,
+        manual_total_damage_3p BIGINT,
+        manual_total_damage_4p BIGINT,
+        manual_updated_at TIMESTAMP,
+        manual_updated_by VARCHAR(255),
+        
+        -- 기타 정보
+        dundam_source VARCHAR(50),
+        excluded_dungeons TEXT,
+        is_excluded BOOLEAN DEFAULT FALSE,
+        is_hard_nabel_eligible BOOLEAN DEFAULT FALSE,
+        is_normal_nabel_eligible BOOLEAN DEFAULT FALSE,
+        is_matching_nabel_eligible BOOLEAN DEFAULT FALSE,
+        last_dungeon_check TIMESTAMP,
+        last_stats_update TIMESTAMP,
+        
+        -- 타임스탬프
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        -- 외래키 제약
+        FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE SET NULL,
+        FOREIGN KEY (server_id) REFERENCES servers(server_id) ON DELETE CASCADE
+    );
+    
+    -- 나벨 난이도 선택 테이블
+    CREATE TABLE IF NOT EXISTS nabel_difficulty_selections (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        character_id VARCHAR(255) NOT NULL,
+        selected_difficulty ENUM('HARD', 'NORMAL', 'MATCHING') NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        
+        -- 인덱스 추가
+        INDEX idx_character_id (character_id),
+        INDEX idx_difficulty (selected_difficulty)
+    );
+    
+    -- 직업 타입 정보 테이블
+    CREATE TABLE IF NOT EXISTS job_types (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        job_name VARCHAR(100) NOT NULL UNIQUE,
+        job_grow_name VARCHAR(100),
+        is_buffer BOOLEAN NOT NULL DEFAULT FALSE,
+        is_dealer BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+    
+    -- 공유 파티 테이블 (SharedParty 엔티티 기준)
     CREATE TABLE IF NOT EXISTS shared_parties (
         id BIGINT AUTO_INCREMENT PRIMARY KEY,
         share_code VARCHAR(255) NOT NULL UNIQUE,
@@ -139,27 +201,75 @@ data:
     
     -- 인덱스 생성
     CREATE INDEX IF NOT EXISTS idx_character_name ON characters(character_name);
-    CREATE INDEX IF NOT EXISTS idx_adventure_name ON characters(adventure_name);
+    CREATE INDEX IF NOT EXISTS idx_adventure_id ON characters(adventure_id);
     CREATE INDEX IF NOT EXISTS idx_server_id ON characters(server_id);
     CREATE INDEX IF NOT EXISTS idx_last_updated ON characters(updated_at);
     CREATE INDEX IF NOT EXISTS idx_last_dungeon_check ON characters(last_dungeon_check);
     CREATE INDEX IF NOT EXISTS idx_last_stats_update ON characters(last_stats_update);
     CREATE INDEX IF NOT EXISTS idx_fame ON characters(fame);
     CREATE INDEX IF NOT EXISTS idx_is_excluded ON characters(is_excluded);
+    CREATE INDEX IF NOT EXISTS idx_character_id ON characters(character_id);
+    
+    -- 서버 인덱스
+    CREATE INDEX IF NOT EXISTS idx_server_active ON servers(is_active);
     
     -- 모험단 인덱스
     CREATE INDEX IF NOT EXISTS idx_adventure_server ON adventures(server_id);
-    CREATE INDEX IF NOT EXISTS idx_adventure_active ON adventures(is_active);
-    CREATE INDEX IF NOT EXISTS idx_adventure_last_activity ON adventures(last_activity);
     
-    -- 제약 조건 (MariaDB 11.8.3에서는 IF NOT EXISTS 지원하지 않음)
-    -- ALTER TABLE characters ADD CONSTRAINT fk_characters_server
-    --     FOREIGN KEY (server_id) REFERENCES adventures(server_id) ON DELETE CASCADE;
+    -- 직업 타입 인덱스
+    CREATE INDEX IF NOT EXISTS idx_job_types_job_name ON job_types(job_name);
+    CREATE INDEX IF NOT EXISTS idx_job_types_job_grow_name ON job_types(job_grow_name);
+    CREATE INDEX IF NOT EXISTS idx_job_types_is_buffer ON job_types(is_buffer);
+    CREATE INDEX IF NOT EXISTS idx_job_types_is_dealer ON job_types(is_dealer);
+    
+    -- 공유 파티 인덱스
+    CREATE INDEX IF NOT EXISTS idx_shared_parties_share_code ON shared_parties(share_code);
+    CREATE INDEX IF NOT EXISTS idx_shared_parties_dungeon_name ON shared_parties(dungeon_name);
+    CREATE INDEX IF NOT EXISTS idx_shared_parties_is_active ON shared_parties(is_active);
+    CREATE INDEX IF NOT EXISTS idx_shared_parties_expires_at ON shared_parties(expires_at);
     
     -- 초기 데이터 삽입 (테스트용)
-    INSERT INTO adventures (adventure_name, server_id, character_count, total_fame, average_level, is_active)
-    VALUES ('테스트모험단', 'cain', 0, 0, 0.0, true)
-    ON DUPLICATE KEY UPDATE adventure_name = adventure_name;
+    INSERT INTO servers (server_id, server_name, is_active) VALUES 
+    ('cain', '카인', true),
+    ('bakal', '바칼', true),
+    ('siroco', '시로코', true),
+    ('casillas', '카시야스', true),
+    ('hilder', '힐더', true)
+    ON DUPLICATE KEY UPDATE server_name = VALUES(server_name), is_active = VALUES(is_active);
+    
+    INSERT INTO adventures (adventure_name, server_id) VALUES 
+    ('테스트모험단', 'cain')
+    ON DUPLICATE KEY UPDATE adventure_name = VALUES(adventure_name);
+    
+    -- 직업 타입 초기 데이터 삽입
+    INSERT INTO job_types (job_name, job_grow_name, is_buffer, is_dealer) VALUES
+    -- 버퍼 직업들
+    ('뮤즈', '眞 뮤즈', TRUE, FALSE),
+    ('크루세이더', '眞 크루세이더(남)', TRUE, FALSE),
+    ('크루세이더', '眞 크루세이더(여)', TRUE, FALSE),
+    ('인챈트리스', '眞 인챈트리스', TRUE, FALSE),
+    ('패러메딕', '眞 패러메딕', TRUE, FALSE)
+    ON DUPLICATE KEY UPDATE 
+        job_grow_name = VALUES(job_grow_name),
+        is_buffer = VALUES(is_buffer),
+        is_dealer = VALUES(is_dealer);
+    
+    -- 딜러 직업들 (주요 직업들만)
+    INSERT INTO job_types (job_name, job_grow_name, is_buffer, is_dealer) VALUES
+    ('웨펀마스터', '眞 웨펀마스터', FALSE, TRUE),
+    ('소울브링어', '眞 소울브링어', FALSE, TRUE),
+    ('버서커', '眞 버서커', FALSE, TRUE),
+    ('아수라', '眞 아수라', FALSE, TRUE),
+    ('검귀', '眞 검귀', FALSE, TRUE),
+    ('소드마스터', '眞 소드마스터', FALSE, TRUE),
+    ('다크템플러', '眞 다크템플러', FALSE, TRUE),
+    ('데몬슬레이어', '眞 데몬슬레이어', FALSE, TRUE),
+    ('베가본드', '眞 베가본드', FALSE, TRUE),
+    ('블레이드', '眞 블레이드', FALSE, TRUE)
+    ON DUPLICATE KEY UPDATE 
+        job_grow_name = VALUES(job_grow_name),
+        is_buffer = VALUES(is_buffer),
+        is_dealer = VALUES(is_dealer);
     
     -- 기존 ENUM 컬럼을 VARCHAR로 업데이트 (스키마 마이그레이션)
     -- mock_api_data 테이블이 이미 존재하는 경우 api_type 컬럼 타입 변경

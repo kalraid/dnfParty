@@ -334,9 +334,10 @@ public class CharacterService {
                                 character.put("dungeonClearNabel", clearStatus.getOrDefault("nabel", false));
                                 character.put("dungeonClearVenus", clearStatus.getOrDefault("venus", false));
                                 character.put("dungeonClearFog", clearStatus.getOrDefault("fog", false));
+                                character.put("dungeonClearTwilight", clearStatus.getOrDefault("twilight", false));
                                 
-                                log.info("던전 클리어 현황 업데이트: characterId={}, nabel={}, venus={}, fog={}", 
-                                    charId, clearStatus.get("nabel"), clearStatus.get("venus"), clearStatus.get("fog"));
+                                log.info("던전 클리어 현황 업데이트: characterId={}, nabel={}, venus={}, fog={}, twilight={}", 
+                                    charId, clearStatus.get("nabel"), clearStatus.get("venus"), clearStatus.get("fog"), clearStatus.get("twilight"));
                             }
                         } else {
                             log.warn("던전 클리어 현황 조회 실패: characterId={}, response={}", charId, clearStatusInfo);
@@ -374,6 +375,9 @@ public class CharacterService {
                 }
                 if (!character.containsKey("dungeonClearFog")) {
                     character.put("dungeonClearFog", false);
+                }
+                if (!character.containsKey("dungeonClearTwilight")) {
+                    character.put("dungeonClearTwilight", false);
                 }
             }
             
@@ -2139,6 +2143,7 @@ public class CharacterService {
         status.put("nabel", false);
         status.put("venus", false);
         status.put("fog", false);
+        status.put("twilight", false);
         
         try {
             if (timelineInfo instanceof JsonNode) {
@@ -2153,6 +2158,8 @@ public class CharacterService {
                             status.put("venus", true);
                         } else if (dungeonName.contains("여신전") || dungeonName.contains("Fog")) {
                             status.put("fog", true);
+                        } else if (dungeonName.contains("황혼전") || dungeonName.contains("twilight")) {
+                            status.put("twilight", true);
                         }
                     }
                 }
@@ -2185,12 +2192,12 @@ public class CharacterService {
             // 캐릭터 정보 업데이트
             updateCharacterFromData(character, characterDetail);
             
-            // 던전 클리어 상태 업데이트
-            character.updateDungeonClearStatus(
+            // 던전 클리어 상태 업데이트 (황혼전 포함)
+            character.updateDungeonClearStatusWithTwilight(
                 dungeonClearStatus.get("nabel"),
                 dungeonClearStatus.get("venus"),
                 dungeonClearStatus.get("fog"),
-                false, false // azure, storm은 기본값
+                dungeonClearStatus.get("twilight")
             );
             
             // DB에 저장

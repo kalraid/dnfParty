@@ -49,8 +49,6 @@ ingress:
           pathType: ImplementationSpecific
   tls: []
 
-
-
 env:
   - name: SPRING_PROFILES_ACTIVE
     value: "kubernetes"

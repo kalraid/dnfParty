@@ -41,7 +41,7 @@ class SSEService {
       this.lastError.value = null
       
       const clientId = this.generateClientId()
-      const url = `${import.meta.env.VITE_API_BASE_URL}/api/sse/connect?clientId=${clientId}`
+      const url = `${import.meta.env.VITE_API_BASE_URL}/sse/connect?clientId=${clientId}`
       
       console.log(`📍 SSE 연결 URL: ${url}`)
       console.log(`🆔 클라이언트 ID: ${clientId}`)

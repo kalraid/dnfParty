@@ -3,6 +3,7 @@ package com.dfparty.backend.service;
 import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.entity.Character;
 import com.dfparty.backend.repository.CharacterRepository;
+import com.dfparty.backend.utils.CharacterUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,9 @@ public class PartyOptimizationService {
     
     private final CharacterService characterService;
     private final CharacterRepository characterRepository;
-    
+    private final CharacterUtils characterUtils;
+
+
     /**
      * 파티 최적화 메인 메서드
      */
@@ -778,23 +781,8 @@ public class PartyOptimizationService {
         String jobName = (String) character.get("jobName");
         String jobGrowName = (String) character.get("jobGrowName");
         
-        if (jobGrowName == null && jobName == null) {
-            return false;
-        }
-        
-        // jobGrowName 우선, 없으면 jobName 사용
-        String targetJobName = jobGrowName != null ? jobGrowName : jobName;
-        
-        // 버퍼 직업 목록: 크루세이더, 뮤즈, 패러메딕, 인챈트리스
-        String[] bufferJobs = {"크루세이더", "뮤즈", "패러메딕", "인챈트리스"};
-        
-        for (String bufferJob : bufferJobs) {
-            if (targetJobName.contains(bufferJob)) {
-                return true;
-            }
-        }
-        
-        return false;
+        return characterUtils.isBuffer(jobName, jobGrowName);
+
     }
     
     /**

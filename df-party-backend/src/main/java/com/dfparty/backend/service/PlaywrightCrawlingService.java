@@ -10,6 +10,8 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.dfparty.backend.entity.Character;
 import com.dfparty.backend.repository.CharacterRepository;
+import com.dfparty.backend.utils.CharacterUtils;
+
 
 import java.io.File;
 import java.io.FileWriter;
@@ -37,6 +39,8 @@ public class PlaywrightCrawlingService {
     private static Browser sharedBrowser = null;
     private static final Object browserLock = new Object();
     private static volatile boolean isInitializing = false;
+    private final CharacterUtils characterUtils;
+
 
     /**
      * 서비스 시작 시 Playwright 드라이버 미리 초기화
@@ -582,7 +586,7 @@ public class PlaywrightCrawlingService {
         }
 
         Character character = characterOpt.get();
-        boolean isBuffer = isBuffer(character);
+        boolean isBuffer = characterUtils.isBuffer(character.getJobName(), character.getJobGrowName());
         log.info("캐릭터 {} (직업: {}) - 버퍼 여부: {}", character.getCharacterName(), character.getJobName(), isBuffer);
 
         // 새 브라우저 컨텍스트 및 페이지 생성
@@ -761,23 +765,6 @@ private void saveHtmlToFile(String htmlContent) {
     } catch (IOException e) {
         log.warn("HTML 파일 저장 실패: {}", e.getMessage());
     }
-}
-
-/**
- * 버퍼 직업인지 확인
- */
-private boolean isBuffer(Character character) {
-    if (character == null || character.getJobName() == null) {
-        return false;
-    }
-
-    String jobName = character.getJobName().toLowerCase();
-    
-    // 버퍼 직업 목록
-    return jobName.contains("크루세이더") || 
-           jobName.contains("뮤즈") || 
-           jobName.contains("패러메딕") ||
-           jobName.contains("헤카테");
 }
 
 /**

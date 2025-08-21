@@ -26,6 +26,9 @@ public class CharacterDetailDto {
     private String avatarImageUrl;
     private Boolean isHardNabelEligible;
     private Boolean isNormalNabelEligible;
+    private Boolean isTwilightEligible;
+
+
 
     public CharacterDetailDto() {}
 
@@ -110,4 +113,7 @@ public class CharacterDetailDto {
     
     public Boolean getIsNormalNabelEligible() { return isNormalNabelEligible; }
     public void setIsNormalNabelEligible(Boolean isNormalNabelEligible) { this.isNormalNabelEligible = isNormalNabelEligible; }
+
+    public Boolean getIsTwilightEligible() { return isTwilightEligible; }
+    public void setIsTwilightEligible(Boolean isTwilightEligible) { this.isTwilightEligible = isTwilightEligible; }
 }

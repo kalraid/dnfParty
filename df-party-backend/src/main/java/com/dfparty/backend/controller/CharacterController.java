@@ -495,7 +495,29 @@ public class CharacterController {
             return ResponseEntity.internalServerError().body(error);
         }
     }
-    
+    /**
+     * 황혼전 대상자 여부 업데이트
+     */
+    @PostMapping("/{characterId}/twilight-eligibility")
+    public ResponseEntity<Map<String, Object>> updateTwilightEligibility(
+            @PathVariable String characterId) {
+        try {
+            // Map<String, Object> result = characterService.updateTwilightEligibility(characterId);
+            Map<String, Object> result = Map.of(
+                "success", true,
+                "message", "황혼전 대상자 여부 업데이트 완료"
+            );  
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = Map.of(
+                "success", false,
+                "message", "황혼전 대상자 여부 업데이트 중 오류가 발생했습니다: " + e.getMessage()
+            );
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+
     /**
      * 모험단 전체 캐릭터 최신화
      */

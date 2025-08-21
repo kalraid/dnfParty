@@ -21,14 +21,14 @@ public class DungeonClearResetService {
     private final CharacterRepository characterRepository;
 
     /**
-     * 매주 목요일 오전 8시50분에 모든 캐릭터의 던전 클리어 상태를 초기화
-     * cron: 매주 목요일(4) 오전 8시 50분
+     * 매주 목요일 오전 8시 모든 캐릭터의 던전 클리어 상태를 초기화
+     * cron: 매주 목요일(4) 오전 8시 
      */
-    @Scheduled(cron = "0 50 8 * * 4")
+    @Scheduled(cron = "0 0 8 * * 4")
     @Transactional
     public void resetDungeonClearStatus() {
         try {
-            log.info("목요일 오전 8시50분 - 던전 클리어 상태 초기화 시작");
+            log.info("목요일 오전 8시 - 던전 클리어 상태 초기화 시작");
             
             // 모든 캐릭터 조회
             List<Character> characters = characterRepository.findAll();
@@ -46,6 +46,9 @@ public class DungeonClearResetService {
                 
                 // 변경사항 저장
                 characterRepository.save(character);
+                resetCount++;
+
+
             }
             
             log.info("던전 클리어 상태 초기화 완료: {}개 캐릭터", resetCount);
@@ -72,11 +75,11 @@ public class DungeonClearResetService {
         }
         
         LocalTime currentTime = now.toLocalTime();
-        LocalTime resetTime = LocalTime.of(8, 50);
+        LocalTime resetTime = LocalTime.of(8, 0);
         
-        // 8시45분 ~ 8시55분 범위 내인지 확인
-        return currentTime.isAfter(LocalTime.of(8, 45)) && 
-               currentTime.isBefore(LocalTime.of(8, 55));
+        // 7시55분 ~ 8시05분 범위 내인지 확인
+        return currentTime.isAfter(LocalTime.of(7, 55)) && 
+               currentTime.isBefore(LocalTime.of(8, 5));
     }
 
     /**

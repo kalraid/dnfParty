@@ -183,6 +183,10 @@ public class Character {
     @Column(name = "is_matching_nabel_eligible")
     @Builder.Default
     private Boolean isMatchingNabelEligible = false;
+
+    @Column(name = "is_twilight_eligible")
+    @Builder.Default
+    private Boolean isTwilightEligible = false;
     
     @Column(name = "last_dungeon_check")
     private LocalDateTime lastDungeonCheck;
@@ -257,7 +261,6 @@ public class Character {
         this.dundamSource = source;
         this.lastStatsUpdate = LocalDateTime.now();
         
-        updateMatchingNabelEligibility();
     }
     
     // 수동 스탯 업데이트 메서드
@@ -267,82 +270,11 @@ public class Character {
         this.manualUpdatedAt = LocalDateTime.now();
         this.manualUpdatedBy = updatedBy;
         
-        updateMatchingNabelEligibility();
     }
     
     public void updateNabelEligibility(){
-        updateMatchingNabelEligibility();
 
     }
-    
-    // 매칭 나벨 대상자 여부 업데이트 (명성만 초과할 때)
-    private void updateMatchingNabelEligibility() {
-
-        // 명성 47,684 이상이면 매칭 가능 (스펙컷 없음)
-        this.isMatchingNabelEligible = (fame != null && fame >= 47684L);
-        
-        // 매칭 가능하면 일반 체크
-        if (this.isMatchingNabelEligible) {
-            updateNormalNabelEligibility();
-        } else {
-            // 매칭도 안되면 일반/하드도 false
-            this.isNormalNabelEligible = false;
-            this.isHardNabelEligible = false;
-        }
-    }
-
-    // 일반 나벨 대상자 여부 업데이트
-    private void updateNormalNabelEligibility() {
-        // 명성 47,684 이상 + 스펙컷 확인
-        if (fame != null && fame >= 47684L) {
-            if (isBuffer()) {
-                // 버퍼: 버프력 400만 이상
-                this.isNormalNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 4000000L);
-            } else {
-                // 딜러: 총딜 30억 이상
-                this.isNormalNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 3000000000L);
-            }
-        } else {
-            this.isNormalNabelEligible = false;
-        }
-        
-        // 일반 가능하면 하드 체크
-        if (this.isNormalNabelEligible) {
-            updateHardNabelEligibility();
-        } else {
-            // 일반도 안되면 하드도 false
-            this.isHardNabelEligible = false;
-        }
-    }
-    
-    
-    
-    // 하드 나벨 대상자 여부 업데이트
-    private void updateHardNabelEligibility() {
-        // 명성 47,684 이상 + 스펙컷 확인
-        if (fame != null && fame >= 47684L) {
-            if (isBuffer()) {
-                // 버퍼: 버프력 500만 이상
-                this.isHardNabelEligible = (getEffectiveBuffPower() != null && getEffectiveBuffPower() >= 5000000L);
-            } else {
-                // 딜러: 총딜 100억 이상
-                this.isHardNabelEligible = (getEffectiveTotalDamage() != null && getEffectiveTotalDamage() >= 10000000000L);
-            }
-        } else {
-            this.isHardNabelEligible = false;
-        }
-        
-    }
-    
-
-    // 버퍼 여부 판단
-    private boolean isBuffer() {
-        if (jobGrowName == null) return false;
-        // 사용자 요청 기준: 크루세이더, 뮤즈, 패러메딕, 인챈트리스만 버퍼
-        return jobGrowName.contains("크루세이더") || jobGrowName.contains("뮤즈") || 
-               jobGrowName.contains("패러메딕") || jobGrowName.contains("인챈트리스");
-    }
-    
 
     
     // 효과적인 스탯 반환 (수동 > 자동)
@@ -401,5 +333,14 @@ public class Character {
     
     public void setSelectedNabelDifficulty(NabelDifficulty selectedNabelDifficulty) {
         this.selectedNabelDifficulty = selectedNabelDifficulty;
+    }
+
+    // 황혼전 대상자 여부 getter/setter
+    public Boolean getIsTwilightEligible() {
+        return isTwilightEligible;
+    }
+    
+    public void setIsTwilightEligible(Boolean isTwilightEligible) {
+        this.isTwilightEligible = isTwilightEligible;
     }
 }

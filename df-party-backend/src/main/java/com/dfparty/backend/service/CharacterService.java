@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.dfparty.backend.utils.CharacterUtils;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,6 +79,8 @@ public class CharacterService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Autowired
+    private CharacterUtils characterUtils;
     /**
      * 통합 캐릭터 정보 조회 (DFO API + DB + 타임라인)
      * 1. DFO API 캐릭터 조회 (캐릭터 ID 획득)
@@ -550,6 +554,10 @@ public class CharacterService {
                         (Long) dundamInfo.get("totalDamage"),
                         "dundam.xyz"
                     );
+                                     
+                    // 나벨 적격성 업데이트
+                    updateNabelEligibility(character);
+                    
                     characterRepository.save(character);
                 }
                 
@@ -921,6 +929,11 @@ public class CharacterService {
                     (Long) dundamInfo.get("totalDamage"),
                     "dundam.xyz"
                 );
+
+                                 
+                // 나벨 적격성 업데이트
+                updateNabelEligibility(character);
+                
             } else if (dundamInfo != null) {
                 // 실패한 경우 로그만 남기고 업데이트하지 않음
                 String message = (String) dundamInfo.get("message");
@@ -1079,6 +1092,10 @@ public class CharacterService {
         // 매칭 나벨 대상자 여부 추가
         dto.put("isMatchingNabelEligible", character.getIsMatchingNabelEligible());
         
+        // 황혼전 대상자 여부 추가
+        dto.put("isTwilightEligible", character.getIsTwilightEligible());
+        
+
         // 선택된 나벨 난이도 추가
         String selectedDifficulty = getNabelDifficultySelection(character.getCharacterId());
         if (selectedDifficulty != null) {
@@ -1817,7 +1834,8 @@ public class CharacterService {
             }
 
             // 4인/3인/2인 수동 입력 값 업데이트
-
+            // 나벨 적격성 업데이트
+            updateNabelEligibility(character);
 
             characterRepository.save(character);
 
@@ -1897,34 +1915,14 @@ public class CharacterService {
      * 직업이 버퍼인지 확인 (DB 기반)
      */
     public boolean isBuffer(String jobName, String jobGrowName) {
-        try {
-            // 먼저 직업성장명으로 정확한 매칭 시도 (jobGrowName이 실제 직업)
-            if (jobGrowName != null && !jobGrowName.trim().isEmpty()) {
-                Optional<JobType> jobType = jobTypeRepository.findByJobNameAndJobGrowName(jobName, jobGrowName);
-                if (jobType.isPresent()) {
-                    return jobType.get().getIsBuffer();
-                }
-            }
-            
-            // 직업성장명으로 매칭 시도
-            Optional<JobType> jobType = jobTypeRepository.findByJobName(jobGrowName);
-            if (jobType.isPresent()) {
-                return jobType.get().getIsBuffer();
-            }
-            
-            // DB에 없는 경우 기본 로직 사용 (jobGrowName 기준)
-            return isBufferByDefault(jobGrowName != null ? jobGrowName : jobName);
-        } catch (Exception e) {
-            log.warn("직업 타입 조회 실패: jobName={}, jobGrowName={}, error={}", jobName, jobGrowName, e.getMessage());
-            return isBufferByDefault(jobGrowName != null ? jobGrowName : jobName);
-        }
+        return characterUtils.isBuffer(jobName, jobGrowName);
     }
     
     /**
      * 직업이 딜러인지 확인 (DB 기반)
      */
     public boolean isDealer(String jobName, String jobGrowName) {
-        return !isBuffer(jobName, jobGrowName);
+        return characterUtils.isDealer(jobName, jobGrowName);
     }
     
     /**
@@ -1943,7 +1941,7 @@ public class CharacterService {
         if (isBuffer) {
             // 버퍼: 버프력 500만 이상
             Long buffPower = character.getEffectiveBuffPower();
-            return buffPower != null && buffPower >= 50000000;
+            return buffPower != null && buffPower >= 5000000;
         } else {
             // 딜러: 총딜 100억 이상
             Long totalDamage = character.getEffectiveTotalDamage();
@@ -1967,7 +1965,7 @@ public class CharacterService {
         if (isBuffer) {
             // 버퍼: 버프력 400만 이상
             Long buffPower = character.getEffectiveBuffPower();
-            return buffPower != null && buffPower >= 40000000;
+            return buffPower != null && buffPower >= 4000000;
         } else {
             // 딜러: 총딜 30억 이상
             Long totalDamage = character.getEffectiveTotalDamage();
@@ -1985,6 +1983,31 @@ public class CharacterService {
         return character.getFame() != null && character.getFame() >= 47684L;
     }
     
+       /**
+     * 황혼전 대상자 여부 확인
+     */
+    public boolean isTwilightEligible(Character character) {
+        if (character == null) return false;
+        
+        // 명성 72,688 이상 조건 확인
+        if (character.getFame() == null || character.getFame() < 72688L) {
+            return false;
+        }
+        
+        boolean isBuffer = isBuffer(character.getJobName(), character.getJobGrowName());
+        
+        if (isBuffer) {
+            // 버퍼: 버프력 500만 이상 (하드 나벨과 동일)
+            Long buffPower = character.getEffectiveBuffPower();
+            return buffPower != null && buffPower >= 5000000;
+        } else {
+            // 딜러: 총딜 100억 이상 (하드 나벨과 동일)
+            Long totalDamage = character.getEffectiveTotalDamage();
+            return totalDamage != null && totalDamage >= 10000000000L;
+        }
+    }
+    
+
     /**
      * 하드 나벨 대상자 여부 업데이트
      */
@@ -2031,25 +2054,69 @@ public class CharacterService {
     }
     
     /**
-     * 기본 버퍼 판별 로직 (DB에 없는 경우 사용)
+     * 황혼전 대상자 여부 업데이트
      */
-    private boolean isBufferByDefault(String jobName) {
-        if (jobName == null) return false;
-        
-        // 사용자 요청 기준: 크루세이더, 뮤즈, 패러메딕, 인챈트리스만 버퍼
-        // 眞 문자 제거 후 비교
-        String cleanJobName = jobName.replaceAll("眞\\s*", "").trim();
-        
-        String[] bufferJobs = {
-            "크루세이더", "뮤즈", "패러메딕", "인챈트리스"
-        };
-        
-        for (String bufferJob : bufferJobs) {
-            if (cleanJobName.contains(bufferJob)) {
-                return true;
+    public Map<String, Object> updateTwilightEligibility(String characterId) {
+        try {
+            log.info("황혼전 대상자 여부 업데이트 시작: characterId={}", characterId);
+            
+            Optional<Character> characterOpt = characterRepository.findByCharacterId(characterId);
+            if (characterOpt.isEmpty()) {
+                log.warn("캐릭터를 찾을 수 없음: characterId={}", characterId);
+                return Map.of("success", false, "message", "캐릭터를 찾을 수 없습니다.");
             }
+            
+            Character character = characterOpt.get();
+            boolean isEligible = isTwilightEligible(character);
+            
+            // DB에 황혼전 대상자 여부 저장
+            character.setIsTwilightEligible(isEligible);
+            characterRepository.save(character);
+            
+            log.info("황혼전 대상자 여부 업데이트 완료: characterId={}, isEligible={}", characterId, isEligible);
+            
+            // SSE로 실시간 업데이트 알림
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("characterId", characterId);
+            eventData.put("isTwilightEligible", isEligible);
+            realtimeEventService.notifyCharacterUpdated(characterId, "TWILIGHT_ELIGIBILITY_UPDATED", eventData);
+            
+            return Map.of(
+                "success", true,
+                "isTwilightEligible", isEligible,
+                "message", "황혼전 대상자 여부가 업데이트되었습니다."
+            );
+            
+        } catch (Exception e) {
+            log.error("황혼전 대상자 여부 업데이트 실패: characterId={}", characterId, e);
+            return Map.of("success", false, "message", "업데이트에 실패했습니다: " + e.getMessage());
         }
-        return false;
+    }
+    
+    /**
+     * 나벨 적격성 업데이트 (매칭, 일반, 하드)
+     */
+    public void updateNabelEligibility(Character character) {
+        if (character == null) return;
+            // 매칭 나벨 적격성 (명성만 확인)
+            boolean isMatchingEligible = character.getFame() != null && character.getFame() >= 47684L;
+            character.setIsMatchingNabelEligible(isMatchingEligible);
+            if (isMatchingEligible) {
+            // 일반 나벨 적격성
+            boolean isNormalEligible = isNormalNabelEligible(character);
+            character.setIsNormalNabelEligible(isNormalEligible);
+            
+            if (isNormalEligible) {
+                // 하드 나벨 적격성
+                boolean isHardEligible = isHardNabelEligible(character);
+                character.setIsHardNabelEligible(isHardEligible);
+            } else {
+                character.setIsHardNabelEligible(false);
+            }
+        } else {
+            character.setIsNormalNabelEligible(false);
+            character.setIsHardNabelEligible(false);
+        }
     }
 
     public Map<String, Object> searchCharacter(String serverId, String characterName) {

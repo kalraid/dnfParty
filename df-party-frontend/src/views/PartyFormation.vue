@@ -305,6 +305,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { apiFetch } from '../config/api';
+import { isBuffer } from '../utils/characterUtils';
 
 // 반응형 데이터
 const searchMode = ref(''); // 검색 모드 (character 또는 adventure)
@@ -985,18 +986,7 @@ const optimizeParty = async () => {
   }
 };
 
-// 버퍼/딜러 구분 함수
-const isBuffer = (character: any): boolean => {
-  if (!character.jobName || character.jobName === 'N/A') return false;
-  
-  // 버퍼 직업 목록
-  const bufferJobs = ['뮤즈', '패러메딕', '크루세이더', '인챈트리스'];
-  
-  return bufferJobs.some(job => 
-    character.jobName.includes(job) || 
-    (character.jobGrowName && character.jobGrowName.includes(job))
-  );
-};
+
 
 // 유틸리티 함수들
 const isCharacterInParty = (characterId: string): boolean => {

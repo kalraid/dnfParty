@@ -17,6 +17,7 @@ export interface Character {
   isHardNabelEligible?: boolean
   isNormalNabelEligible?: boolean
   isMatchingNabelEligible?: boolean
+  isTwilightEligible?: boolean
   selectedNabelDifficulty?: 'hard' | 'normal' | 'matching'
   createdAt?: string
   updatedAt?: string

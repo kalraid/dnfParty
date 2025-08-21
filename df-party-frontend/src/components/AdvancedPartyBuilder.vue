@@ -191,6 +191,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { Character } from '@/types'
+import { apiFetch } from '../config/api'
 
 interface PartySlot {
   character: Character | null
@@ -404,7 +405,7 @@ const autoOptimize = async () => {
   try {
     // 백엔드 API 호출하여 자동 최적화
     const characterIds = props.characters.map(c => c.characterId)
-    const response = await fetch('/api/eight-person-party/create', {
+    const response = await apiFetch('/eight-person-party/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

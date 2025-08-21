@@ -302,6 +302,7 @@ import { useRouter } from 'vue-router'
 import { dfApiService, type Server } from '../services/dfApi';
 import { apiFetch } from '../config/api';
 import sseService from '../services/sseService';
+import { isBuffer } from '../utils/characterUtils';
 
 const router = useRouter()
 
@@ -943,23 +944,6 @@ const formatJobName = (jobName: string): string => {
 };
 
 // 직업 판별 함수들
-const isBuffer = (character: any): boolean => {
-  // 백엔드 API 호출로 직업 타입 확인
-  if (character.jobName && character.jobGrowName) {
-    // "眞" 문자를 제거한 후 버퍼 직업 판별
-    const cleanJobName = formatJobName(character.jobGrowName);
-    const cleanBaseJobName = formatJobName(character.jobName);
-    
-      // 버퍼 직업 목록 (眞 제거 후 판별)
-  const bufferJobs = ['뮤즈', '패러메딕', '크루세이더', '인챈트리스'];
-    
-    return bufferJobs.some(job => 
-      cleanJobName.includes(job) || cleanBaseJobName.includes(job)
-    );
-  }
-  return false;
-};
-
 const isDealer = (character: any): boolean => {
   // 버퍼가 아니면 딜러로 간주
   return !isBuffer(character);

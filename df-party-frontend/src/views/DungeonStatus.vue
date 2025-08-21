@@ -87,22 +87,29 @@
           <span class="stat-label">나벨 클리어</span>
           <span class="stat-value">{{ dungeonStats.nabel }}/{{ dungeonStats.nabelTotal }}</span>
           <span class="stat-percentage">({{ getDungeonPercentage('nabel') }}%)</span>
+          <span class="stat-limit">최대 {{ getDungeonLimit('nabel') }}캐릭</span>
+          <div class="clear-breakdown">
+            <span class="clear-type">일반: {{ dungeonStats.nabelNormal - dungeonStats.nabelHard }}/{{ dungeonStats.nabelTotal }}</span>
+            <span class="clear-type">하드: {{ dungeonStats.nabelHard }}/4</span>
+          </div>
         </div>
         <div class="stat-card">
           <span class="stat-label">베누스 클리어</span>
           <span class="stat-value">{{ dungeonStats.venus }}/{{ dungeonStats.venusTotal }}</span>
           <span class="stat-percentage">({{ getDungeonPercentage('venus') }}%)</span>
+          <span class="stat-limit">최대 {{ getDungeonLimit('venus') }}캐릭</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">안개신 클리어</span>
           <span class="stat-value">{{ dungeonStats.fog }}/{{ dungeonStats.fogTotal }}</span>
           <span class="stat-percentage">({{ getDungeonPercentage('fog') }}%)</span>
+          <span class="stat-limit">최대 {{ getDungeonLimit('fog') }}캐릭</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">황혼전 클리어</span>
           <span class="stat-value">{{ dungeonStats.twilight }}/{{ dungeonStats.twilightTotal }}</span>
           <span class="stat-percentage">({{ getDungeonPercentage('twilight') }}%)</span>
-          <span class="coming-soon">(개발중)</span>
+          <span class="stat-limit">최대 {{ getDungeonLimit('twilight') }}캐릭</span>
         </div>
       </div>
 
@@ -143,13 +150,17 @@
               안개신
               <span v-if="sortField === 'fog'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
+            <th @click="sortBy('twilight')" class="sortable dungeon-clear-column">
+              황혼전
+              <span v-if="sortField === 'twilight'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+            </th>
             <th>액션</th>
             <th>마지막 업데이트</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="character in sortedCharacters" :key="character.characterId" 
-              :class="{ 'all-cleared': character.dungeonClearNabel && character.dungeonClearVenus && character.dungeonClearFog }">
+              :class="{ 'all-cleared': character.dungeonClearNabel && character.dungeonClearVenus && character.dungeonClearFog && character.dungeonClearTwilight }">
             <td class="character-name">{{ character.characterName }}</td>
             <td>{{ character.level || 'N/A' }}</td>
             <td>{{ formatNumber(character.fame) }}</td>
@@ -189,6 +200,7 @@
                 </span>
               </div>
               
+              
               <!-- 아래쪽: 난이도 선택 버튼들 -->
               <div class="nabel-difficulty-buttons">
                 <!-- 하드 나벨 버튼 -->
@@ -219,8 +231,7 @@
                   매칭
                 </button>
                 <!-- 안감 버튼 -->
-                <button 
-                  @click="toggleExclude(character, 'nabel')" 
+                <button @click="toggleExclude(character, 'nabel')" 
                   :class="{ active: character.isExcludedNabel }"
                   class="difficulty-btn exclude-btn"
                   title="안감">
@@ -269,6 +280,27 @@
                         :class="{ active: character.isExcludedFog }"
                         title="안감">안감</button>
                 
+              </div>
+            </td>
+            <td class="dungeon-status-cell twilight-cell">
+              <div v-if="character.isTwilightEligible" class="dungeon-clear-status" 
+                   :class="{ 
+                     cleared: character.dungeonClearTwilight,
+                     excluded: false
+                   }">
+                <span class="clear-icon">
+                  {{ character.dungeonClearTwilight ? '✅' : '❌' }}
+                </span>
+                <span class="clear-text">
+                  {{ character.dungeonClearTwilight ? '클리어' : '미클리어' }}
+                </span>
+              </div>
+              <div v-else class="dungeon-clear-status excluded">
+                <span class="clear-icon">-</span>
+                <span class="clear-text">스펙 부족</span>
+              </div>
+              <div class="action-buttons-mini">
+                <span class="coming-soon-text">안감</span>
               </div>
             </td>
             <td>
@@ -416,18 +448,6 @@
               min="0"
             />
           </div>
-          
-
-          
-
-          
-
-          
-
-          
-
-          
-
         </div>
         
         <div class="modal-footer">
@@ -445,7 +465,8 @@ import { useRoute } from 'vue-router';
 import { useCharacterStore } from '../stores/character'
 import { usePartyStore } from '../stores/party'
 import sseService from '../services/sseService'
-import { getApiUrl } from '../config/api'
+import { apiFetch } from '../config/api'
+import { isBuffer } from '../utils/characterUtils'
 import type { Character } from '../types'
 
 // RealtimeEvent 타입 정의
@@ -506,12 +527,12 @@ const isWithinTimeLimit = (characterId: string): boolean => {
   const diffMinutes = diffMs / (1000 * 60);
   
   // 디버깅용 로그
-  console.log(`케릭터 ${characterId} 동기화 제한 확인:`, {
-    lastSync: lastSync.toISOString(),
-    now: now.toISOString(),
-    diffMinutes: diffMinutes,
-    isAvailable: diffMinutes >= 2
-  });
+  // console.log(`케릭터 ${characterId} 동기화 제한 확인:`, {
+  //   lastSync: lastSync.toISOString(),
+  //   now: now.toISOString(),
+  //   diffMinutes: diffMinutes,
+  //   isAvailable: diffMinutes >= 2
+  // });
   
   return diffMinutes >= 2;
 };
@@ -526,12 +547,12 @@ const isAdventureSyncAvailable = (adventureName: string): boolean => {
   const diffMinutes = diffMs / (1000 * 60);
   
   // 디버깅용 로그
-  console.log(`모험단 ${adventureName} 동기화 제한 확인:`, {
-    lastSync: lastSync.toISOString(),
-    now: now.toISOString(),
-    diffMinutes: diffMinutes,
-    isAvailable: diffMinutes >= 2
-  });
+  // console.log(`모험단 ${adventureName} 동기화 제한 확인:`, {
+  //   lastSync: lastSync.toISOString(),
+  //   now: now.toISOString(),
+  //   diffMinutes: diffMinutes,
+  //   isAvailable: diffMinutes >= 2
+  // });
   
   return diffMinutes >= 2;
 };
@@ -648,7 +669,7 @@ const searchAdventure = async () => {
     successMessage.value = '';
     
     console.log('API 호출 시작:', `/api/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
-          const response = await fetch(`${getApiUrl('characters/adventure')}/${encodeURIComponent(searchQuery.value)}`);
+          const response = await apiFetch(`/characters/adventure/${encodeURIComponent(searchQuery.value)}`);
     
     console.log('API 응답 상태:', response.status);
     
@@ -959,21 +980,7 @@ const allAdventures = ref<string[]>([]);
 
 
 
-// 직업이 버퍼인지 확인하는 함수
-const isBuffer = (character: Character): boolean => {
-  if (!character.jobName || character.jobName === 'N/A') return false;
-  
-  // "眞" 문자를 제거한 후 버퍼 직업 판별
-  const cleanJobName = formatJobName(character.jobName);
-  const cleanJobGrowName = character.jobGrowName ? formatJobName(character.jobGrowName) : '';
-  
-  // 버퍼 직업 목록 (眞 제거 후 판별)
-  const bufferJobs = ['뮤즈', '패러메딕', '크루세이더', '인챈트리스'];
-  
-  return bufferJobs.some(job => 
-    cleanJobName.includes(job) || cleanJobGrowName.includes(job)
-  );
-};
+
 
 // 모험단별 필터링 - CharacterSearch.vue와 동일한 localStorage 키 사용
 const availableAdventures = computed(() => {
@@ -1041,7 +1048,7 @@ const filterByAdventure = async () => {
   // 전체 모험단 선택 시는 필터링만 적용
 };
 
-// 던전 통계 (안감 제외)
+// 던전 통계 (안감 제외, 최대치 제한 적용)
 const dungeonStats = computed(() => {
   const stats = {
     nabel: 0,
@@ -1051,27 +1058,63 @@ const dungeonStats = computed(() => {
     nabelTotal: 0,
     venusTotal: 0,
     fogTotal: 0,
-    twilightTotal: 0
+    twilightTotal: 0,
+    nabelNormal: 0,
+    nabelHard: 0,
+    venusNormal: 0,
+    venusHard: 0,
+    fogNormal: 0,
+    fogHard: 0
   };
   
-  filteredCharacters.value.forEach(char => {
-    // 안감되지 않은 캐릭터만 통계에 포함
+  // 안감되지 않은 캐릭터만 필터링
+  const eligibleCharacters = filteredCharacters.value.filter(char => 
+    !char.isExcludedNabel || !char.isExcludedVenus || !char.isExcludedFog
+  );
+  
+  // 각 던전별로 최대치 제한 적용
+  eligibleCharacters.forEach(char => {
     if (!char.isExcludedNabel) {
-      stats.nabelTotal++;
-      if (char.dungeonClearNabel) stats.nabel++;
+      if (stats.nabelTotal < getDungeonLimit('nabel')) {
+        stats.nabelTotal++;
+        if (char.dungeonClearNabel) stats.nabel++;
+        // 하드 클리어 횟수 계산
+        if (char.dungeonClearNabel) {
+          stats.nabelHard++;
+        }
+      }
     }
     if (!char.isExcludedVenus) {
-      stats.venusTotal++;
-      if (char.dungeonClearVenus) stats.venus++;
+      if (stats.venusTotal < getDungeonLimit('venus')) {
+        stats.venusTotal++;
+        if (char.dungeonClearVenus) stats.venus++;
+        // 베누스는 일반 모드만 있음 (임시로 클리어 여부로 계산)
+        if (char.dungeonClearVenus) {
+          stats.venusNormal++;
+        }
+      }
     }
     if (!char.isExcludedFog) {
-      stats.fogTotal++;
-      if (char.dungeonClearFog) stats.fog++;
+      if (stats.fogTotal < getDungeonLimit('fog')) {
+        stats.fogTotal++;
+        if (char.dungeonClearFog) stats.fog++;
+        // 안개신은 일반 모드만 있음 (임시로 클리어 여부로 계산)
+        if (char.dungeonClearFog) {
+          stats.fogNormal++;
+        }
+      }
     }
-    // 황혼전은 아직 안감 기능 없음
-    stats.twilightTotal++;
-    if (char.dungeonClearTwilight) stats.twilight++;
+    // 황혼전 적격성 체크 (명성 72,688, 버퍼 버프력 5,200,000, 딜러 총딜 12,000,000,000)
+    if (char.isTwilightEligible) {
+      if (stats.twilightTotal < getDungeonLimit('twilight')) {
+        stats.twilightTotal++;
+        if (char.dungeonClearTwilight) stats.twilight++;
+      }
+    }
   });
+  
+  // 일반 클리어는 전체 적격 캐릭터 - 하드 클리어한 캐릭터
+  stats.nabelNormal = stats.nabelTotal - stats.nabelHard;
   
   return stats;
 });
@@ -1145,6 +1188,17 @@ const sortedCharacters = computed(() => {
         return sortOrder.value === 'asc' ? 
           (a.dungeonClearFog ? -1 : 1) : 
           (a.dungeonClearFog ? 1 : -1);
+      }
+      // 동점 시 캐릭터 이름으로 정렬
+      return a.characterName.localeCompare(b.characterName);
+    }
+    
+    // 황혼전 정렬
+    if (sortField.value === 'twilight') {
+      if (a.dungeonClearTwilight !== b.dungeonClearTwilight) {
+        return sortOrder.value === 'asc' ? 
+          (a.dungeonClearTwilight ? -1 : 1) : 
+          (a.dungeonClearTwilight ? 1 : -1);
       }
       // 동점 시 캐릭터 이름으로 정렬
       return a.characterName.localeCompare(b.characterName);
@@ -2015,6 +2069,22 @@ const getSSEStatusClass = computed(() => {
     default: return 'text-gray-600'
   }
 })
+
+// 던전별 최대 캐릭터 수 제한
+const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): number => {
+  switch (dungeon) {
+    case 'nabel':
+      return 4; // 나벨 하드는 4케릭 제한
+    case 'venus':
+      return 20; // 베누스는 20케릭 제한
+    case 'fog':
+      return 20; // 안개신은 20케릭 제한
+    case 'twilight':
+      return 8; // 황혼전은 8케릭 제한
+    default:
+      return 0;
+  }
+};
 </script>
 
 <style scoped>
@@ -2245,6 +2315,35 @@ const getSSEStatusClass = computed(() => {
   color: #28a745;
 }
 
+.stat-limit {
+  font-size: 10px;
+  color: #6c757d;
+  font-weight: 600;
+  margin-top: 4px;
+  padding: 2px 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  border: 1px solid #dee2e6;
+}
+
+.clear-breakdown {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clear-type {
+  font-size: 9px;
+  color: #495057;
+  font-weight: 500;
+  padding: 1px 4px;
+  background: #f8f9fa;
+  border-radius: 2px;
+  border: 1px solid #dee2e6;
+  text-align: center;
+}
+
 .characters-table {
   width: 100%;
   border-collapse: collapse;
@@ -2332,6 +2431,10 @@ const getSSEStatusClass = computed(() => {
 
 .fog-cell {
   border: 2px solid #45b7d1; /* 파란색 - 안개신 */
+}
+
+.twilight-cell {
+  border: 2px solid #f39c12; /* 주황색 - 황혼전 */
 }
 
 .dungeon-clear-status {
@@ -2620,6 +2723,17 @@ const getSSEStatusClass = computed(() => {
   color: #999;
   font-style: italic;
   margin-left: 5px;
+}
+
+.coming-soon-text {
+  font-size: 10px;
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 2px 6px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 3px;
 }
 
 /* 안감/업둥 버튼 스타일 */
@@ -3331,6 +3445,43 @@ const getSSEStatusClass = computed(() => {
   color: #666;
   transform: none;
   box-shadow: none;
+}
+
+/* 나벨 클리어 상세 정보 스타일 */
+.nabel-clear-details {
+  margin: 8px 0;
+  padding: 6px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.clear-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.clear-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.clear-detail-label {
+  color: #6c757d;
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.clear-detail-value {
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.clear-detail-value.cleared {
+  color: #28a745;
 }
 
 /* 나벨 난이도 버튼 스타일 */

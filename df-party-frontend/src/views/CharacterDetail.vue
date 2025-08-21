@@ -146,6 +146,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { dfApi } from '@/services/dfApi'
+import { isBuffer } from '../utils/characterUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -238,21 +239,7 @@ const formatJobName = (jobName: string): string => {
   return jobName.replace(/眞\s*/, '');
 };
 
-const isBuffer = (character: any): boolean => {
-  if (character.jobName && character.jobGrowName) {
-    // "眞" 문자를 제거한 후 버퍼 직업 판별
-    const cleanJobName = formatJobName(character.jobGrowName);
-    const cleanBaseJobName = formatJobName(character.jobName);
-    
-      // 버퍼 직업 목록 (眞 제거 후 판별)
-  const bufferJobs = ['뮤즈', '패러메딕', '크루세이더', '인챈트리스'];
-    
-    return bufferJobs.some(job => 
-      cleanJobName.includes(job) || cleanBaseJobName.includes(job)
-    );
-  }
-  return false
-}
+
 
 const isDealer = (character: any): boolean => {
   return !isBuffer(character)

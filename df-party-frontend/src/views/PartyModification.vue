@@ -300,6 +300,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useCharacterStore } from '@/stores/character'
 import { usePartyStore } from '@/stores/party'
 import type { Character, Server, PartySlot } from '@/types'
+import { apiFetch } from '../config/api'
 
 // 스토어
 const characterStore = useCharacterStore()
@@ -341,7 +342,7 @@ const isPartyBalanced = computed(() => {
 // 메서드
 const loadServers = async () => {
   try {
-    const response = await fetch('/api/dfo/servers')
+    const response = await apiFetch('/dfo/servers')
     const data = await response.json()
     servers.value = data
   } catch (error) {
@@ -353,7 +354,7 @@ const loadCharacters = async () => {
   if (!selectedServer.value) return
   
   try {
-    const response = await fetch(`/api/characters/server/${selectedServer.value}`)
+    const response = await apiFetch(`/characters/server/${selectedServer.value}`)
     const data = await response.json()
     characters.value = data
   } catch (error) {
@@ -366,7 +367,7 @@ const createEightPersonParty = async () => {
   
   try {
     const characterIds = characters.value.map(c => c.characterId)
-    const response = await fetch('/api/eight-person-party/create', {
+    const response = await apiFetch('/eight-person-party/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -394,7 +395,7 @@ const validateParty = async () => {
   if (!eightPersonParty.value) return
   
   try {
-    const response = await fetch('/api/eight-person-party/validate', {
+    const response = await apiFetch('/eight-person-party/validate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -429,7 +430,7 @@ const optimizeParty = async () => {
   
   try {
     const characterIds = characters.value.map(c => c.characterId)
-    const response = await fetch('/api/eight-person-party/optimize', {
+    const response = await apiFetch('/eight-person-party/optimize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -477,7 +478,7 @@ const onDrop = async (event: DragEvent, targetSlot: any, targetParty: string) =>
     let response
     if (draggedSource.value === 'character') {
       // 캐릭터를 파티에 추가
-      response = await fetch('/api/party-modification/add', {
+      response = await apiFetch('/party-modification/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -490,7 +491,7 @@ const onDrop = async (event: DragEvent, targetSlot: any, targetParty: string) =>
       })
     } else {
       // 파티 내에서 캐릭터 교체
-      response = await fetch('/api/party-modification/swap', {
+      response = await apiFetch('/party-modification/swap', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -526,7 +527,7 @@ const onDrop = async (event: DragEvent, targetSlot: any, targetParty: string) =>
 
 const removeCharacter = async (slot: any, partyKey: string) => {
   try {
-    const response = await fetch('/api/party-modification/remove', {
+    const response = await apiFetch('/party-modification/remove', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -559,7 +560,7 @@ const analyzeParty = async () => {
   if (!eightPersonParty.value) return
   
   try {
-    const response = await fetch('/api/eight-person-party/analyze', {
+    const response = await apiFetch('/eight-person-party/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -590,7 +591,7 @@ const selectCharacter = (character: any) => {
 
 const toggleFavorite = async (character: Character) => {
   try {
-    const response = await fetch(`/api/characters/${character.serverId}/${character.characterId}/favorite`, {
+    const response = await apiFetch(`/characters/${character.serverId}/${character.characterId}/favorite`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'

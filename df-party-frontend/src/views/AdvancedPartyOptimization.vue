@@ -383,6 +383,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useCharacterStore } from '@/stores/character'
 import { usePartyStore } from '@/stores/party'
 import type { Character, Server } from '@/types'
+import { apiFetch } from '../config/api'
 
 // Store 사용
 const characterStore = useCharacterStore()
@@ -689,7 +690,7 @@ const executePartyOptimization = async () => {
       parties: parties.value
     }
     
-    const response = await fetch(`/api/party-optimization/optimize`, {
+    const response = await apiFetch(`/party-optimization/optimize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -732,7 +733,7 @@ const optimizePartyBalance = async () => {
       parties: parties.value
     }
     
-    const response = await fetch('/api/party-optimization/balance', {
+    const response = await apiFetch('/party-optimization/balance', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -778,7 +779,7 @@ const compareAllStrategies = async () => {
       parties: parties.value
     }
     
-    const response = await fetch('/api/party-optimization/compare', {
+    const response = await apiFetch('/party-optimization/compare', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -812,7 +813,7 @@ const runPerformanceTest = async () => {
     isOptimizing.value = true
     errorMessage.value = ''
     
-    const response = await fetch('/api/party-optimization/performance-test', {
+    const response = await apiFetch('/party-optimization/performance-test', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

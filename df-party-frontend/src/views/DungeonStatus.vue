@@ -824,6 +824,7 @@ const isHardEligible = (character: Character): boolean => {
   if (isBuffer) {
     // 버퍼: 버프력 500만 이상
     const buffPower = character.manualBuffPower || character.buffPower;
+
     return buffPower !== undefined && buffPower !== null && buffPower >= 5000000;
   } else {
     // 딜러: 총딜 100억 이상

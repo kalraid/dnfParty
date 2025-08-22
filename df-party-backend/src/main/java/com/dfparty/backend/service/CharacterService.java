@@ -2543,6 +2543,20 @@ public class CharacterService {
                                 if (totalDamage != null && totalDamage > 0) {
                                     character.setTotalDamage(totalDamage);
                                 }
+                                
+                                // 던담 정보 업데이트 후 나벨 자격 재계산
+                                boolean isHardEligible = isHardNabelEligible(character);
+                                boolean isNormalEligible = isNormalNabelEligible(character);
+                                boolean isMatchingEligible = isMatchingNabelEligible(character);
+                                boolean isTwilightEligible = isTwilightEligible(character);
+                                
+                                character.setIsHardNabelEligible(isHardEligible);
+                                character.setIsNormalNabelEligible(isNormalEligible);
+                                character.setIsMatchingNabelEligible(isMatchingEligible);
+                                character.setIsTwilightEligible(isTwilightEligible);
+                                
+                                log.info("나벨 자격 업데이트 완료: {} - 하드={}, 일반={}, 매칭={}, 황혼전={}", 
+                                    character.getCharacterName(), isHardEligible, isNormalEligible, isMatchingEligible, isTwilightEligible);
                             }
                         } catch (Exception e) {
                             log.warn("던담 정보 업데이트 실패: {} - {}", character.getCharacterName(), e.getMessage());

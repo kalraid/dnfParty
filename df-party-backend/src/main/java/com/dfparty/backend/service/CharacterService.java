@@ -1997,9 +1997,9 @@ public class CharacterService {
         boolean isBuffer = isBuffer(character.getJobName(), character.getJobGrowName());
         
         if (isBuffer) {
-            // 버퍼: 버프력 500만 이상 (하드 나벨과 동일)
+            // 버퍼: 버프력 520만 이상 (황혼전 전용)
             Long buffPower = character.getEffectiveBuffPower();
-            return buffPower != null && buffPower >= 5000000;
+            return buffPower != null && buffPower >= 5200000;
         } else {
             // 딜러: 총딜 100억 이상 (하드 나벨과 동일)
             Long totalDamage = character.getEffectiveTotalDamage();
@@ -2678,12 +2678,19 @@ public class CharacterService {
             }
             
             if (updated) {
-                // 나벨 자격 업데이트 (총딜/버프력 변경 후)
-                character.updateNabelEligibility();
-                log.info("나벨 자격 업데이트 완료: 하드={}, 일반={}, 매칭={}", 
-                    character.getIsHardNabelEligible(), 
-                    character.getIsNormalNabelEligible(), 
-                    character.getIsMatchingNabelEligible());
+                // 나벨 자격 자동 업데이트 (총딜/버프력 변경 후)
+                boolean isHardEligible = isHardNabelEligible(character);
+                boolean isNormalEligible = isNormalNabelEligible(character);
+                boolean isMatchingEligible = isMatchingNabelEligible(character);
+                boolean isTwilightEligible = isTwilightEligible(character);
+                
+                character.setIsHardNabelEligible(isHardEligible);
+                character.setIsNormalNabelEligible(isNormalEligible);
+                character.setIsMatchingNabelEligible(isMatchingEligible);
+                character.setIsTwilightEligible(isTwilightEligible);
+                
+                log.info("나벨 자격 업데이트 완료: 하드={}, 일반={}, 매칭={}, 황혼전={}", 
+                    isHardEligible, isNormalEligible, isMatchingEligible, isTwilightEligible);
                 
                 character.setLastStatsUpdate(LocalDateTime.now());
                 characterRepository.save(character);

@@ -273,7 +273,8 @@ public class Character {
     }
     
     public void updateNabelEligibility(){
-
+        // 이 메서드는 CharacterService에서 처리하므로 여기서는 비워둠
+        // 실제 로직은 CharacterService.updateHardNabelEligibility() 등에서 처리
     }
 
     

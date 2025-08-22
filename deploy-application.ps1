@@ -8,7 +8,8 @@ $ProgressPreference = 'SilentlyContinue'
 param(
     [string]$ReleaseName,
     [string]$Namespace,
-    [string]$ValuesFile
+    [string]$ValuesFile,
+    [string]$Timestamp
 )
 
 # Set default values if not provided
@@ -16,9 +17,22 @@ if (-not $ReleaseName) { $ReleaseName = "df-party-application" }
 if (-not $Namespace) { $Namespace = "dfo" }
 if (-not $ValuesFile) { $ValuesFile = "helm-charts/values.yaml" }
 
+# Load timestamp from file if not provided
+if (-not $Timestamp) {
+    if (Test-Path "current-timestamp.txt") {
+        $Timestamp = Get-Content "current-timestamp.txt" -Raw
+        $Timestamp = $Timestamp.Trim()
+        Write-Host "Loaded timestamp from file: $Timestamp" -ForegroundColor Cyan
+    } else {
+        Write-Host "Warning: No timestamp provided and current-timestamp.txt not found. Using 'latest' tag." -ForegroundColor Yellow
+        $Timestamp = "latest"
+    }
+}
+
 Write-Host "Starting DFO Party Management Application Helm Deployment in Background..." -ForegroundColor Green
 Write-Host "Process ID: $PID" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date)" -ForegroundColor Cyan
+Write-Host "Image Tag: $Timestamp" -ForegroundColor Cyan
 
 # Function to find existing Helm releases across multiple namespaces
 function Find-ExistingHelmReleases {
@@ -167,7 +181,7 @@ if ($VITE_WS_BASE_URL) {
 
 # Build helm command with environment variables
 # Use local chart directory directly
-$helmCommand = "helm upgrade --install $ReleaseName ./helm-charts --namespace $Namespace --values $ValuesFile --set frontend.image.pullPolicy=Always --set backend.image.pullPolicy=Always --set backend.dfoApiKey=`"$DF_API_KEY`" --timeout 10m"
+$helmCommand = "helm upgrade --install $ReleaseName ./helm-charts --namespace $Namespace --values $ValuesFile --set frontend.image.tag=`"$Timestamp`" --set backend.image.tag=`"$Timestamp`" --set frontend.image.pullPolicy=Always --set backend.image.pullPolicy=Always --set backend.dfoApiKey=`"$DF_API_KEY`" --timeout 10m"
 if ($frontendEnvSets.Count -gt 0) {
     $helmCommand += " " + ($frontendEnvSets -join " ")
 }

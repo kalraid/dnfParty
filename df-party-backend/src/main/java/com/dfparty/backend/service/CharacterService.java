@@ -1092,7 +1092,7 @@ public class CharacterService {
         // 매칭 나벨 대상자 여부 추가
         dto.put("isMatchingNabelEligible", character.getIsMatchingNabelEligible());
         
-        // 황혼전 대상자 여부 추가
+        // 이내 황혼전 대상자 여부 추가
         dto.put("isTwilightEligible", character.getIsTwilightEligible());
         
 
@@ -1802,7 +1802,7 @@ public class CharacterService {
             case "fog":
                 return "여신전";
             case "twilight":
-                return "황혼전";
+                return "이내 황혼전";
             default:
                 return dungeonType;
         }
@@ -1984,7 +1984,7 @@ public class CharacterService {
     }
     
        /**
-     * 황혼전 대상자 여부 확인
+     * 이내 황혼전 대상자 여부 확인
      */
     public boolean isTwilightEligible(Character character) {
         if (character == null) return false;
@@ -2054,11 +2054,11 @@ public class CharacterService {
     }
     
     /**
-     * 황혼전 대상자 여부 업데이트
+     * 이내 황혼전 대상자 여부 업데이트
      */
     public Map<String, Object> updateTwilightEligibility(String characterId) {
         try {
-            log.info("황혼전 대상자 여부 업데이트 시작: characterId={}", characterId);
+            log.info("이내 황혼전 대상자 여부 업데이트 시작: characterId={}", characterId);
             
             Optional<Character> characterOpt = characterRepository.findByCharacterId(characterId);
             if (characterOpt.isEmpty()) {
@@ -2069,11 +2069,11 @@ public class CharacterService {
             Character character = characterOpt.get();
             boolean isEligible = isTwilightEligible(character);
             
-            // DB에 황혼전 대상자 여부 저장
+            // DB에 이내 황혼전 대상자 여부 저장
             character.setIsTwilightEligible(isEligible);
             characterRepository.save(character);
             
-            log.info("황혼전 대상자 여부 업데이트 완료: characterId={}, isEligible={}", characterId, isEligible);
+            log.info("이내 황혼전 대상자 여부 업데이트 완료: characterId={}, isEligible={}", characterId, isEligible);
             
             // SSE로 실시간 업데이트 알림
             Map<String, Object> eventData = new HashMap<>();
@@ -2084,11 +2084,11 @@ public class CharacterService {
             return Map.of(
                 "success", true,
                 "isTwilightEligible", isEligible,
-                "message", "황혼전 대상자 여부가 업데이트되었습니다."
+                "message", "이내 황혼전 대상자 여부가 업데이트되었습니다."
             );
             
         } catch (Exception e) {
-            log.error("황혼전 대상자 여부 업데이트 실패: characterId={}", characterId, e);
+            log.error("이내 황혼전 대상자 여부 업데이트 실패: characterId={}", characterId, e);
             return Map.of("success", false, "message", "업데이트에 실패했습니다: " + e.getMessage());
         }
     }
@@ -2259,7 +2259,7 @@ public class CharacterService {
             // 캐릭터 정보 업데이트
             updateCharacterFromData(character, characterDetail);
             
-            // 던전 클리어 상태 업데이트 (황혼전 포함)
+            // 던전 클리어 상태 업데이트 (이내 황혼전 포함)
             character.updateDungeonClearStatusWithTwilight(
                 dungeonClearStatus.get("nabel"),
                 dungeonClearStatus.get("venus"),

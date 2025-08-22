@@ -130,6 +130,11 @@
                   <span class="dungeon-name">안개신</span>
                   <span class="clear-status">{{ character.dungeonClearFog ? 'X' : 'O' }}</span>
                 </div>
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearTwilight }">
+                  <span class="dungeon-icon">🌅</span>
+                  <span class="dungeon-name">이내 황혼전</span>
+                  <span class="clear-status">{{ character.dungeonClearTwilight ? 'X' : 'O' }}</span>
+                </div>
               </div>
             </div>
             
@@ -271,8 +276,7 @@
                 @change="toggleDungeonFavorite('twilight', $event)"
               />
               <span class="dungeon-icon">🌅</span>
-              <span class="dungeon-name">황혼전 업둥이</span>
-              <span class="coming-soon">(개발중)</span>
+                              <span class="dungeon-name">이내 황혼전 업둥이</span>
             </label>
           </div>
         </div>
@@ -1100,6 +1104,7 @@ const saveToSearchHistory = (characters: any[]) => {
       dungeonClearNabel: char.dungeonClearNabel,
       dungeonClearVenus: char.dungeonClearVenus,
       dungeonClearFog: char.dungeonClearFog,
+      dungeonClearTwilight: char.dungeonClearTwilight,
       searchTimestamp: new Date().toISOString()
     }));
     

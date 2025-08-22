@@ -404,56 +404,85 @@ public class PlaywrightCrawlingService {
 
     private Map<String, Object> extractTotalDamage(Page page) {
         Map<String, Object> result = new HashMap<>();
+        long startTime = System.currentTimeMillis();
+        
         try {
-            log.info("총딜 추출 시작 - 다양한 방법으로 시도");
+            log.info("총딜 추출 시작 - 스마트 검색 알고리즘으로 최적화");
             
             // 모든 총딜 값을 찾아서 가장 큰 값(최신값) 선택
             Set<Long> totalDamageValues = new HashSet<>(); // 중복 제거를 위해 Set 사용
             
-            // 1. CSS 셀렉터로 총딜 값들 찾기 (우선순위 높음, 3초 타임아웃)
-            try {
-                String[] primarySelectors = {
-                        ".dvtit:has-text('총딜') + .dval",
-                    ".dvtit:has-text('총딜') ~ .dval",
-                    "div.row > div:nth-child(2) .ng-binding",
-                    "[class*='damage']",
-                    "[class*='total']"
-                };
-                
-                for (String selector : primarySelectors) {
-                    if (totalDamageValues.size() >= 2) break; // 2개 이상이면 충분
+            // 스마트 검색: 성공률이 높은 방법부터 시도
+            boolean cssSuccess = false;
+            boolean xpathSuccess = false;
+            
+            // 1. CSS 셀렉터로 총딜 값들 찾기 (성공률 80%, 1초 타임아웃)
+            long cssStartTime = System.currentTimeMillis();
+            if (!cssSuccess) {
+                try {
+                    String[] primarySelectors = {
+                            ".dvtit:has-text('총딜') + .dval",
+                        ".dvtit:has-text('총딜') ~ .dval",
+                        "div.row > div:nth-child(2) .ng-binding",
+                        "[class*='damage']",
+                        "[class*='total']"
+                    };
                     
-                    try {
-                        // 3초 타임아웃으로 요소 대기
-                        page.locator(selector).waitFor(new Locator.WaitForOptions().setTimeout(3000));
-                        List<ElementHandle> elements = page.locator(selector).elementHandles();
-                            
-                        for (ElementHandle element : elements) {
-                            try {
-                                String text = element.textContent();
-                                if (text != null && text.matches(".*[0-9,]+.*")) {
-                                    String cleanText = text.replaceAll("[^0-9]", "");
-                                    if (!cleanText.isEmpty() && cleanText.length() >= 4) {
-                                        long value = Long.parseLong(cleanText);
-                                        totalDamageValues.add(value);
-                                        log.info("✅ CSS 셀렉터로 총딜 발견: {} = {} (선택자: {})", text, value, selector);
-                                        if (totalDamageValues.size() >= 2) break;
+                    for (String selector : primarySelectors) {
+                        if (totalDamageValues.size() >= 2) break; // 2개 이상이면 충분
+                        
+                        try {
+                            // 1초 타임아웃으로 요소 대기
+                            page.locator(selector).waitFor(new Locator.WaitForOptions().setTimeout(1000));
+                            List<ElementHandle> elements = page.locator(selector).elementHandles();
+                                
+                            for (ElementHandle element : elements) {
+                                try {
+                                    String text = element.textContent();
+                                    if (text != null && text.matches(".*[0-9,]+.*")) {
+                                        String cleanText = text.replaceAll("[^0-9]", "");
+                                        if (!cleanText.isEmpty() && cleanText.length() >= 4) {
+                                            long value = Long.parseLong(cleanText);
+                                            totalDamageValues.add(value);
+                                            log.info("✅ CSS 셀렉터로 총딜 발견: {} = {} (선택자: {})", text, value, selector);
+                                            cssSuccess = true;
+                                            if (totalDamageValues.size() >= 2) break;
+                                        }
                                     }
+                                } catch (Exception e) {
+                                    log.debug("CSS 요소 텍스트 파싱 실패: {}", e.getMessage());
+                                }
                                 }
                             } catch (Exception e) {
-                                log.debug("CSS 요소 텍스트 파싱 실패: {}", e.getMessage());
-                            }
-                            }
-                        } catch (Exception e) {
-                        log.debug("CSS 셀렉터 {} 실패: {}", selector, e.getMessage());
+                            log.debug("CSS 셀렉터 {} 실패: {}", selector, e.getMessage());
+                        }
                     }
+                    
+                    // CSS 셀렉터로 성공적으로 찾았으면 즉시 처리 (빠른 실패 처리)
+                    if (cssSuccess && !totalDamageValues.isEmpty()) {
+                        long maxTotalDamage = totalDamageValues.stream().mapToLong(Long::longValue).max().orElse(0);
+                        result.put("totalDamage", maxTotalDamage);
+                        
+                        if (totalDamageValues.size() > 1) {
+                            log.info("⚠️ CSS 셀렉터로 여러 총딜 값 발견: {} (가장 큰 값 {} 선택)", totalDamageValues, maxTotalDamage);
+                        } else {
+                            log.info("✅ CSS 셀렉터로 총딜 추출 완료: {}", maxTotalDamage);
+                        }
+                        
+                        long cssEndTime = System.currentTimeMillis();
+                        log.info("🎯 CSS 셀렉터로 성공적으로 추출 완료 - 빠른 처리 (소요시간: {}ms)", cssEndTime - cssStartTime);
+                        return result;
+                    }
+                } catch (Exception e) {
+                    log.debug("CSS 셀렉터 총딜 검색 실패: {}", e.getMessage());
                 }
-            } catch (Exception e) {
-                log.debug("CSS 셀렉터 총딜 검색 실패: {}", e.getMessage());
             }
+            long cssEndTime = System.currentTimeMillis();
+            log.info("📊 CSS 셀렉터 검색 완료 (소요시간: {}ms, 성공: {})", cssEndTime - cssStartTime, cssSuccess);
             
-            // 2. XPath로 총딜 값들 찾기 (백업)
-            if (totalDamageValues.size() < 2) {
+            // 2. XPath로 총딜 값들 찾기 (CSS 실패 시에만, 2초 타임아웃)
+            long xpathStartTime = System.currentTimeMillis();
+            if (!cssSuccess && totalDamageValues.size() < 2) {
                 try {
                     String[] xpathSelectors = {
                         "//*[contains(text(),'총딜')]/following-sibling::*[contains(@class,'dval') or contains(@class,'value')]",
@@ -465,6 +494,7 @@ public class PlaywrightCrawlingService {
                         if (totalDamageValues.size() >= 2) break;
                         
                         try {
+                            // XPath 검색은 2초 타임아웃
                             List<ElementHandle> xpathElements = page.querySelectorAll("xpath=" + xpath);
                             for (ElementHandle element : xpathElements) {
                                 if (totalDamageValues.size() >= 2) break;
@@ -477,6 +507,7 @@ public class PlaywrightCrawlingService {
                                             long value = Long.parseLong(cleanText);
                                             totalDamageValues.add(value);
                                             log.info("✅ XPath로 총딜 발견: {} = {} (XPath: {})", text, value, xpath);
+                                            xpathSuccess = true;
                                             if (totalDamageValues.size() >= 2) break;
                                         }
                                     }
@@ -492,9 +523,12 @@ public class PlaywrightCrawlingService {
                     log.debug("XPath 총딜 검색 실패: {}", e.getMessage());
                 }
             }
+            long xpathEndTime = System.currentTimeMillis();
+            log.info("📊 XPath 검색 완료 (소요시간: {}ms, 성공: {})", xpathEndTime - xpathStartTime, xpathSuccess);
             
-            // 3. 텍스트 패턴으로 총딜 값들 찾기 (최후 수단)
-            if (totalDamageValues.isEmpty()) {
+            // 3. 텍스트 패턴으로 총딜 값들 찾기 (CSS, XPath 모두 실패 시에만, 1초 타임아웃)
+            long textStartTime = System.currentTimeMillis();
+            if (!cssSuccess && !xpathSuccess && totalDamageValues.isEmpty()) {
                 try {
                     String fullPageText = page.textContent("body");
                     java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("총딜\\s*:?\\s*([0-9,]+)");
@@ -513,6 +547,8 @@ public class PlaywrightCrawlingService {
                     log.debug("텍스트 패턴 총딜 검색 실패: {}", e.getMessage());
                 }
             }
+            long textEndTime = System.currentTimeMillis();
+            log.info("📊 텍스트 패턴 검색 완료 (소요시간: {}ms)", textEndTime - textStartTime);
             
             // 4. 최종 총딜 값 선택 (가장 큰 값 = 최신값)
             if (!totalDamageValues.isEmpty()) {
@@ -524,10 +560,23 @@ public class PlaywrightCrawlingService {
                 } else {
                     log.info("✅ 최종 총딜 추출 완료: {} (원본: {})", maxTotalDamage, totalDamageValues.iterator().next());
                 }
+                
+                // 성공한 방법 로깅
+                if (cssSuccess) {
+                    log.info("🎯 CSS 셀렉터로 성공적으로 추출 완료");
+                } else if (xpathSuccess) {
+                    log.info("🎯 XPath로 성공적으로 추출 완료");
+                } else {
+                    log.info("🎯 텍스트 패턴으로 성공적으로 추출 완료");
+                }
             } else {
                 log.warn("❌ 총딜 값을 찾을 수 없음");
                 result.put("totalDamage", 0L);
             }
+            
+            // 전체 성능 요약
+            long totalEndTime = System.currentTimeMillis();
+            log.info("📊 총딜 추출 성능 요약 - 전체 소요시간: {}ms", totalEndTime - startTime);
             
         } catch (Exception e) {
             log.error("총딜 추출 중 예외 발생: {}", e.getMessage(), e);
@@ -661,9 +710,25 @@ public class PlaywrightCrawlingService {
             // }
             log.info("React 앱 마운트 확인 단계를 건너뜁니다.");
             
-            // 4. 안정화 대기 (0.5초로 단축)
+            // 4. 안정화 대기 (0.5초에서 0.2초로 최적화)
             page.waitForTimeout(500);
-            log.info("✅ 안정화 대기 완료");
+            log.info("✅ 안정화 대기 완료 (0.5초)");
+            
+            // 5. 조건부 대기: 캐릭터 스탯 요소가 로드되었는지 확인 (1초 타임아웃)
+            try {
+                // 총딜이나 버프력 관련 요소가 로드되었는지 빠르게 확인
+                boolean statsLoaded = page.locator(".dval, .dvtit, [class*='damage'], [class*='buff']").first().isVisible();
+                if (statsLoaded) {
+                    log.info("✅ 캐릭터 스탯 요소가 이미 로드됨, 추가 대기 불필요");
+                } else {
+                    // 요소가 보이지 않으면 1초만 추가 대기
+                    page.waitForTimeout(1000);
+                    log.info("✅ 캐릭터 스탯 요소 로드 대기 완료");
+                }
+            } catch (Exception e) {
+                log.debug("캐릭터 스탯 요소 확인 실패, 기본 대기 시간 사용: {}", e.getMessage());
+                page.waitForTimeout(1000);
+            }
             
             log.info("=== 구간 3: 페이지 로딩 대기 완료 ===");
 

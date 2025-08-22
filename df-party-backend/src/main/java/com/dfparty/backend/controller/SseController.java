@@ -3,6 +3,7 @@ package com.dfparty.backend.controller;
 import com.dfparty.backend.model.RealtimeEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +24,13 @@ public class SseController {
     private final Map<String, CopyOnWriteArrayList<SseEmitter>> emitters = new ConcurrentHashMap<>();
     private static final int MAX_EMITTERS_PER_CLIENT = 3; // 클라이언트당 최대 에미터 수 제한
     private static final int MAX_TOTAL_EMITTERS = 100; // 전체 최대 에미터 수 제한
-    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환용
+    private final ObjectMapper objectMapper; // JSON 변환용
     
     public SseController() {
-        // 기본 생성자
+        // Jackson JSR310 모듈 활성화로 LocalDateTime 직렬화 지원
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+        System.out.println("✅ Jackson JSR310 모듈 활성화 완료 - LocalDateTime 직렬화 지원");
     }
 
     /**

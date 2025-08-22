@@ -106,7 +106,7 @@
           <span class="stat-limit">최대 {{ getDungeonLimit('fog') }}캐릭</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">황혼전 클리어</span>
+                        <span class="stat-label">이내 황혼전 클리어</span>
           <span class="stat-value">{{ dungeonStats.twilight }}/{{ dungeonStats.twilightTotal }}</span>
           <span class="stat-percentage">({{ getDungeonPercentage('twilight') }}%)</span>
           <span class="stat-limit">최대 {{ getDungeonLimit('twilight') }}캐릭</span>
@@ -151,7 +151,7 @@
               <span v-if="sortField === 'fog'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
             <th @click="sortBy('twilight')" class="sortable dungeon-clear-column">
-              황혼전
+              이내 황혼전
               <span v-if="sortField === 'twilight'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
             <th>액션</th>
@@ -1104,7 +1104,7 @@ const dungeonStats = computed(() => {
         }
       }
     }
-    // 황혼전 적격성 체크 (명성 72,688, 버퍼 버프력 5,200,000, 딜러 총딜 12,000,000,000)
+            // 이내 황혼전 적격성 체크 (명성 72,688, 버퍼 버프력 5,200,000, 딜러 총딜 12,000,000,000)
     if (char.isTwilightEligible) {
       if (stats.twilightTotal < getDungeonLimit('twilight')) {
         stats.twilightTotal++;
@@ -1193,7 +1193,7 @@ const sortedCharacters = computed(() => {
       return a.characterName.localeCompare(b.characterName);
     }
     
-    // 황혼전 정렬
+            // 이내 황혼전 정렬
     if (sortField.value === 'twilight') {
       if (a.dungeonClearTwilight !== b.dungeonClearTwilight) {
         return sortOrder.value === 'asc' ? 
@@ -2080,7 +2080,7 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
     case 'fog':
       return 20; // 안개신은 20케릭 제한
     case 'twilight':
-      return 8; // 황혼전은 8케릭 제한
+              return 8; // 이내 황혼전은 8케릭 제한
     default:
       return 0;
   }
@@ -2434,7 +2434,7 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
 }
 
 .twilight-cell {
-  border: 2px solid #f39c12; /* 주황색 - 황혼전 */
+          border: 2px solid #f39c12; /* 주황색 - 이내 황혼전 */
 }
 
 .dungeon-clear-status {

@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.DayOfWeek;
 import java.time.format.DateTimeFormatter;
 import com.dfparty.backend.service.PlaywrightCrawlingService;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -90,8 +91,12 @@ public class DfoApiService {
      * 현재 시간을 기준으로 종료날짜 계산 (DFO API 형식)
      */
     private String calculateEndDate() {
-        // 현재 시간을 DFO API 권장 형식으로 반환: YYYYMMDDTHHMM
-        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmm"));
+        // 현재 시간을 KST(한국 표준시) 기준으로 계산
+        ZoneId kstZone = ZoneId.of("Asia/Seoul");
+        LocalDateTime nowKST = LocalDateTime.now(kstZone);
+        
+        // DFO API 권장 형식으로 반환: YYYYMMDDTHHMM
+        return nowKST.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmm"));
     }
 
     /**
@@ -531,7 +536,7 @@ public class DfoApiService {
                                     System.out.println("✅ 안개신 클리어 상태 설정됨");
                                 } else if (regionName.contains("황혼전") || regionName.equals("twilight")) {
                                     dungeonStatus.put("twilight", true);
-                                    System.out.println("✅ 황혼전 클리어 상태 설정됨");
+                                    System.out.println("✅ 이내 황혼전 클리어 상태 설정됨");
                                 }
                             }
                             
@@ -552,7 +557,7 @@ public class DfoApiService {
                                     System.out.println("✅ 안개신 클리어 상태 설정됨 (레이드)");
                                 } else if (raidName.contains("황혼전") || raidName.contains("twilight")) {
                                     dungeonStatus.put("twilight", true);
-                                    System.out.println("✅ 황혼전 클리어 상태 설정됨 (레이드)");
+                                    System.out.println("✅ 이내 황혼전 클리어 상태 설정됨 (레이드)");
                                 }
                             }
                             
@@ -573,7 +578,7 @@ public class DfoApiService {
                                     System.out.println("✅ 안개신 클리어 상태 설정됨");
                                 } else if (dungeonName.contains("황혼전") || dungeonName.contains("twilight")) {
                                     dungeonStatus.put("twilight", true);
-                                    System.out.println("✅ 황혼전 클리어 상태 설정됨");
+                                    System.out.println("✅ 이내 황혼전 클리어 상태 설정됨");
                                 }
                             }
                             

@@ -38,7 +38,7 @@
           @click="setDungeon('twilight')" 
           :class="{ active: selectedDungeon === 'twilight' }"
           class="dungeon-btn twilight-btn">
-          황혼전
+                      이내 황혼전
         </button>
       </div>
     </div>
@@ -605,10 +605,10 @@ const loadSearchHistory = () => {
 
 // 던전 변경 시
 const onDungeonChange = () => {
-  // 황혼전 선택 시 개발중 메시지 표시
+  // 이내 황혼전 선택 시 개발중 메시지 표시
   if (selectedDungeon.value === 'twilight') {
-    error.value = '⚠️ 황혼전은 아직 개발중인 던전입니다. 곧 업데이트 예정입니다!';
-    // 황혼전은 아직 사용 불가하므로 선택 해제
+    error.value = '⚠️ 이내 황혼전은 아직 개발중인 던전입니다. 곧 업데이트 예정입니다!';
+    // 이내 황혼전은 아직 사용 불가하므로 선택 해제
     setTimeout(() => {
       selectedDungeon.value = 'nabel-normal'; // 기본값으로 복원
       error.value = '';
@@ -737,8 +737,8 @@ const getFilteredCharacters = (adventureName: string) => {
         isExcluded = character.isExcludedFog;
         break;
       case 'twilight':
-        dungeonCondition = true; // 황혼전은 아직 클리어 데이터가 없으므로 모든 캐릭터
-        isExcluded = false; // 황혼전은 아직 안감 기능 없음
+        dungeonCondition = true; // 이내 황혼전은 아직 클리어 데이터가 없으므로 모든 캐릭터
+        isExcluded = false; // 이내 황혼전은 아직 안감 기능 없음
         break;
       default:
         dungeonCondition = true;
@@ -1007,7 +1007,7 @@ const isHelperCharacter = (character: any): boolean => {
     case 'fog':
       return character.isSkipFog === true;
     case 'twilight':
-      return false; // 황혼전은 아직 업둥 기능 없음
+      return false; // 이내 황혼전은 아직 업둥 기능 없음
     default:
       return false;
   }

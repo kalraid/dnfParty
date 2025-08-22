@@ -245,7 +245,7 @@ public class Character {
         this.lastDungeonCheck = LocalDateTime.now();
     }
     
-    // 던전 클리어 현황 업데이트 (황혼전 포함)
+            // 던전 클리어 현황 업데이트 (이내 황혼전 포함)
     public void updateDungeonClearStatusWithTwilight(Boolean nabel, Boolean venus, Boolean fog, Boolean twilight) {
         this.dungeonClearNabel = nabel;
         this.dungeonClearVenus = venus;
@@ -335,7 +335,7 @@ public class Character {
         this.selectedNabelDifficulty = selectedNabelDifficulty;
     }
 
-    // 황혼전 대상자 여부 getter/setter
+            // 이내 황혼전 대상자 여부 getter/setter
     public Boolean getIsTwilightEligible() {
         return isTwilightEligible;
     }

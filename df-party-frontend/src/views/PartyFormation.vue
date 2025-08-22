@@ -433,6 +433,27 @@ import { RouterLink } from 'vue-router';
 import { apiFetch } from '../config/api';
 import { isBuffer } from '../utils/characterUtils';
 
+// 던전별 명성 요구사항 상수
+const DUNGEON_FAME_REQUIREMENTS = {
+  nabel: 47684,      // 나벨
+  venus: 41929,      // 베누스
+  fog: 30135,        // 안개신
+  twilight: 72688    // 이내 황혼전
+};
+
+// 명성 체크 함수들
+const isVenusEligible = (character: any) => {
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.venus;
+};
+
+const isFogEligible = (character: any) => {
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.fog;
+};
+
+const isTwilightEligible = (character: any) => {
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.twilight;
+};
+
 // 반응형 데이터
 const searchMode = ref(''); // 검색 모드 (character 또는 adventure)
 const searchQuery = ref(''); // 검색어 (캐릭터명 또는 모험단명)
@@ -645,7 +666,7 @@ const addSelectedRecentAdventure = () => {
   if (selectedRecentAdventure.value && !selectedAdventures.value.includes(selectedRecentAdventure.value)) {
     selectedAdventures.value.push(selectedRecentAdventure.value);
     selectedRecentAdventure.value = '';
-    console.log('최근 검색 모험단 추가됨:', selectedRecentAdventures.value);
+    console.log('최근 검색 모험단 추가됨:', selectedAdventures.value);
   }
 };
 
@@ -799,8 +820,19 @@ const copyPartyToClipboard = async () => {
     });
     
     if (clipboardText.trim()) {
-      await navigator.clipboard.writeText(clipboardText.trim());
-      alert(`카카오톡용 파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${clipboardText.trim()}`);
+      // 클립보드 복사 시도 (navigator.clipboard 지원 여부 확인)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(clipboardText.trim());
+          alert(`카카오톡용 파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${clipboardText.trim()}`);
+        } catch (clipboardErr) {
+          // navigator.clipboard 실패 시 fallback 방식 사용
+          fallbackCopyTextToClipboard(clipboardText.trim());
+        }
+      } else {
+        // navigator.clipboard를 지원하지 않는 브라우저
+        fallbackCopyTextToClipboard(clipboardText.trim());
+      }
     } else {
       error.value = '복사할 파티 구성이 없습니다.';
     }
@@ -869,15 +901,15 @@ const getFilteredCharacters = (adventureName: string) => {
         dungeonCondition = dungeonCondition && character.isHardNabelEligible;
         break;
       case 'venus':
-        dungeonCondition = !character.dungeonClearVenus;
+        dungeonCondition = !character.dungeonClearVenus && character.isVenusEligible; // 클리어 안한 캐릭터 + 베누스 명성 체크
         isExcluded = character.isExcludedVenus;
         break;
       case 'fog':
-        dungeonCondition = !character.dungeonClearFog;
+        dungeonCondition = !character.dungeonClearFog && character.isFogEligible; // 클리어 안한 캐릭터 + 안개신 명성 체크
         isExcluded = character.isExcludedFog;
         break;
       case 'twilight':
-        dungeonCondition = !character.dungeonClearTwilight; // 클리어 안한 캐릭터
+        dungeonCondition = !character.dungeonClearTwilight && character.isTwilightEligible; // 클리어 안한 캐릭터 + 이내 황혼전 명성 체크
         isExcluded = false; // 이내 황혼전은 아직 안감 기능 없음
         break;
       default:
@@ -1407,8 +1439,19 @@ const copyPartyForWhisper = async () => {
     });
     
     if (whisperText.trim()) {
-      await navigator.clipboard.writeText(whisperText.trim());
-      alert(`귓속말용 파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${whisperText.trim()}`);
+      // 클립보드 복사 시도 (navigator.clipboard 지원 여부 확인)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(whisperText.trim());
+          alert(`귓속말용 파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${whisperText.trim()}`);
+        } catch (clipboardErr) {
+          // navigator.clipboard 실패 시 fallback 방식 사용
+          fallbackCopyTextToClipboard(whisperText.trim());
+        }
+      } else {
+        // navigator.clipboard를 지원하지 않는 브라우저
+        fallbackCopyTextToClipboard(whisperText.trim());
+      }
     } else {
       error.value = '복사할 파티 구성이 없습니다.';
     }
@@ -1419,6 +1462,35 @@ const copyPartyForWhisper = async () => {
 };
 
 
+
+// Fallback 클립보드 복사 함수 (navigator.clipboard를 지원하지 않는 브라우저용)
+const fallbackCopyTextToClipboard = (text: string) => {
+  try {
+    // textarea 요소를 생성하여 텍스트를 복사
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    if (successful) {
+      alert(`파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${text}`);
+    } else {
+      // execCommand도 실패한 경우 사용자에게 수동 복사 안내
+      alert(`자동 복사에 실패했습니다. 아래 내용을 수동으로 복사해주세요:\n\n${text}`);
+    }
+  } catch (err) {
+    console.error('Fallback 클립보드 복사 실패:', err);
+    // 최종적으로 사용자에게 수동 복사 안내
+    alert(`클립보드 복사에 실패했습니다. 아래 내용을 수동으로 복사해주세요:\n\n${text}`);
+  }
+};
 
 // 유틸리티 함수들
 const isCharacterInParty = (characterId: string): boolean => {

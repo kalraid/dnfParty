@@ -201,42 +201,46 @@
               </div>
               
               
-              <!-- 아래쪽: 난이도 선택 버튼들 -->
+              <!-- 아래쪽: 난이도 선택 버튼들 (2x2 그리드) -->
               <div class="nabel-difficulty-buttons">
-                <!-- 하드 나벨 버튼 -->
-                <button 
-                  @click="setNabelDifficulty(character, 'hard')"
-                  :class="{ active: getNabelDifficulty(character) === 'hard' }"
-                  :disabled="!isHardEligible(character)"
-                  class="difficulty-btn hard-btn"
-                  :title="`하드 모드 선택 (isHardNabelEligible: ${character.isHardNabelEligible}, 계산값: ${isHardEligible(character)})`">
-                  하드
-                </button>
-                <!-- 일반 나벨 버튼 -->
-                <button 
-                  @click="setNabelDifficulty(character, 'normal')"
-                  :class="{ active: getNabelDifficulty(character) === 'normal' }"
-                  :disabled="!isNormalEligible(character)"
-                  class="difficulty-btn normal-btn"
-                  :title="`일반 모드 선택 (isNormalNabelEligible: ${character.isNormalNabelEligible}, 계산값: ${isNormalEligible(character)})`">
-                  일반
-                </button>
-                <!-- 매칭 나벨 버튼 -->
-                <button 
-                  @click="setNabelDifficulty(character, 'matching')"
-                  :class="{ active: getNabelDifficulty(character) === 'matching' }"
-                  :disabled="!isMatchingEligible(character)"
-                  class="difficulty-btn matching-btn"
-                  :title="`매칭 모드 선택 (isMatchingNabelEligible: ${character.isMatchingNabelEligible}, 계산값: ${isMatchingEligible(character)})`">
-                  매칭
-                </button>
-                <!-- 안감 버튼 -->
-                <button @click="toggleExclude(character, 'nabel')" 
-                  :class="{ active: character.isExcludedNabel }"
-                  class="difficulty-btn exclude-btn"
-                  title="안감">
-                  안감
-                </button>
+                <div class="difficulty-row">
+                  <!-- 하드 나벨 버튼 -->
+                  <button 
+                    @click="setNabelDifficulty(character, 'hard')"
+                    :class="{ active: getNabelDifficulty(character) === 'hard' }"
+                    :disabled="!isHardEligible(character)"
+                    class="difficulty-btn hard-btn"
+                    :title="`하드 모드 선택 (isHardNabelEligible: ${character.isHardNabelEligible}, 계산값: ${isHardEligible(character)})`">
+                    하드
+                  </button>
+                  <!-- 일반 나벨 버튼 -->
+                  <button 
+                    @click="setNabelDifficulty(character, 'normal')"
+                    :class="{ active: getNabelDifficulty(character) === 'normal' }"
+                    :disabled="!isNormalEligible(character)"
+                    class="difficulty-btn normal-btn"
+                    :title="`일반 모드 선택 (isNormalNabelEligible: ${character.isNormalNabelEligible}, 계산값: ${isNormalEligible(character)})`">
+                    일반
+                  </button>
+                </div>
+                <div class="difficulty-row">
+                  <!-- 매칭 나벨 버튼 -->
+                  <button 
+                    @click="setNabelDifficulty(character, 'matching')"
+                    :class="{ active: getNabelDifficulty(character) === 'matching' }"
+                    :disabled="!isMatchingEligible(character)"
+                    class="difficulty-btn matching-btn"
+                    :title="`매칭 모드 선택 (isMatchingNabelEligible: ${character.isMatchingNabelEligible}, 계산값: ${isMatchingEligible(character)})`">
+                    매칭
+                  </button>
+                  <!-- 안감 버튼 -->
+                  <button @click="toggleExclude(character, 'nabel')" 
+                    :class="{ active: character.isExcludedNabel }"
+                    class="difficulty-btn exclude-btn"
+                    title="안감">
+                    안감
+                  </button>
+                </div>
               </div>
             </td>
 
@@ -3485,28 +3489,34 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
   color: #28a745;
 }
 
-/* 나벨 난이도 버튼 스타일 */
+/* 나벨 난이도 버튼 스타일 (2x2 그리드) */
 .nabel-difficulty-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.difficulty-row {
+  display: flex;
+  gap: 2px;
 }
 
 .difficulty-btn {
-  padding: 4px 8px;
-  border: 2px solid #90caf9;
-  border-radius: 6px;
+  padding: 2px 4px;
+  border: 1px solid #90caf9;
+  border-radius: 4px;
   background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
   color: #000;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 40px;
+  transition: all 0.2s ease;
+  min-width: 32px;
   text-align: center;
   margin: 0;
+  line-height: 1.2;
 }
 
 .difficulty-btn:hover {

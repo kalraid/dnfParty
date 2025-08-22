@@ -2,10 +2,7 @@
   <div class="party-formation">
     <h2>파티 구성</h2>
     
-    <!-- 성공 메시지 -->
-    <div v-if="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
+
     
     <!-- 던전 선택 버튼들 -->
     <div class="dungeon-selection-container">
@@ -109,30 +106,100 @@
       </div>
     </div>
               
-    <!-- 파티 구성 버튼들 -->
+    <!-- 파티 구성 영역 (좌우 1:3 비율) -->
     <div v-if="selectedDungeon && selectedAdventures.length > 0" class="party-controls">
-      <div class="party-info">
-        <p><strong>파티 구성 규칙:</strong></p>
-        <ul>
-          <li>한 파티에 모험단 하나씩만 배치</li>
-          <li>버퍼는 버프력, 딜러는 전투력으로 정렬</li>
-          <li>전체 중 강한딜러 1, 스탯제한에 가까운 약한딜러 2, 버퍼 우선으로 평균치가 비슷한 파티 구성</li>
-        </ul>
+      <!-- 좌측: 파티 구성 규칙 (1/3) -->
+      <div class="party-rules-section">
+        <div class="party-info">
+          <p><strong>Basic 기본 규칙:</strong></p>
+          <ul>
+            <li>한 파티에 모험단 하나씩만 배치</li>
+            <li>버퍼 역순, 쩔딜러 정순, 약한딜러 역순</li>
+            <li>최소 1버퍼, 1딜러 구성</li>
+            <li>기능 변경이 필요하면 Advanced<br>
+                <small>( 개발 중 )</small></li>
+          </ul>
+        </div>
       </div>
-      <div class="control-buttons">
-        <button @click="autoGenerateParty" :disabled="loading" class="control-btn auto-btn">
-          {{ loading ? '생성 중...' : '자동 파티 생성' }}
-        </button>
-        <button @click="clearParty" class="control-btn clear-btn">파티 초기화</button>
-        <button @click="optimizeParty" :disabled="loading" class="control-btn optimize-btn">
-          {{ loading ? '최적화 중...' : '파티 최적화' }}
-        </button>
-        <button @click="refreshSelectedAdventures" 
-                :disabled="refreshingAdventures" 
-                class="control-btn refresh-btn">
-          {{ refreshingAdventures ? '최신화 중...' : '🔄 모험단 최신화' }}
-        </button>
-        <button @click="copyPartyToClipboard" class="control-btn copy-btn">📋 클립보드 복사</button>
+      
+      <!-- 우측: 컨트롤 및 옵션 (3/3) -->
+      <div class="party-controls-right">
+        <!-- 우측 상단: 컨트롤 버튼들 (1/3) -->
+        <div class="control-buttons-section">
+          <div class="control-buttons">
+            <button @click="refreshSelectedAdventures" 
+                    :disabled="refreshingAdventures" 
+                    class="control-btn refresh-btn">
+              {{ refreshingAdventures ? '최신화 중...' : '🔄 모험단 최신화' }}
+            </button>
+            <button @click="clearParty" class="control-btn clear-btn">파티 초기화</button>
+            <button @click="copyPartyForWhisper" class="control-btn optimize-btn">
+              📋 귓속말용 파티 복사
+            </button>
+            <button @click="copyPartyToClipboard" class="control-btn copy-btn">📋 카카오톡용 파티 복사</button>
+            <button @click="autoGenerateParty" :disabled="loading" class="control-btn auto-btn">
+              {{ loading ? '생성 중...' : '자동 파티 생성' }}
+            </button>
+          </div>
+        </div>
+        
+        <!-- 우측 하단: 파티 구성 옵션 (3/3) -->
+        <div class="party-options-section">
+          <div class="party-options-box">
+            <p><strong>파티 구성 옵션:</strong></p>
+            <div class="option-selector">
+              <label for="partyFormationMode">자동 파티 생성 방식:</label>
+              <select 
+                id="partyFormationMode" 
+                v-model="selectedPartyFormationMode" 
+                class="option-dropdown"
+              >
+                <option value="basic">Basic (기본)</option>
+                <option value="advanced">Advanced (고급)</option>
+              </select>
+            </div>
+            
+            <!-- Basic 모드 설명 -->
+            <div v-if="selectedPartyFormationMode === 'basic'" class="mode-description">
+              <small>기본 파티 구성 알고리즘을 사용합니다.</small>
+            </div>
+            
+            <!-- Advanced 모드 옵션들 -->
+            <div v-if="selectedPartyFormationMode === 'advanced'" class="advanced-options">
+              <div class="advanced-section">
+                <h4>알고리즘:</h4>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="advancedOptions.bufferPriority" class="checkbox-input">
+                    버퍼 우선
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="advancedOptions.dealerPriority" class="checkbox-input">
+                    딜러 우선
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="advancedOptions.adventurePriority" class="checkbox-input">
+                    모험단 우선
+                  </label>
+                </div>
+              </div>
+              
+              <div class="advanced-section">
+                <h4>기능 제한 해제:</h4>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="advancedOptions.ignoreSlotRoles" class="checkbox-input">
+                    버퍼-딜러 칸 무시
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="advancedOptions.ignoreMinRequirements" class="checkbox-input">
+                    딜러-버퍼 최소 인원 제한 해제
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -144,17 +211,16 @@
         <div class="party-tables">
           <div v-for="(party, index) in parties" :key="index" class="party-table">
             <div class="party-header">
-              <h4>파티 {{ index + 1 }}</h4>
-              <div class="party-info">
-                <span class="party-stats">
-                  총 전투력: {{ formatNumber(getPartyTotalDamage(party)) }} | 
-                  총 버프력: {{ formatNumber(getPartyTotalBuffPower(party)) }}
-                </span>
-                <span v-if="selectedDungeon === 'nabel-normal' || selectedDungeon === 'nabel-hard'" class="nabel-difficulty">
-                  난이도: {{ selectedDungeon === 'nabel-normal' ? '일반' : '하드' }}
-                </span>
+              <div class="party-title-stats">
+                <span class="party-title">파티{{ index + 1 }}</span>
+                <span class="party-separator">|</span>
+                <span class="party-combat-power">총 전투력: {{ getPartyTotalDamageInBillion(party) }} 억</span>
+                <span class="party-separator">|</span>
+                <span class="party-buff-power">버프력: {{ getPartyTotalBuffPowerInTenThousand(party) }}만</span>
+                <span class="party-separator">|</span>
+                <span class="party-coefficient">파티 계수: {{ getPartyCoefficient(party) }}</span>
+              </div>
             </div>
-          </div>
             <div class="party-slots">
               <div 
                 v-for="slotIndex in 4" 
@@ -183,10 +249,14 @@
                   <div class="character-info">
                     <div class="character-name">{{ party[slotIndex - 1].characterName }}</div>
                     <div class="adventure-name">{{ party[slotIndex - 1].adventureName }}</div>
-                    <div class="character-stats">
-                      <div class="stat">전투력: {{ formatNumber(party[slotIndex - 1].totalDamage || 0) }}</div>
-                      <div class="stat">버프력: {{ formatNumber(party[slotIndex - 1].buffPower || 0) }}</div>
-    </div>
+                                      <div class="character-stats">
+                    <div v-if="!isBuffer(party[slotIndex - 1])" class="stat dealer-stat">
+                      전투력: {{ formatNumber(party[slotIndex - 1].totalDamage || 0) }}
+                    </div>
+                    <div v-if="isBuffer(party[slotIndex - 1])" class="stat buffer-stat">
+                      버프력: {{ formatNumber(party[slotIndex - 1].buffPower || 0) }}
+                    </div>
+                  </div>
                     <div class="dungeon-status">
                       <span :class="getDungeonClearClass(party[slotIndex - 1])">
                         {{ getDungeonClearText(party[slotIndex - 1]) }}
@@ -195,12 +265,12 @@
             </div>
                   <button @click="removeFromParty(index, slotIndex - 1)" class="remove-from-party">×</button>
             </div>
-                <div v-else class="empty-slot">
+                                <div v-else class="empty-slot">
                   <div class="slot-placeholder">
-                    <span class="slot-number">{{ slotIndex }}</span>
+                    <span class="slot-number">{{ getSlotRole(slotIndex) }}</span>
                     <span class="slot-text">드래그해서 추가</span>
-          </div>
-        </div>
+                  </div>
+                </div>
       </div>
         </div>
       </div>
@@ -215,71 +285,127 @@
         <h3>사용 가능한 캐릭터</h3>
         <div class="adventure-panels">
           <div v-for="adventure in selectedAdventures" :key="adventure" class="adventure-panel">
-            <div class="adventure-header">
+                        <div class="adventure-header">
               <h4>{{ adventure }}</h4>
-              <span class="character-count">{{ getFilteredCharacters(adventure).length }}명</span>
-        </div>
-            <div class="character-list">
-              <!-- 디버깅: 필터링된 캐릭터 수 표시 -->
-              <div v-if="getFilteredCharacters(adventure).length === 0" class="no-characters-debug">
-                <small style="color: #dc3545;">
-                  📋 디버깅: 필터링된 캐릭터 없음 
-                  (전체: {{ allCharacters.value?.filter((c: any) => c.adventureName === adventure)?.length || 0 }}개, 
-                  던전: {{ selectedDungeon || '미선택' }})
-                </small>
-        </div>
-        
-              <div 
-                v-for="character in getFilteredCharacters(adventure)" 
-                :key="character.characterId"
-                class="character-card"
-                :class="{ 
-                  'in-use': isCharacterInParty(character.characterId),
-                  'is-helper': isHelperCharacter(character),
-                  'draggable': !isCharacterInParty(character.characterId)
-                }"
-                :draggable="!isCharacterInParty(character.characterId)"
-                @dragstart="onDragStart($event, character)"
-              >
-                <div class="character-avatar">
-                  <img 
-                    v-if="character.avatarImageUrl || character.characterImageUrl" 
-                    :src="character.avatarImageUrl || character.characterImageUrl"
-                    :alt="character.characterName"
-                    class="character-img"
-                    @error="handleImageError"
-                  />
-                  <div v-else class="avatar-placeholder">
-                    {{ character.characterName.charAt(0) }}
+              <div class="character-counts">
+                <span class="dealer-count">딜러: {{ getDealerCount(adventure) }}명</span>
+                <span class="buffer-count">버퍼: {{ getBufferCount(adventure) }}명</span>
               </div>
-                </div>
-                <div class="character-info">
-                  <div class="character-name">{{ character.characterName }}</div>
-                <div class="character-stats">
-                    <div v-if="isBuffer(character)" class="stat buffer-stat">
-                        버프력: {{ formatNumber(character.buffPower || 0) }}
-                </div>
-                    <div v-else class="stat dealer-stat">
-                        전투력: {{ formatNumber(character.totalDamage || 0) }}
-              </div>
-              </div>
-                                    <div class="dungeon-status">
-                    <span :class="getDungeonClearClass(character)">
-                      {{ getDungeonClearText(character) }}
-                    </span>
             </div>
-                  <div class="character-fame">명성: {{ formatNumber(character.fame || 0) }}</div>
-                  <!-- 업둥 표시 -->
-                  <div v-if="isHelperCharacter(character)" class="helper-badge">
-                    ⭐ 업둥
+            <div class="character-list">
+              
+              <!-- 딜러 섹션 -->
+              <div class="character-section dealer-section">
+                <div class="section-header dealer-header">
+                  <h5>딜러</h5>
+                </div>
+                <div class="section-content">
+                  <div 
+                    v-for="character in getFilteredCharacters(adventure).filter(c => !isBuffer(c))" 
+                    :key="character.characterId"
+                    class="character-card"
+                    :class="{ 
+                      'in-use': isCharacterInParty(character.characterId),
+                      'is-helper': isHelperCharacter(character),
+                      'draggable': !isCharacterInParty(character.characterId)
+                    }"
+                    :draggable="!isCharacterInParty(character.characterId)"
+                    @dragstart="onDragStart($event, character)"
+                  >
+                    <!-- 파티 포함 표시 - 카드 왼쪽 상단에 배치 -->
+                    <div v-if="isCharacterInParty(character.characterId)" class="in-party-badge-left">
+                      🔒
+                    </div>
+                    <div class="character-avatar">
+                      <img 
+                        v-if="character.avatarImageUrl || character.characterImageUrl" 
+                        :src="character.avatarImageUrl || character.characterImageUrl"
+                        :alt="character.characterName"
+                        class="character-img"
+                        @error="handleImageError"
+                      />
+                      <div v-else class="avatar-placeholder">
+                        {{ character.characterName.charAt(0) }}
+                      </div>
+                    </div>
+                    <div class="character-info">
+                      <div class="character-name">{{ character.characterName }}</div>
+                      <div class="character-stats">
+                        <div class="stat dealer-stat">
+                          전투력: {{ formatNumber(character.totalDamage || 0) }}
+                        </div>
+                      </div>
+                      <div class="dungeon-status">
+                        <span :class="getDungeonClearClass(character)">
+                          {{ getDungeonClearText(character) }}
+                        </span>
+                      </div>
+                      <div class="character-fame">명성: {{ formatNumber(character.fame || 0) }}</div>
+                      <!-- 업둥 표시 -->
+                      <div v-if="isHelperCharacter(character)" class="helper-badge">
+                        ⭐ 업둥
+                      </div>
+                    </div>
                   </div>
-                  <!-- 파티 포함 표시 -->
-                  <div v-if="isCharacterInParty(character.characterId)" class="in-party-badge">
-                    🔒 파티 포함
+                </div>
+              </div>
+              
+              <!-- 버퍼 섹션 -->
+              <div class="character-section buffer-section">
+                <div class="section-header buffer-header">
+                  <h5>버퍼</h5>
+                </div>
+                <div class="section-content">
+                  <div 
+                    v-for="character in getFilteredCharacters(adventure).filter(c => isBuffer(c))" 
+                    :key="character.characterId"
+                    class="character-card"
+                    :class="{ 
+                      'in-use': isCharacterInParty(character.characterId),
+                      'is-helper': isHelperCharacter(character),
+                      'draggable': !isCharacterInParty(character.characterId)
+                    }"
+                    :draggable="!isCharacterInParty(character.characterId)"
+                    @dragstart="onDragStart($event, character)"
+                  >
+                    <!-- 파티 포함 표시 - 카드 왼쪽 상단에 배치 -->
+                    <div v-if="isCharacterInParty(character.characterId)" class="in-party-badge-left">
+                      🔒
+                    </div>
+                    <div class="character-avatar">
+                      <img 
+                        v-if="character.avatarImageUrl || character.characterImageUrl" 
+                        :src="character.avatarImageUrl || character.characterImageUrl"
+                        :alt="character.characterName"
+                        class="character-img"
+                        @error="handleImageError"
+                      />
+                      <div v-else class="avatar-placeholder">
+                        {{ character.characterName.charAt(0) }}
+                      </div>
+                    </div>
+                    <div class="character-info">
+                      <div class="character-name">{{ character.characterName }}</div>
+                      <div class="character-stats">
+                        <div class="stat buffer-stat">
+                          버프력: {{ formatNumber(character.buffPower || 0) }}
+                        </div>
+                      </div>
+                      <div class="dungeon-status">
+                        <span :class="getDungeonClearClass(character)">
+                          {{ getDungeonClearText(character) }}
+                        </span>
+                      </div>
+                      <div class="character-fame">명성: {{ formatNumber(character.fame || 0) }}</div>
+                      <!-- 업둥 표시 -->
+                      <div v-if="isHelperCharacter(character)" class="helper-badge">
+                        ⭐ 업둥
+                      </div>
+                    </div>
                   </div>
-          </div>
-        </div>
-      </div>
+                </div>
+              </div>
+            </div>
     </div>
       </div>
         </div>
@@ -302,7 +428,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { apiFetch } from '../config/api';
 import { isBuffer } from '../utils/characterUtils';
@@ -322,6 +448,39 @@ const error = ref('');
 const successMessage = ref('');
 const allCharacters = ref<any[]>([]);
 const refreshingAdventures = ref(false);
+const selectedPartyFormationMode = ref('basic'); // 파티 구성 방식 (기본값: basic)
+const advancedOptions = ref({
+  bufferPriority: false,      // 버퍼 우선
+  dealerPriority: false,      // 딜러 우선
+  adventurePriority: false,   // 모험단 우선
+  ignoreSlotRoles: false,     // 버퍼-딜러 칸 무시
+  ignoreMinRequirements: false // 딜러-버퍼 최소 인원 제한 해제
+});
+
+// Advanced 옵션 저장
+const saveAdvancedOptions = () => {
+  localStorage.setItem('dnfPartyAdvancedOptions', JSON.stringify(advancedOptions.value));
+  console.log('Advanced 옵션 저장됨:', advancedOptions.value);
+};
+
+// Advanced 옵션 복원
+const loadAdvancedOptions = () => {
+  try {
+    const saved = localStorage.getItem('dnfPartyAdvancedOptions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      advancedOptions.value = { ...advancedOptions.value, ...parsed };
+      console.log('Advanced 옵션 복원됨:', advancedOptions.value);
+    }
+  } catch (err) {
+    console.error('Advanced 옵션 복원 실패:', err);
+  }
+};
+
+// Advanced 옵션 변경 감지 및 저장
+watch(advancedOptions, () => {
+  saveAdvancedOptions();
+}, { deep: true });
 
 // 컴포넌트 마운트
 onMounted(() => {
@@ -332,6 +491,7 @@ onMounted(() => {
   searchMode.value = 'adventure';
   loadSearchHistory();
   loadCharactersFromAPI();
+  loadAdvancedOptions(); // Advanced 옵션 복원
 });
 
 // 검색 기록에서 모험단 목록 가져오기 (CharacterSearch.vue와 동일한 localStorage 키 사용)
@@ -408,24 +568,24 @@ const loadCharactersFromAPI = async () => {
     
     const allCharacterPromises = adventureNames.map(async (adventureName) => {
       try {
-        console.log(`모험단 '${adventureName}' 캐릭터 로드 시작...`);
+        // console.log(`모험단 '${adventureName}' 캐릭터 로드 시작...`);
         const response = await apiFetch(`/characters/adventure/${encodeURIComponent(adventureName)}`);
         
-        console.log(`모험단 '${adventureName}' API 응답 상태:`, response.status);
+        // console.log(`모험단 '${adventureName}' API 응답 상태:`, response.status);
         
         if (response.ok) {
           const data = await response.json();
-          console.log(`모험단 '${adventureName}' API 응답 데이터:`, data);
+          // console.log(`모험단 '${adventureName}' API 응답 데이터:`, data);
           
-                    if (data.success && data.characters) {
-            console.log(`모험단 '${adventureName}' 캐릭터 ${data.characters.length}개 로드됨`);
+          if (data.success && data.characters) {
+            // console.log(`모험단 '${adventureName}' 캐릭터 ${data.characters.length}개 로드됨`);
             return data.characters;
           } else {
-            console.warn(`모험단 '${adventureName}' 캐릭터 데이터 없음:`, data);
+            // console.warn(`모험단 '${adventureName}' 캐릭터 데이터 없음:`, data);
             return [];
           }
         } else {
-          console.error(`모험단 '${adventureName}' API 호출 실패:`, response.status, response.statusText);
+          // console.error(`모험단 '${adventureName}' API 호출 실패:`, response.status, response.statusText);
           return [];
     }
   } catch (err) {
@@ -437,8 +597,8 @@ const loadCharactersFromAPI = async () => {
     const results = await Promise.all(allCharacterPromises);
     const flatResults = results.flat();
     
-    console.log('로드된 전체 캐릭터 결과:', flatResults);
-    console.log('총 캐릭터 수:', flatResults.length);
+    // console.log('로드된 전체 캐릭터 결과:', flatResults);
+    // console.log('총 캐릭터 수:', flatResults.length);
     
     allCharacters.value = flatResults;
     
@@ -468,6 +628,8 @@ const isSearchDisabled = computed(() => {
 const setDungeon = (dungeon: string) => {
   selectedDungeon.value = dungeon;
   console.log('선택된 던전:', dungeon);
+  // 던전이 변경되면 파티 초기화
+  clearParty();
 };
 
 // 검색 모드 변경 핸들러
@@ -493,10 +655,10 @@ const loadRecentSearchedAdventures = () => {
     const saved = localStorage.getItem('df_dungeon_adventure_history');
     if (saved) {
       recentSearchedAdventures.value = JSON.parse(saved);
-      console.log('던전 모험단 기록 로드 완료:', recentSearchedAdventures.value);
+      // console.log('던전 모험단 기록 로드 완료:', recentSearchedAdventures.value);
     }
   } catch (error) {
-    console.error('던전 모험단 기록 로드 실패:', error);
+    // console.error('던전 모험단 기록 로드 실패:', error);
     recentSearchedAdventures.value = [];
   }
 };
@@ -605,16 +767,6 @@ const loadSearchHistory = () => {
 
 // 던전 변경 시
 const onDungeonChange = () => {
-  // 이내 황혼전 선택 시 개발중 메시지 표시
-  if (selectedDungeon.value === 'twilight') {
-    error.value = '⚠️ 이내 황혼전은 아직 개발중인 던전입니다. 곧 업데이트 예정입니다!';
-    // 이내 황혼전은 아직 사용 불가하므로 선택 해제
-    setTimeout(() => {
-      selectedDungeon.value = 'nabel-normal'; // 기본값으로 복원
-      error.value = '';
-    }, 3000);
-    return;
-  }
   
   // 파티 초기화
   parties.value = [[]];
@@ -648,11 +800,8 @@ const copyPartyToClipboard = async () => {
     
     if (clipboardText.trim()) {
       await navigator.clipboard.writeText(clipboardText.trim());
-      successMessage.value = '파티 구성이 클립보드에 복사되었습니다!';
-      setTimeout(() => {
-        successMessage.value = '';
-      }, 3000);
-  } else {
+      alert(`카카오톡용 파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${clipboardText.trim()}`);
+    } else {
       error.value = '복사할 파티 구성이 없습니다.';
     }
   } catch (err) {
@@ -668,24 +817,20 @@ const addAdventure = (event: Event) => {
   if (adventure && !selectedAdventures.value.includes(adventure)) {
     selectedAdventures.value.push(adventure);
     target.value = ''; // 선택 초기화
+    // 모험단이 추가되면 파티 초기화
+    clearParty();
   }
 };
 
 const removeAdventure = (adventure: string) => {
   selectedAdventures.value = selectedAdventures.value.filter(a => a !== adventure);
-  // 해당 모험단 캐릭터들을 파티에서 제거
-  parties.value.forEach(party => {
-    for (let i = party.length - 1; i >= 0; i--) {
-      if (party[i] && party[i].adventureName === adventure) {
-        party.splice(i, 1);
-      }
-    }
-  });
+  // 모험단이 제거되면 파티 초기화
+  clearParty();
 };
 
 // 선택된 던전에 따라 조건에 맞는 캐릭터 필터링 (안감 제외, 업둥 포함)
 const getFilteredCharacters = (adventureName: string) => {
-  console.log(`getFilteredCharacters 호출: adventureName="${adventureName}"`);
+  // console.log(`getFilteredCharacters 호출: adventureName="${adventureName}"`);
   
   // allCharacters가 undefined이거나 null인 경우 빈 배열 반환
   if (!allCharacters.value || !Array.isArray(allCharacters.value)) {
@@ -693,20 +838,15 @@ const getFilteredCharacters = (adventureName: string) => {
     return [];
   }
   
-  console.log(`전체 캐릭터 수: ${allCharacters.value.length}`);
-  
   // 1. 모험단별 캐릭터 필터링
   const adventureCharacters = allCharacters.value.filter(c => c.adventureName === adventureName);
-  console.log(`모험단 "${adventureName}"의 캐릭터 수: ${adventureCharacters.length}`);
   
   if (adventureCharacters.length === 0) {
-    console.warn(`모험단 "${adventureName}"에 캐릭터가 없습니다.`);
     return [];
   }
   
   // 2. 던전이 선택되지 않았다면 모든 캐릭터 반환 (안감만 제외)
   if (!selectedDungeon.value) {
-    console.log(`던전 선택 없음, 안감만 제외하고 모든 캐릭터 반환`);
     return adventureCharacters; // 던전 선택 안했을 때는 모든 캐릭터 표시
   }
   
@@ -737,7 +877,7 @@ const getFilteredCharacters = (adventureName: string) => {
         isExcluded = character.isExcludedFog;
         break;
       case 'twilight':
-        dungeonCondition = true; // 이내 황혼전은 아직 클리어 데이터가 없으므로 모든 캐릭터
+        dungeonCondition = !character.dungeonClearTwilight; // 클리어 안한 캐릭터
         isExcluded = false; // 이내 황혼전은 아직 안감 기능 없음
         break;
       default:
@@ -748,13 +888,21 @@ const getFilteredCharacters = (adventureName: string) => {
     // 안감인 경우 제외, 그 외에는 던전 조건에 맞는 캐릭터만 포함
     const shouldInclude = !isExcluded && dungeonCondition;
     
-    console.log(`캐릭터 "${character.characterName}": 던전조건=${dungeonCondition}, 안감=${isExcluded}, 포함=${shouldInclude}`);
-    
     return shouldInclude;
   });
   
-  console.log(`던전 "${selectedDungeon.value}" 필터링 후 캐릭터 수: ${filteredCharacters.length}개`);
-  return filteredCharacters;
+  // 4. 딜러와 버퍼를 각각 정렬하여 반환
+  const dealers = filteredCharacters.filter(char => !isBuffer(char));
+  const buffers = filteredCharacters.filter(char => isBuffer(char));
+  
+  // 딜러: 전투력 기준 내림차순 정렬 (강한 순)
+  dealers.sort((a, b) => (b.totalDamage || 0) - (a.totalDamage || 0));
+  
+  // 버퍼: 버프력 기준 내림차순 정렬 (강한 순)
+  buffers.sort((a, b) => (b.buffPower || 0) - (a.buffPower || 0));
+  
+  // 딜러 먼저, 그 다음 버퍼 순서로 반환
+  return [...dealers, ...buffers];
 };
 
 // 파티에 들어간 캐릭터 ID들을 추적하는 함수
@@ -813,6 +961,14 @@ const onDrop = (event: DragEvent, partyIndex: number, slotIndex: number) => {
       // 파티 내 캐릭터 이동
       const { character, sourceParty, sourceSlot } = dragData;
       
+      // 역할 체크 (버퍼/딜러)
+      if (!canAddCharacterToSlot(character, slotIndex)) {
+        const roleName = getSlotRole(slotIndex);
+        const characterRole = isBuffer(character) ? '버퍼' : '딜러';
+        error.value = `${roleName} 칸에는 ${characterRole} 캐릭터를 넣을 수 없습니다.`;
+        return;
+      }
+      
       // 파티 배열이 충분히 크지 않으면 확장
       while (parties.value[partyIndex].length <= slotIndex) {
         parties.value[partyIndex].push(null);
@@ -829,9 +985,17 @@ const onDrop = (event: DragEvent, partyIndex: number, slotIndex: number) => {
       
       // 파티당 모험단 제한 체크
       if (!canAddCharacterToParty(character, partyIndex)) {
-        error.value = `파티 ${partyIndex + 1}에는 이미 다른 모험단의 캐릭터가 있습니다. 한 파티당 하나의 모험단만 허용됩니다.`;
-    return;
-  }
+        error.value = `파티 ${partyIndex + 1}에는 이미 같은 모험단('${character.adventureName}')의 캐릭터가 있습니다. 한 파티당 하나의 모험단만 허용됩니다.`;
+        return;
+      }
+      
+      // 역할 체크 (버퍼/딜러)
+      if (!canAddCharacterToSlot(character, slotIndex)) {
+        const roleName = getSlotRole(slotIndex);
+        const characterRole = isBuffer(character) ? '버퍼' : '딜러';
+        error.value = `${roleName} 칸에는 ${characterRole} 캐릭터를 넣을 수 없습니다.`;
+        return;
+      }
   
       // 파티 배열이 충분히 크지 않으면 확장
       while (parties.value[partyIndex].length <= slotIndex) {
@@ -855,11 +1019,31 @@ const canAddCharacterToParty = (character: any, partyIndex: number): boolean => 
     .map(char => char.adventureName)
     .filter(adventure => adventure && adventure !== 'N/A');
   
-  // 같은 모험단이거나 모험단이 없는 경우만 허용
+  // 파티가 비어있으면 추가 가능
   if (existingAdventures.length === 0) return true;
-  if (existingAdventures.includes(character.adventureName)) return true;
   
-  return false;
+  // 같은 모험단이 이미 있으면 추가 불가 (요구사항: 같은 모험단이 있으면 포함되지 않는 기능)
+  if (existingAdventures.includes(character.adventureName)) return false;
+  
+  // 다른 모험단이면 추가 가능
+  return true;
+};
+
+// 슬롯 역할 체크 함수 (버퍼/딜러)
+// slotIndex는 실제 배열 인덱스 (0-3)
+const canAddCharacterToSlot = (character: any, slotIndex: number): boolean => {
+  const isCharacterBuffer = isBuffer(character);
+  const slotRole = getSlotRole(slotIndex + 1); // 0->1, 1->2, 2->3, 3->4
+  
+  // 슬롯 1번(버퍼)에는 버퍼만, 슬롯 2-4번(딜러)에는 딜러만
+  if (slotRole === '버퍼' && !isCharacterBuffer) {
+    return false; // 버퍼 칸에 딜러 넣으려고 함
+  }
+  if (slotRole === '딜러' && isCharacterBuffer) {
+    return false; // 딜러 칸에 버퍼 넣으려고 함
+  }
+  
+  return true;
 };
 
 // 파티 관리
@@ -875,11 +1059,51 @@ const clearParty = () => {
   parties.value = [[]];
 };
 
+// Advanced 파티 생성
+const generateAdvancedParty = async () => {
+  try {
+    loading.value = true;
+    error.value = '';
+    
+    console.log('=== Advanced 자동 파티 생성 시작 ===');
+    console.log('선택된 옵션:', advancedOptions.value);
+    
+    // 선택된 옵션에 따른 파티 생성 로직
+    if (advancedOptions.value.ignoreSlotRoles) {
+      console.log('⚠️ 버퍼-딜러 칸 역할 제한 해제됨');
+    }
+    
+    if (advancedOptions.value.ignoreMinRequirements) {
+      console.log('⚠️ 최소 인원 제한 해제됨');
+    }
+    
+    // 기본 파티 생성 로직을 기반으로 Advanced 옵션 적용
+    await generateBasicParty();
+    
+    console.log('=== Advanced 자동 파티 생성 완료 ===');
+    
+  } catch (err) {
+    console.error('Advanced 파티 생성 실패:', err);
+    error.value = 'Advanced 파티 생성에 실패했습니다.';
+  } finally {
+    loading.value = false;
+  }
+};
+
 // 자동 파티 생성
 const autoGenerateParty = async () => {
   try {
     loading.value = true;
     error.value = '';
+    
+    // 선택된 방식에 따라 다른 로직 실행
+    if (selectedPartyFormationMode.value === 'basic') {
+      await generateBasicParty();
+      return;
+    } else if (selectedPartyFormationMode.value === 'advanced') {
+      await generateAdvancedParty();
+      return;
+    }
     
     const availableCharacters = selectedAdventures.value.flatMap(adventure => getFilteredCharacters(adventure));
     
@@ -950,39 +1174,247 @@ const autoGenerateParty = async () => {
   }
 };
 
-// 파티 최적화
-const optimizeParty = async () => {
-  try {
-    loading.value = true;
-    error.value = '';
+// Basic 방식 자동 파티 생성 로직
+const generateBasicParty = async () => {
+  console.log('=== Basic 자동 파티 생성 시작 ===');
+  
+  const availableCharacters = selectedAdventures.value.flatMap(adventure => getFilteredCharacters(adventure));
+  
+  if (availableCharacters.length < 4) {
+    error.value = '파티 구성에 필요한 캐릭터가 부족합니다. (최소 4명 필요)';
+    return;
+  }
+  
+  // 1. 캐릭터 분류 및 정렬
+  const dealers = availableCharacters.filter(char => !isBuffer(char));
+  const buffers = availableCharacters.filter(char => isBuffer(char));
+  
+  // 딜러 리스트: 전투력 기준 내림차순 정렬 (강한 순)
+  dealers.sort((a, b) => (b.totalDamage || 0) - (a.totalDamage || 0));
+  
+  // 버퍼 리스트: 버프력 기준 내림차순 정렬 (강한 순)
+  buffers.sort((a, b) => (b.buffPower || 0) - (a.buffPower || 0));
+  
+  console.log(`총 캐릭터 수: ${availableCharacters.length} (딜러: ${dealers.length}, 버퍼: ${buffers.length})`);
+  console.log('딜러 순서 (강한 순):', dealers.map(d => `${d.characterName}(${(d.totalDamage || 0).toLocaleString()})`));
+  console.log('버퍼 순서 (강한 순):', buffers.map(b => `${b.characterName}(${(b.buffPower || 0).toLocaleString()})`));
+  
+  // 2. 파티 구성 반복
+  const newParties: Array<Array<any>> = [];
+  const usedCharacters = new Set<string>(); // 이미 사용된 캐릭터 추적
+  const excludedStrongDealers: any[] = []; // 모험단 중복으로 제외된 딜러들
+  const excludedWeakenDealers: any[] = []; // 모험단 중복으로 제외된 딜러들
+  const excludedBuffers: any[] = []; // 모험단 중복으로 제외된 버퍼들
+  
+  while (dealers.length >= 1 && buffers.length >= 1) {
+    const party: any[] = [];
+    console.log(`\n--- 파티 ${newParties.length + 1} 구성 시작 ---`);
+    
+    
+    // 2-1. 버퍼 추가 (1): 버퍼 리스트에서 역순(약한 순)으로 캐릭터를 하나씩 뽑아 모험단 중복 체크
+    if (buffers.length > 0) {
+      // 약한 순으로 버퍼 선택 (리스트의 끝에서부터)
+      const weakBuffer = buffers.pop()!;
+      console.log(`🔄 버퍼 추가 시도: ${weakBuffer.characterName} (버프력: ${(weakBuffer.buffPower || 0).toLocaleString()}, 모험단: ${weakBuffer.adventureName})`);
+      party.push(weakBuffer);
+      usedCharacters.add(weakBuffer.characterId);
 
-    const response = await apiFetch('/party/optimize', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        dungeonType: selectedDungeon.value,
-        characters: selectedAdventures.value.flatMap(adventure => getFilteredCharacters(adventure))
-      })
-    });
-
-    if (response.ok) {
-    const result = await response.json();
-    if (result.success) {
-        // 최적화된 파티 구성 적용
-        parties.value = [result.party];
-    } else {
-        error.value = result.message || '파티 최적화에 실패했습니다.';
     }
+
+    // 2-2. 딜러 추가 (1): 딜러 리스트에서 가장 강한 딜러 1명을 파티에 추가 (모험단 중복 시 다음 강한 딜러 시도)
+    let strongestDealerAdded = false;
+    while (dealers.length > 0 && !strongestDealerAdded) {
+      const strongestDealer = dealers.shift()!;
+      
+      console.log(`🔄 최강 딜러 추가 시도: ${strongestDealer.characterName} (전투력: ${(strongestDealer.totalDamage || 0).toLocaleString()}, 모험단: ${strongestDealer.adventureName})`);
+      
+      const partyAdventures = party.map(char => char.adventureName).filter(adv => adv && adv !== 'N/A');
+      if (!partyAdventures.includes(strongestDealer.adventureName)) {
+        party.push(strongestDealer);
+        usedCharacters.add(strongestDealer.characterId);
+        strongestDealerAdded = true;
+        console.log(`✅ 파티 ${newParties.length + 1}에 최강 딜러 추가: ${strongestDealer.characterName} (전투력: ${(strongestDealer.totalDamage || 0).toLocaleString()}, 모험단: ${strongestDealer.adventureName})`);
+      } else {
+        console.log(`❌ 모험단 중복으로 인해 딜러 제외: ${strongestDealer.characterName} (모험단: ${strongestDealer.adventureName}) - 파티 내 모험단: [${partyAdventures.join(', ')}]`);
+        // 제외된 딜러는 별도 배열에 보관
+        excludedStrongDealers.push(strongestDealer);
+        console.log(`🔄 다음 강한 딜러 시도...`);
+      }
+    }
+    
+    // 강한 딜러를 추가하지 못했다면 파티 구성 실패
+    if (!strongestDealerAdded) {
+      console.log(`⚠️ 강한 딜러 추가 실패: 모든 강한 딜러가 모험단 중복으로 제외됨`);
+      // 사용된 캐릭터들을 원래 리스트로 되돌리기
+      party.forEach(char => {
+        if (isBuffer(char)) {
+          buffers.unshift(char);
+          console.log(`   🔄 버퍼 복원: ${char.characterName} → 버퍼 리스트`);
+        }
+        usedCharacters.delete(char.characterId);
+      });
+      continue; // 다음 파티 구성 시도
+    }
+    
+    // 2-3. 딜러 추가 (2, 3): 딜러 리스트의 반대 방향(약한 순)에서 캐릭터를 하나씩 뽑아 모험단 중복 체크
+    let dealerCount = 1;
+    while (dealerCount < 3 && dealers.length > 0) {
+      // 약한 순으로 딜러 선택 (리스트의 끝에서부터)
+      const weakDealer = dealers.pop()!;
+      console.log(`🔄 딜러 추가 시도 (${dealerCount + 1}/3): ${weakDealer.characterName} (전투력: ${(weakDealer.totalDamage || 0).toLocaleString()}, 모험단: ${weakDealer.adventureName})`);
+      
+      // 모험단 중복 체크 - 현재 파티에 있는 모험단들과 비교
+      const partyAdventures = party.map(char => char.adventureName).filter(adv => adv && adv !== 'N/A');
+      if (!partyAdventures.includes(weakDealer.adventureName)) {
+        party.push(weakDealer);
+        usedCharacters.add(weakDealer.characterId);
+        dealerCount++;
+        console.log(`✅ 파티 ${newParties.length + 1}에 약한 딜러 추가: ${weakDealer.characterName} (모험단: ${weakDealer.adventureName})`);
+      } else {
+        console.log(`❌ 모험단 중복으로 인해 딜러 제외: ${weakDealer.characterName} (모험단: ${weakDealer.adventureName}) - 파티 내 모험단: [${partyAdventures.join(', ')}]`);
+        // 제외된 딜러는 별도 배열에 보관
+        excludedWeakenDealers.push(weakDealer);
+      }
+    }
+    
+    
+    // 최소 구성 조건 체크: 1딜러 + 1버퍼가 있어야 파티 구성
+    const hasDealer = party.some(char => !isBuffer(char));
+    const hasBuffer = party.some(char => isBuffer(char));
+    
+    if (hasDealer && hasBuffer) {
+      // 파티가 완성되면 추가
+      newParties.push(party);
+      const partyDealers = party.filter(char => !isBuffer(char));
+      const partyBuffers = party.filter(char => isBuffer(char));
+      console.log(`🎉 파티 ${newParties.length} 완성!`);
+      console.log(`   딜러: ${partyDealers.map(d => `${d.characterName}(${(d.totalDamage || 0).toLocaleString()})`).join(', ')}`);
+      console.log(`   버퍼: ${partyBuffers.map(b => `${b.characterName}(${(b.buffPower || 0).toLocaleString()})`).join(', ')}`);
+      console.log(`   모험단: [${party.map(char => char.adventureName).filter(adv => adv && adv !== 'N/A').join(', ')}]`);
+      
+            // 🔄 파티 구성 완료 후 제외된 캐릭터들을 뒤로 추가
+      if (excludedWeakenDealers.length > 0) {
+        dealers.push(...excludedWeakenDealers);
+        console.log(`🔄 제외된 딜러 ${excludedWeakenDealers.length}명을 딜러 리스트 뒤로 추가`);
+        excludedWeakenDealers.length = 0; // 배열 초기화
+      }
+      if (excludedStrongDealers.length > 0) {
+        dealers.unshift(...excludedStrongDealers);
+        console.log(`🔄 제외된 딜러 ${excludedStrongDealers.length}명을 딜러 리스트 뒤로 추가`);
+        excludedStrongDealers.length = 0; // 배열 초기화
+      }
+      if (excludedBuffers.length > 0) {
+        buffers.push(...excludedBuffers);
+        console.log(`🔄 제외된 버퍼 ${excludedBuffers.length}명을 버퍼 리스트 뒤로 추가`);
+        excludedBuffers.length = 0; // 배열 초기화
+      }
     } else {
-      error.value = '파티 최적화 요청에 실패했습니다.';
+      // 최소 구성 조건을 만족하지 않으면 파티 구성하지 않음
+      console.log(`⚠️ 파티 구성 조건 미달: 딜러=${hasDealer}, 버퍼=${hasBuffer}, 파티 구성 취소`);
+      console.log(`   현재 파티 구성: ${party.map(char => `${char.characterName}(${isBuffer(char) ? '버퍼' : '딜러'})`).join(', ')}`);
+      // 사용된 캐릭터들을 원래 리스트로 되돌리기
+      party.forEach(char => {
+        if (isBuffer(char)) {
+          buffers.unshift(char);
+          console.log(`   🔄 버퍼 복원: ${char.characterName} → 버퍼 리스트`);
+        } else {
+          dealers.unshift(char);
+          console.log(`   🔄 딜러 복원: ${char.characterName} → 딜러 리스트`);
+        }
+        usedCharacters.delete(char.characterId);
+      });
+    }
+  }
+  
+  // 3. 최종 결과 요약
+  console.log('\n=== Basic 자동 파티 생성 완료 ===');
+  console.log(`총 생성된 파티 수: ${newParties.length}`);
+  console.log(`남은 딜러 수: ${dealers.length}`);
+  console.log(`남은 버퍼 수: ${buffers.length}`);
+  
+  if (newParties.length > 0) {
+    console.log('\n📊 생성된 파티 상세 정보:');
+    newParties.forEach((party, index) => {
+      const partyDealers = party.filter(char => !isBuffer(char));
+      const partyBuffers = party.filter(char => isBuffer(char));
+      const totalCombatPower = partyDealers.reduce((sum, char) => sum + (char.totalDamage || 0), 0);
+      const totalBuffPower = partyBuffers.reduce((sum, char) => sum + (char.buffPower || 0), 0);
+      const coefficient = (totalCombatPower / 100000000) * (totalBuffPower / 1000000);
+      
+      console.log(`파티 ${index + 1}:`);
+      console.log(`  딜러: ${partyDealers.map(d => `${d.characterName}(${(d.totalDamage || 0).toLocaleString()})`).join(', ')}`);
+      console.log(`  버퍼: ${partyBuffers.map(b => `${b.characterName}(${(b.buffPower || 0).toLocaleString()})`).join(', ')}`);
+      console.log(`  총 전투력: ${(totalCombatPower / 100000000).toFixed(1)}억`);
+      console.log(`  총 버프력: ${(totalBuffPower / 10000).toFixed(0)}만`);
+      console.log(`  파티 계수: ${coefficient.toFixed(2)}`);
+      console.log(`  모험단: [${party.map(char => char.adventureName).filter(adv => adv && adv !== 'N/A').join(', ')}]`);
+    });
+  }
+  
+  if (dealers.length > 0 || buffers.length > 0) {
+    console.log('\n📋 파티 구성에 사용되지 않은 남은 캐릭터:');
+    if (dealers.length > 0) {
+      console.log(`딜러: ${dealers.map(d => `${d.characterName}(${(d.totalDamage || 0).toLocaleString()}, ${d.adventureName})`).join(', ')}`);
+    }
+    if (buffers.length > 0) {
+      console.log(`버퍼: ${buffers.map(b => `${b.characterName}(${(b.buffPower || 0).toLocaleString()}, ${b.adventureName})`).join(', ')}`);
+    }
+  }
+  
+  console.log('=== 로그 끝 ===\n');
+  
+  // 4. 결과 표시
+  if (newParties.length > 0) {
+    parties.value = newParties;
+    console.log('파티 생성 완료:', newParties);
+  } else {
+    // 파티 생성 실패 시 alert로 원인 설명
+    let failureReason = '';
+    if (dealers.length === 0) {
+      failureReason = '사용 가능한 딜러가 없습니다.';
+    } else if (buffers.length === 0) {
+      failureReason = '사용 가능한 버퍼가 없습니다.';
+    } else {
+      failureReason = '모험단 중복으로 인해 파티를 구성할 수 없습니다. 다양한 모험단의 캐릭터가 필요합니다.';
+    }
+    
+    alert(`파티 자동 생성에 실패했습니다.\n\n원인: ${failureReason}`);
+    error.value = '파티를 구성할 수 없습니다.';
+  }
+};
+
+// 귓속말용 파티 복사 (딜러/버프력만 구분해서 복사)
+const copyPartyForWhisper = async () => {
+  try {
+    let whisperText = '';
+    
+    parties.value.forEach((party, partyIndex) => {
+      if (party.length > 0 && party.some(slot => slot !== null)) {
+        const partyStats = party
+          .filter(slot => slot !== null)
+          .map(character => {
+            if (character.totalDamage > 0) {
+              // 딜러: 억 단위로 변환
+              return (character.totalDamage / 100000000).toFixed(1);
+            } else {
+              // 버퍼: 만 단위로 변환
+              return (character.buffPower / 10000).toFixed(0);
+            }
+          });
+        
+        whisperText += partyStats.join(', ') + '\n';
+      }
+    });
+    
+    if (whisperText.trim()) {
+      await navigator.clipboard.writeText(whisperText.trim());
+      alert(`귓속말용 파티 정보가 클립보드에 복사되었습니다!\n\n복사된 내용:\n${whisperText.trim()}`);
+    } else {
+      error.value = '복사할 파티 구성이 없습니다.';
     }
   } catch (err) {
-    error.value = '파티 최적화에 실패했습니다.';
-    console.error(err);
-  } finally {
-    loading.value = false;
+    console.error('귓속말용 파티 복사 실패:', err);
+    error.value = '귓속말용 파티 복사에 실패했습니다.';
   }
 };
 
@@ -1021,6 +1453,50 @@ const getPartyTotalBuffPower = (party: any[]): number => {
   return party.reduce((total, member) => total + (member?.buffPower || 0), 0);
 };
 
+// 파티 총 전투력을 억 단위로 표시
+const getPartyTotalDamageInBillion = (party: any[]): string => {
+  const totalDamage = getPartyTotalDamage(party);
+  return (totalDamage / 100000000).toFixed(1);
+};
+
+// 파티 총 버프력을 만 단위로 표시
+const getPartyTotalBuffPowerInTenThousand = (party: any[]): string => {
+  const totalBuffPower = getPartyTotalBuffPower(party);
+  return (totalBuffPower / 10000).toFixed(0);
+};
+
+// 파티 계수: (총 전투력 / 억) * (버프력 / 백만)
+const getPartyCoefficient = (party: any[]): string => {
+  const totalDamage = getPartyTotalDamage(party);
+  const totalBuffPower = getPartyTotalBuffPower(party);
+  const damageInBillion = totalDamage / 100000000; // 억 단위
+  const buffPowerInMillion = totalBuffPower / 1000000; // 백만 단위
+  const coefficient = damageInBillion * buffPowerInMillion;
+  return coefficient.toFixed(2); // 소수점 2자리까지 표시
+};
+
+// 슬롯 역할 표시 (버퍼, 딜러, 딜러, 딜러)
+// slotIndex는 1부터 4까지의 값 (HTML에서 사용)
+const getSlotRole = (slotIndex: number): string => {
+  switch (slotIndex) {
+    case 1: return '버퍼';    // 슬롯 1번
+    case 2: return '딜러';   // 슬롯 2번
+    case 3: return '딜러';   // 슬롯 3번
+    case 4: return '딜러';   // 슬롯 4번
+    default: return slotIndex.toString();
+  }
+};
+
+// 모험단별 딜러 수 계산
+const getDealerCount = (adventureName: string): number => {
+  return getFilteredCharacters(adventureName).filter(char => !isBuffer(char)).length;
+};
+
+// 모험단별 버퍼 수 계산
+const getBufferCount = (adventureName: string): number => {
+  return getFilteredCharacters(adventureName).filter(char => isBuffer(char)).length;
+};
+
 const getDungeonClearClass = (character: any): string => {
   const cleared = getDungeonClearStatus(character);
   return cleared ? 'cleared' : 'not-cleared';
@@ -1028,7 +1504,7 @@ const getDungeonClearClass = (character: any): string => {
 
 const getDungeonClearText = (character: any): string => {
   const cleared = getDungeonClearStatus(character);
-  return cleared ? '클리어' : '미클리어';
+  return cleared ? '클리어' : '';
 };
 
 const getDungeonClearStatus = (character: any): boolean => {
@@ -1109,13 +1585,6 @@ const refreshSelectedAdventures = async () => {
       }
     }
     
-    // 최종 결과 메시지
-    const resultMessage = `모험단 최신화 완료!\n\n` +
-      `총 성공: ${totalSuccess}개 캐릭터\n` +
-      `총 실패: ${totalFail}개 캐릭터\n\n` +
-      `상세 결과:\n${results.join('\n')}`;
-    
-    alert(resultMessage);
     
     // 캐릭터 목록 다시 로드
     await loadCharactersFromAPI();
@@ -1226,6 +1695,18 @@ const debugLocalStorage = async () => {
   font-weight: 700;
 }
 
+.party-formation h3 {
+  margin: 0 0 20px 0;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+  color: #495057;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .top-bar {
   display: flex;
   gap: 20px;
@@ -1272,9 +1753,9 @@ const debugLocalStorage = async () => {
 }
 
 .party-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 3fr; /* 좌우 1:3 비율 */
+  gap: 20px;
   margin-bottom: 20px;
   padding: 20px;
   background: linear-gradient(135deg, #f8f9fa, #e9ecef);
@@ -1282,14 +1763,27 @@ const debugLocalStorage = async () => {
   border: 2px solid #dee2e6;
 }
 
+/* 반응형: 화면이 작아지면 세로 배치 */
+@media (max-width: 1200px) {
+  .party-controls {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* 좌측: 파티 구성 규칙 섹션 */
+.party-rules-section {
+  display: flex;
+  flex-direction: column;
+}
+
 .party-info {
   flex: 1;
-  margin-right: 30px;
 }
 
 .party-info p {
   margin: 0 0 10px 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #333;
 }
@@ -1301,28 +1795,242 @@ const debugLocalStorage = async () => {
 
 .party-info li {
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 12px;
   color: #555;
   line-height: 1.4;
 }
 
+/* 우측 하단: 파티 구성 옵션 섹션 */
+.party-options-section {
+  flex: 3; /* 위아래 1:3 비율에서 3/3 차지 */
+}
+
+/* 파티 구성 옵션 스타일 */
+.party-options-container {
+  margin-bottom: 20px;
+}
+
+.party-options-box {
+  padding: 20px;
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  border-radius: 12px;
+  border: 2px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.party-options-box p {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.option-selector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.option-selector label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.option-dropdown {
+  padding: 10px 15px;
+  border: 2px solid #ced4da;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.option-dropdown:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.option-dropdown:hover {
+  border-color: #007bff;
+}
+
+.option-description {
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Advanced 모드 설명 */
+.mode-description {
+  margin-top: 10px;
+  text-align: center;
+  color: #6c757d;
+}
+
+/* Advanced 옵션들 */
+.advanced-options {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.advanced-section {
+  margin-bottom: 20px;
+}
+
+.advanced-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #495057;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox-label:hover {
+  color: #007bff;
+}
+
+.option-description small {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* 우측: 컨트롤 및 옵션 영역 */
+.party-controls-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 우측 상단: 컨트롤 버튼들 섹션 */
+.control-buttons-section {
+  flex: 1;
+}
+
 .control-buttons {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+/* 반응형: 작은 화면에서 버튼들을 세로로 배치 */
+@media (max-width: 768px) {
+  .control-buttons {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .control-btn {
+    min-width: auto;
+    width: 100%;
+  }
 }
 
 .control-btn {
-  padding: 12px 20px;
-  font-size: 16px;
+  padding: 10px 16px;
+  font-size: 13px;
   font-weight: 600;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-height: 50px;
-  min-width: 140px;
+  min-height: 44px;
+  min-width: 110px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.control-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 개별 버튼 스타일 */
+.refresh-btn {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+}
+
+.refresh-btn:hover {
+  background: linear-gradient(135deg, #138496, #117a8b);
+}
+
+.clear-btn {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+}
+
+.clear-btn:hover {
+  background: linear-gradient(135deg, #5a6268, #495057);
+}
+
+.optimize-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.optimize-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.copy-btn {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+}
+
+.copy-btn:hover {
+  background: linear-gradient(135deg, #1e7e34, #155724);
+}
+
+.auto-btn {
+  background: linear-gradient(135deg, #fd7e14, #e55a00);
+  color: white;
+  font-weight: 700;
+  min-width: 120px;
+  box-shadow: 0 3px 6px rgba(253, 126, 20, 0.3);
+}
+
+.auto-btn:hover {
+  background: linear-gradient(135deg, #e55a00, #cc4a00);
+  box-shadow: 0 4px 8px rgba(253, 126, 20, 0.4);
 }
 
 /* 모험단 검색 섹션 스타일 */
@@ -1597,6 +2305,54 @@ const debugLocalStorage = async () => {
   min-height: 600px;
 }
 
+/* 반응형 레이아웃: 화면이 작아지면 세로 배치 */
+@media (max-width: 1200px) {
+  .main-content {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .left-panel,
+  .right-panel {
+    flex: none;
+    width: 100%;
+  }
+  
+  .right-panel {
+    max-height: none;
+  }
+}
+
+/* 더 작은 화면에서의 추가 최적화 */
+@media (max-width: 768px) {
+  .main-content {
+    gap: 10px;
+  }
+  
+  .left-panel,
+  .right-panel {
+    padding: 15px;
+  }
+  
+  .party-tables {
+    gap: 15px;
+  }
+  
+  .party-table {
+    padding: 10px;
+  }
+  
+  .party-title-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+}
+
 .left-panel {
   flex: 1;
   background: white;
@@ -1620,33 +2376,139 @@ const debugLocalStorage = async () => {
 
 .party-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.party-title-stats {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: nowrap;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.party-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin-right: 10px;
+}
+
+.party-combat-power {
+  font-size: 14px;
+  font-weight: 600;
+  color: #007bff;
+  padding: 4px 8px;
+}
+
+.party-buff-power {
+  font-size: 14px;
+  font-weight: 600;
+  color: #28a745;
+  padding: 4px 8px;
+}
+
+.party-coefficient {
+  font-size: 14px;
+  font-weight: 700;
+  color: #dc3545;
+  padding: 4px 8px;
+}
+
+.party-separator {
+  color: #6c757d;
+  font-weight: 400;
+  margin: 0 5px;
+}
+
+.character-counts {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.dealer-count {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.buffer-count {
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* 캐릭터 섹션 스타일 */
+.character-section {
+  margin-bottom: 20px;
+}
+
+.section-header {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.section-header h5 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.dealer-header {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.buffer-header {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+}
+
+.section-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
   margin-bottom: 15px;
 }
 
-.party-header h4 {
-  margin: 0;
-  color: #333;
+/* 슬롯 텍스트 스타일 개선 */
+.slot-number {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  display: block;
+  margin-bottom: 2px;
+  text-align: center;
 }
 
-.party-stats {
-  font-size: 14px;
-  color: #666;
+.slot-text {
+  font-size: 10px;
+  color: #6c757d;
+  text-align: center;
+  line-height: 1.1;
+  margin: 0;
 }
 
 .party-slots {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 2px;
+  padding: 0;
 }
 
 .party-slot {
   min-height: 120px;
   border: 2px dashed #ccc;
-  border-radius: 8px;
+  border-radius: 4px;
   position: relative;
   background: white;
+  padding: 4px;
+  margin: 0;
 }
 
 .party-slot.filled {
@@ -1662,8 +2524,68 @@ const debugLocalStorage = async () => {
   border-radius: 6px;
   background: white;
   border: 1px solid #e5e5e5;
-  height: 100%;
+  min-height: 120px;
+  height: auto;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 반응형 캐릭터 카드: 작은 화면에서 크기 조정 */
+@media (max-width: 768px) {
+  .character-card {
+    min-height: 100px;
+    padding: 6px;
+  }
+  
+  .character-avatar {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .avatar-placeholder {
+    font-size: 16px;
+  }
+  
+  .character-name {
+    font-size: 12px;
+  }
+  
+  .adventure-name {
+    font-size: 10px;
+  }
+  
+  .stat {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-card {
+    min-height: 90px;
+    padding: 5px;
+  }
+  
+  .character-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .avatar-placeholder {
+    font-size: 14px;
+  }
+  
+  .character-name {
+    font-size: 11px;
+  }
+  
+  .adventure-name {
+    font-size: 9px;
+  }
+  
+  .stat {
+    font-size: 9px;
+  }
 }
 
 .character-card.draggable {
@@ -1732,13 +2654,13 @@ const debugLocalStorage = async () => {
 
 .character-name {
   font-weight: bold;
-  font-size: 12px;
+  font-size: 13px;
   margin-bottom: 3px;
   color: #333;
 }
 
 .adventure-name {
-  font-size: 10px;
+  font-size: 11px;
   color: #666;
   margin-bottom: 5px;
 }
@@ -1751,7 +2673,7 @@ const debugLocalStorage = async () => {
 }
 
 .stat {
-  font-size: 10px;
+  font-size: 11px;
   color: #555;
 }
 
@@ -1772,17 +2694,17 @@ const debugLocalStorage = async () => {
 .cleared {
   color: #28a745;
   font-weight: bold;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .not-cleared {
   color: #dc3545;
   font-weight: bold;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .character-fame {
-  font-size: 10px;
+  font-size: 11px;
   color: #666;
 }
 
@@ -1806,7 +2728,7 @@ const debugLocalStorage = async () => {
 }
 
 .slot-text {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .remove-from-party {
@@ -1840,8 +2762,7 @@ const debugLocalStorage = async () => {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  max-height: 800px;
-  overflow-y: auto;
+  /* max-height와 overflow-y 제거하여 스크롤바 없이 아래로 쭉 나오도록 수정 */
 }
 
 .adventure-panels {
@@ -1854,6 +2775,45 @@ const debugLocalStorage = async () => {
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* 반응형 모험단 패널: 작은 화면에서 간격 조정 */
+@media (max-width: 768px) {
+  .adventure-panels {
+    gap: 15px;
+  }
+  
+  .adventure-header {
+    padding: 8px 12px;
+  }
+  
+  .adventure-header h4 {
+    font-size: 16px;
+  }
+  
+  .character-counts {
+    font-size: 11px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .adventure-panels {
+    gap: 10px;
+  }
+  
+  .adventure-header {
+    padding: 6px 10px;
+  }
+  
+  .adventure-header h4 {
+    font-size: 14px;
+  }
+  
+  .character-counts {
+    font-size: 10px;
+    gap: 8px;
+  }
 }
 
 .adventure-header {
@@ -1882,8 +2842,38 @@ const debugLocalStorage = async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
-  max-height: 400px;
-  overflow-y: auto;
+  /* max-height와 overflow-y 제거하여 스크롤바 없이 아래로 쭉 나오도록 수정 */
+}
+
+/* 반응형 그리드: 화면 크기에 따라 열 수 조정 */
+@media (max-width: 1400px) {
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 6px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-list {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 5px;
+    padding: 5px;
+  }
 }
 
 .no-selection {
@@ -2001,6 +2991,18 @@ const debugLocalStorage = async () => {
   font-weight: bold;
   text-align: center;
   margin-top: 4px;
+}
+
+/* 파티 포함 배지 - 카드 왼쪽 상단에 배치 */
+.in-party-badge-left {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  color: #6c757d;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  z-index: 10;
 }
 
 .adventure-debug-info {

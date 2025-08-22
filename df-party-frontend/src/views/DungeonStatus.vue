@@ -185,67 +185,78 @@
                 </span>
               </div>
             </td>
-            <td class="dungeon-status-cell nabel-cell">
-              <!-- 위쪽: 클리어 여부 -->
-              <div class="dungeon-clear-status" 
-                   :class="{ 
-                     cleared: character.dungeonClearNabel,
-                     excluded: character.isExcludedNabel
-                   }">
-                <span class="clear-icon">
-                  {{ character.isExcludedNabel ? '-' : (character.dungeonClearNabel ? '✅' : '❌') }}
-                </span>
-                <span class="clear-text">
-                  {{ character.isExcludedNabel ? '안감' : (character.dungeonClearNabel ? '클리어' : '미클리어') }}
-                </span>
+            <td class="dungeon-status-cell nabel-cell" :class="{ 'ineligible': !isNabelEligible(character) }">
+              <!-- 명성이 부족한 경우: 셀 자체에 내용 표시 -->
+              <div v-if="!isNabelEligible(character)" class="ineligible-content">
+                <span class="clear-icon">-</span>
               </div>
-              
-              
-              <!-- 아래쪽: 난이도 선택 버튼들 (2x2 그리드) -->
-              <div class="nabel-difficulty-buttons">
-                <div class="difficulty-row">
-                  <!-- 하드 나벨 버튼 -->
-                  <button 
-                    @click="setNabelDifficulty(character, 'hard')"
-                    :class="{ active: getNabelDifficulty(character) === 'hard' }"
-                    :disabled="!isHardEligible(character)"
-                    class="difficulty-btn hard-btn"
-                    :title="`하드 모드 선택 (isHardNabelEligible: ${character.isHardNabelEligible}, 계산값: ${isHardEligible(character)})`">
-                    하드
-                  </button>
-                  <!-- 일반 나벨 버튼 -->
-                  <button 
-                    @click="setNabelDifficulty(character, 'normal')"
-                    :class="{ active: getNabelDifficulty(character) === 'normal' }"
-                    :disabled="!isNormalEligible(character)"
-                    class="difficulty-btn normal-btn"
-                    :title="`일반 모드 선택 (isNormalNabelEligible: ${character.isNormalNabelEligible}, 계산값: ${isNormalEligible(character)})`">
-                    일반
-                  </button>
+              <!-- 명성이 충분한 경우: 기존 표시 -->
+              <div v-else>
+                <!-- 위쪽: 클리어 여부 -->
+                <div class="dungeon-clear-status" 
+                     :class="{ 
+                       cleared: character.dungeonClearNabel,
+                       excluded: character.isExcludedNabel
+                     }">
+                  <span class="clear-icon">
+                    {{ character.isExcludedNabel ? '-' : (character.dungeonClearNabel ? '✅' : '❌') }}
+                  </span>
+                  <span class="clear-text">
+                    {{ character.isExcludedNabel ? '안감' : (character.dungeonClearNabel ? '클리어' : '미클리어') }}
+                  </span>
                 </div>
-                <div class="difficulty-row">
-                  <!-- 매칭 나벨 버튼 -->
-                  <button 
-                    @click="setNabelDifficulty(character, 'matching')"
-                    :class="{ active: getNabelDifficulty(character) === 'matching' }"
-                    :disabled="!isMatchingEligible(character)"
-                    class="difficulty-btn matching-btn"
-                    :title="`매칭 모드 선택 (isMatchingNabelEligible: ${character.isMatchingNabelEligible}, 계산값: ${isMatchingEligible(character)})`">
-                    매칭
-                  </button>
-                  <!-- 안감 버튼 -->
-                  <button @click="toggleExclude(character, 'nabel')" 
-                    :class="{ active: character.isExcludedNabel }"
-                    class="difficulty-btn exclude-btn"
-                    title="안감">
-                    안감
-                  </button>
+                
+                <!-- 아래쪽: 난이도 선택 버튼들 (2x2 그리드) -->
+                <div class="nabel-difficulty-buttons">
+                  <div class="difficulty-row">
+                    <!-- 하드 나벨 버튼 -->
+                    <button 
+                      @click="setNabelDifficulty(character, 'hard')"
+                      :class="{ active: getNabelDifficulty(character) === 'hard' }"
+                      :disabled="!isHardEligible(character)"
+                      class="difficulty-btn hard-btn"
+                      :title="`하드 모드 선택 (isHardNabelEligible: ${character.isHardNabelEligible}, 계산값: ${isHardEligible(character)})`">
+                      하드
+                    </button>
+                    <!-- 일반 나벨 버튼 -->
+                    <button 
+                      @click="setNabelDifficulty(character, 'normal')"
+                      :class="{ active: getNabelDifficulty(character) === 'normal' }"
+                      :disabled="!isNormalEligible(character)"
+                      class="difficulty-btn normal-btn"
+                      :title="`일반 모드 선택 (isNormalNabelEligible: ${character.isNormalNabelEligible}, 계산값: ${isNormalEligible(character)})`">
+                      일반
+                    </button>
+                  </div>
+                  <div class="difficulty-row">
+                    <!-- 매칭 나벨 버튼 -->
+                    <button 
+                      @click="setNabelDifficulty(character, 'matching')"
+                      :class="{ active: getNabelDifficulty(character) === 'matching' }"
+                      :disabled="!isMatchingEligible(character)"
+                      class="difficulty-btn matching-btn"
+                      :title="`매칭 모드 선택 (isMatchingNabelEligible: ${character.isMatchingNabelEligible}, 계산값: ${isMatchingEligible(character)})`">
+                      매칭
+                    </button>
+                    <!-- 안감 버튼 -->
+                    <button @click="toggleExclude(character, 'nabel')" 
+                      :class="{ active: character.isExcludedNabel }"
+                      class="difficulty-btn exclude-btn"
+                      title="안감">
+                      안감
+                    </button>
+                  </div>
                 </div>
               </div>
             </td>
 
-            <td class="dungeon-status-cell venus-cell">
-              <div class="dungeon-clear-status" 
+            <td class="dungeon-status-cell venus-cell" :class="{ 'ineligible': !isVenusEligible(character) }">
+              <!-- 명성이 부족한 경우: 셀 자체에 내용 표시 -->
+              <div v-if="!isVenusEligible(character)" class="ineligible-content">
+                <span class="clear-icon">-</span>
+              </div>
+              <!-- 명성이 충분한 경우: 기존 표시 -->
+              <div v-else class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearVenus,
                      excluded: character.isExcludedVenus
@@ -253,20 +264,25 @@
                 <span class="clear-icon">
                   {{ character.isExcludedVenus ? '-' : (character.dungeonClearVenus ? '✅' : '❌') }}
                 </span>
-                                  <span class="clear-text">
-                    {{ character.isExcludedVenus ? '안감' : (character.dungeonClearVenus ? '클리어' : '미클리어') }}
-                  </span>
+                <span class="clear-text">
+                  {{ character.isExcludedVenus ? '안감' : (character.dungeonClearVenus ? '클리어' : '미클리어') }}
+                </span>
               </div>
-              <div class="action-buttons-mini">
+              <!-- 명성이 부족한 경우: 버튼 제거 -->
+              <div v-if="isVenusEligible(character)" class="action-buttons-mini">
                 <button @click="toggleExclude(character, 'venus')" 
                         class="exclude-btn" 
                         :class="{ active: character.isExcludedVenus }"
                         title="안감">안감</button>
-                
               </div>
             </td>
-            <td class="dungeon-status-cell fog-cell">
-              <div class="dungeon-clear-status" 
+            <td class="dungeon-status-cell fog-cell" :class="{ 'ineligible': !isFogEligible(character) }">
+              <!-- 명성이 부족한 경우: 셀 자체에 내용 표시 -->
+              <div v-if="!isFogEligible(character)" class="ineligible-content">
+                <span class="clear-icon">-</span>
+              </div>
+              <!-- 명성이 충분한 경우: 기존 표시 -->
+              <div v-else class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearFog,
                      excluded: character.isExcludedFog
@@ -274,20 +290,25 @@
                 <span class="clear-icon">
                   {{ character.isExcludedFog ? '-' : (character.dungeonClearFog ? '✅' : '❌') }}
                 </span>
-                                  <span class="clear-text">
-                    {{ character.isExcludedFog ? '안감' : (character.dungeonClearFog ? '클리어' : '미클리어') }}
-                  </span>
+                <span class="clear-text">
+                  {{ character.isExcludedFog ? '안감' : (character.dungeonClearFog ? '클리어' : '미클리어') }}
+                </span>
               </div>
-              <div class="action-buttons-mini">
+              <!-- 명성이 부족한 경우: 버튼 제거 -->
+              <div v-if="isFogEligible(character)" class="action-buttons-mini">
                 <button @click="toggleExclude(character, 'fog')" 
                         class="exclude-btn" 
                         :class="{ active: character.isExcludedFog }"
                         title="안감">안감</button>
-                
               </div>
             </td>
-            <td class="dungeon-status-cell twilight-cell">
-              <div v-if="isTwilightEligible(character)" class="dungeon-clear-status" 
+            <td class="dungeon-status-cell twilight-cell" :class="{ 'ineligible': !isTwilightEligible(character) }">
+              <!-- 명성이 부족한 경우: 셀 자체에 내용 표시 -->
+              <div v-if="!isTwilightEligible(character)" class="ineligible-content">
+                <span class="clear-icon">-</span>
+              </div>
+              <!-- 명성이 충분한 경우: 기존 표시 -->
+              <div v-else class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearTwilight,
                      excluded: false
@@ -299,11 +320,8 @@
                   {{ character.dungeonClearTwilight ? '클리어' : '미클리어' }}
                 </span>
               </div>
-              <div v-else class="dungeon-clear-status excluded">
-                <span class="clear-icon">-</span>
-                <span class="clear-text">명성 부족</span>
-              </div>
-              <div class="action-buttons-mini">
+              <!-- 명성이 부족한 경우: 버튼 제거 -->
+              <div v-if="isTwilightEligible(character)" class="action-buttons-mini">
                 <span class="coming-soon-text">안감</span>
               </div>
             </td>
@@ -1102,14 +1120,17 @@ const dungeonStats = computed(() => {
     fogHard: 0
   };
   
-  // 안감되지 않은 캐릭터만 필터링
+  // 안감되지 않고 명성이 충분한 캐릭터만 필터링
   const eligibleCharacters = filteredCharacters.value.filter(char => 
-    !char.isExcludedNabel || !char.isExcludedVenus || !char.isExcludedFog
+    (!char.isExcludedNabel && isNabelEligible(char)) || 
+    (!char.isExcludedVenus && isVenusEligible(char)) || 
+    (!char.isExcludedFog && isFogEligible(char)) ||
+    isTwilightEligible(char)
   );
   
   // 각 던전별로 최대치 제한 적용
   eligibleCharacters.forEach(char => {
-    if (!char.isExcludedNabel) {
+    if (!char.isExcludedNabel && isNabelEligible(char)) {
       // 나벨은 일반과 하드를 독립적으로 계산
       if (char.isHardNabelEligible) {
         // 하드 적격자는 4케릭 제한 적용
@@ -1127,7 +1148,7 @@ const dungeonStats = computed(() => {
         }
       }
     }
-    if (!char.isExcludedVenus) {
+    if (!char.isExcludedVenus && isVenusEligible(char)) {
       if (stats.venusTotal < getDungeonLimit('venus')) {
         stats.venusTotal++;
         if (char.dungeonClearVenus) stats.venus++;
@@ -1137,7 +1158,7 @@ const dungeonStats = computed(() => {
         }
       }
     }
-    if (!char.isExcludedFog) {
+    if (!char.isExcludedFog && isFogEligible(char)) {
       if (stats.fogTotal < getDungeonLimit('fog')) {
         stats.fogTotal++;
         if (char.dungeonClearFog) stats.fog++;
@@ -1156,10 +1177,10 @@ const dungeonStats = computed(() => {
     }
   });
   
-  // 나벨 일반 통계는 일반 적격자 중에서 계산
+  // 나벨 일반 통계는 일반 적격자 중에서 계산 (명성 부족 제외)
   stats.nabelNormal = 0;
   eligibleCharacters.forEach(char => {
-    if (!char.isExcludedNabel && !char.isHardNabelEligible) {
+    if (!char.isExcludedNabel && !char.isHardNabelEligible && isNabelEligible(char)) {
       stats.nabelNormal++;
     }
   });
@@ -2481,6 +2502,13 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
 .dungeon-status-cell {
   text-align: center;
   padding: 6px;
+  position: relative; /* 명성 부족 상태를 위한 상대 위치 설정 */
+}
+
+/* 명성 부족인 셀 전체를 회색으로 만들기 */
+.dungeon-status-cell.ineligible {
+  background-color: #e9ecef;
+  border-color: #ced4da !important; /* 기존 테두리 색상 덮어쓰기 */
 }
 
 /* 던전별 바운더리 색상 */
@@ -2517,6 +2545,18 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
   border: 1px dashed #dee2e6;
 }
 
+/* 명성 부족 내용 스타일 - 셀 자체에 내용 표시 */
+.ineligible-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
+  min-height: 60px;
+  color: #6c757d;
+}
+
 /* 업둥 상태 배경색 */
 .dungeon-clear-status.skip {
   background-color: #fff3cd;
@@ -2535,7 +2575,8 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
 }
 
 .clear-icon {
-  font-size: 16px;
+  font-size: 24px; /* 명성 부족 시 "-" 크기 증가 */
+  font-weight: bold; /* 더 굵게 표시 */
 }
 
 .clear-text {

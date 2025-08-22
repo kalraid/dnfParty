@@ -88,15 +88,17 @@ public class DungeonClearService {
 
     /**
      * 타임라인에서 던전 클리어 현황을 분석합니다.
+     * DfoApiService와 동일한 최신 로직 사용
      */
     private Map<String, Boolean> analyzeDungeonClear(Object timeline) {
         Map<String, Boolean> clearStatus = new HashMap<>();
         
         try {
             // 기본값 설정
-            clearStatus.put("nabel", false);      // 만들어진 신 나벨
+            clearStatus.put("nabel", false);      // 나벨
             clearStatus.put("venus", false);      // 베누스
             clearStatus.put("fog", false);        // 안개신
+            clearStatus.put("twilight", false);   // 이내 황혼전
 
             if (timeline instanceof JsonNode) {
                 JsonNode timelineNode = (JsonNode) timeline;
@@ -104,24 +106,60 @@ public class DungeonClearService {
 
                 if (rows.isArray()) {
                     for (JsonNode row : rows) {
-                        String raidName = row.path("raidName").asText("");
-                        String regionName = row.path("regionName").asText("");
-                        String name = row.path("name").asText("");
-
-                        // 레기온 클리어 확인
-                        if ("레기온 클리어".equals(name)) {
-                            // 나벨 클리어 확인
-                            if ("만들어진 신 나벨".equals(raidName)) {
-                                clearStatus.put("nabel", true);
+                        try {
+                            int code = row.path("code").asInt(0);
+                            String name = row.path("name").asText("");
+                            JsonNode data = row.path("data");
+                            
+                            // 레기온 클리어 이벤트 (code: 209)
+                            if (code == 209 && data.has("regionName")) {
+                                String regionName = data.path("regionName").asText();
+                                // 줄바꿈과 공백 제거하여 정리
+                                regionName = regionName.replaceAll("\\s+", " ").trim();
+                                
+                                // 지역명에 따른 던전 클리어 상태 설정
+                                if (regionName.contains("베누스") || regionName.equals("venus")) {
+                                    clearStatus.put("venus", true);
+                                }
                             }
-                            // 베누스 클리어 확인
-                            if ("베누스".equals(regionName)) {
-                                clearStatus.put("venus", true);
+                            
+                            // 레이드 클리어/선발대 이벤트 (code: 201 또는 210) - 나벨, 안개신, 이내 황혼전 등
+                            if ((code == 201 || code == 210) && data.has("raidName")) {
+                                String raidName = data.path("raidName").asText();
+                                // 줄바꿈과 공백 제거하여 정리
+                                raidName = raidName.replaceAll("\\s+", " ").trim();
+                                
+                                // 레이드명에 따른 던전 클리어 상태 설정
+                                if (raidName.contains("나벨") || raidName.contains("nabel")) {
+                                    clearStatus.put("nabel", true);
+                                } else if (raidName.contains("안개신") || raidName.contains("fog") || raidName.contains("아스라한")) {
+                                    clearStatus.put("fog", true);
+                                } else if (raidName.contains("환혼전") || raidName.contains("황혼전") || raidName.contains("twilight")) {
+                                    clearStatus.put("twilight", true);
+                                }
                             }
-                            // 안개신 클리어 확인
-                            if ("안개신".equals(raidName)) {
-                                clearStatus.put("fog", true);
+                            
+                            // 던전 클리어 이벤트 (dungeonName)
+                            if (data.has("dungeonName")) {
+                                String dungeonName = data.path("dungeonName").asText();
+                                // 줄바꿈과 공백 제거하여 정리
+                                dungeonName = dungeonName.replaceAll("\\s+", " ").trim();
+                                
+                                // 던전명에 따른 클리어 상태 설정
+                                if (dungeonName.contains("나벨") || dungeonName.contains("nabel")) {
+                                    clearStatus.put("nabel", true);
+                                } else if (dungeonName.contains("베누스") || dungeonName.contains("venus")) {
+                                    clearStatus.put("venus", true);
+                                } else if (dungeonName.contains("안개신") || dungeonName.contains("fog")) {
+                                    clearStatus.put("fog", true);
+                                } else if (dungeonName.contains("황혼전") || dungeonName.contains("twilight")) {
+                                    clearStatus.put("twilight", true);
+                                }
                             }
+                            
+                        } catch (Exception e) {
+                            // 개별 row 파싱 오류 시 다음 row로 진행
+                            continue;
                         }
                     }
                 }

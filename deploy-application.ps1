@@ -259,7 +259,7 @@ $allReady = $false
 
 while ($attempt -lt $maxAttempts -and -not $allReady) {
     $attempt++
-    Write-Host "Attempt $attempt/$maxAttempts: Checking pod status..." -ForegroundColor Cyan
+    Write-Host "Attempt $attempt of $maxAttempts - Checking pod status..." -ForegroundColor Cyan
     
     $pods = kubectl get pods -n $Namespace -o json | ConvertFrom-Json
     $runningPods = $pods.items | Where-Object { $_.metadata.labels.app -like "*frontend*" -or $_.metadata.labels.app -like "*backend*" }
@@ -276,7 +276,7 @@ while ($attempt -lt $maxAttempts -and -not $allReady) {
     }
     
     if (-not $allReady) {
-        Write-Host "Waiting for pods to be ready... (attempt $attempt/$maxAttempts)" -ForegroundColor Yellow
+        Write-Host "Waiting for pods to be ready... (attempt $attempt of $maxAttempts)" -ForegroundColor Yellow
         Start-Sleep -Seconds 10
     }
 }

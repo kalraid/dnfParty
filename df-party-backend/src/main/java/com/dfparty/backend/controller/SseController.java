@@ -87,9 +87,9 @@ public class SseController {
         // 새로운 에미터 생성
         System.out.println("🆕 새 에미터 생성 시작");
         
-        // 5분 타임아웃으로 설정 (SSE 연결 유지)
-        SseEmitter emitter = new SseEmitter(300000L);
-        System.out.println("⏰ SSE 타임아웃 설정: 300초 (5분)");
+        // 2분 타임아웃으로 설정 (SSE 연결 유지, 더 짧게 설정하여 안정성 향상)
+        SseEmitter emitter = new SseEmitter(120000L);
+        System.out.println("⏰ SSE 타임아웃 설정: 120초 (2분)");
         
         // 연결 성공 이벤트 전송
         try {
@@ -141,8 +141,14 @@ public class SseController {
         
         emitter.onError((ex) -> {
             System.err.println("🚨 SSE 연결 오류: " + clientId + " - " + ex.getMessage());
+            if (ex instanceof java.io.IOException && ex.getMessage().contains("Broken pipe")) {
+                System.out.println("🔌 Broken pipe 감지 - 클라이언트 연결이 끊어짐");
+            }
             removeEmitter(clientId, emitter);
         });
+        
+        // 하트비트 메커니즘 추가 (30초마다 연결 상태 확인)
+        startHeartbeat(emitter, clientId);
         
         System.out.println("🎯 === 새 에미터 생성 완료 ===");
         System.out.println("🆔 클라이언트 ID: " + clientId);
@@ -315,6 +321,61 @@ public class SseController {
         emitters.entrySet().removeIf(entry -> entry.getValue().isEmpty());
         
         System.out.println("오래된 에미터 정리 완료");
+    }
+    
+    /**
+     * 하트비트 메커니즘으로 연결 상태 확인
+     */
+    private void startHeartbeat(SseEmitter emitter, String clientId) {
+        Thread heartbeatThread = new Thread(() -> {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Thread.sleep(30000); // 30초마다 하트비트 전송
+                    
+                    // 에미터가 여전히 유효한지 확인
+                    if (emitter == null) {
+                        System.out.println("💓 하트비트 중단 - 에미터가 null: " + clientId);
+                        break;
+                    }
+                    
+                    try {
+                        // 하트비트 이벤트 전송
+                        emitter.send(SseEmitter.event()
+                            .name("heartbeat")
+                            .data("ping"));
+                        System.out.println("💓 하트비트 전송 완료: " + clientId);
+                        
+                    } catch (IOException e) {
+                        // Broken pipe는 클라이언트 연결 해제를 의미 (정상적인 상황)
+                        if (e.getMessage() != null && e.getMessage().contains("Broken pipe")) {
+                            System.out.println("🔌 하트비트 전송 중 Broken pipe 감지: " + clientId + " - 클라이언트 연결이 정상적으로 해제됨");
+                        } else {
+                            System.err.println("❌ 하트비트 전송 실패: " + clientId + " - " + e.getMessage());
+                        }
+                        
+                        // 에미터 정리 및 스레드 종료
+                        try {
+                            emitter.complete();
+                        } catch (Exception cleanupEx) {
+                            // 정리 중 오류는 무시
+                        }
+                        
+                        // 클라이언트 에미터 목록에서 제거
+                        removeEmitter(clientId, emitter);
+                        break;
+                    }
+                }
+            } catch (InterruptedException e) {
+                System.out.println("💓 하트비트 스레드 중단됨: " + clientId);
+                Thread.currentThread().interrupt();
+            }
+        });
+        
+        heartbeatThread.setDaemon(true);
+        heartbeatThread.setName("SSE-Heartbeat-" + clientId);
+        heartbeatThread.start();
+        
+        System.out.println("💓 하트비트 스레드 시작: " + clientId);
     }
     
     /**

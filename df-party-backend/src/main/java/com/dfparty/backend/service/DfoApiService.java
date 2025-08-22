@@ -522,40 +522,32 @@ public class DfoApiService {
                             // 레기온 클리어 이벤트 (code: 209)
                             if (code == 209 && data.has("regionName")) {
                                 String regionName = data.path("regionName").asText();
+                                // 줄바꿈과 공백 제거하여 정리
+                                regionName = regionName.replaceAll("\\s+", " ").trim();
                                 System.out.println("🎯 레기온 클리어 발견: " + regionName);
                                 
                                 // 지역명에 따른 던전 클리어 상태 설정
-                                if (regionName.contains("나벨") || regionName.equals("nabel")) {
-                                    dungeonStatus.put("nabel", true);
-                                    System.out.println("✅ 나벨 클리어 상태 설정됨");
-                                } else if (regionName.contains("베누스") || regionName.equals("venus")) {
+                                if (regionName.contains("베누스") || regionName.equals("venus")) {
                                     dungeonStatus.put("venus", true);
                                     System.out.println("✅ 베누스 클리어 상태 설정됨");
-                                } else if (regionName.contains("안개신") || regionName.equals("fog")) {
-                                    dungeonStatus.put("fog", true);
-                                    System.out.println("✅ 안개신 클리어 상태 설정됨");
-                                } else if (regionName.contains("황혼전") || regionName.equals("twilight")) {
-                                    dungeonStatus.put("twilight", true);
-                                    System.out.println("✅ 이내 황혼전 클리어 상태 설정됨");
                                 }
                             }
                             
-                            // 레이드 클리어 이벤트 (code: 201) - 나벨, 안개신 등
-                            if (code == 201 && data.has("raidName")) {
+                            // 레이드 클리어/선발대 이벤트 (code: 201 또는 210) - 나벨, 안개신, 이내 황혼전 등
+                            if ((code == 201 || code == 210) && data.has("raidName")) {
                                 String raidName = data.path("raidName").asText();
-                                System.out.println("🎯 레이드 클리어 발견: " + raidName);
+                                // 줄바꿈과 공백 제거하여 정리
+                                raidName = raidName.replaceAll("\\s+", " ").trim();
+                                System.out.println("🎯 레이드 이벤트 발견: " + raidName + " (code: " + code + ")");
                                 
                                 // 레이드명에 따른 던전 클리어 상태 설정
                                 if (raidName.contains("나벨") || raidName.contains("nabel")) {
                                     dungeonStatus.put("nabel", true);
                                     System.out.println("✅ 나벨 클리어 상태 설정됨 (레이드)");
-                                } else if (raidName.contains("베누스") || raidName.contains("venus")) {
-                                    dungeonStatus.put("venus", true);
-                                    System.out.println("✅ 베누스 클리어 상태 설정됨 (레이드)");
                                 } else if (raidName.contains("안개신") || raidName.contains("fog") || raidName.contains("아스라한")) {
                                     dungeonStatus.put("fog", true);
                                     System.out.println("✅ 안개신 클리어 상태 설정됨 (레이드)");
-                                } else if (raidName.contains("황혼전") || raidName.contains("twilight")) {
+                                } else if (raidName.contains("환혼전") ||raidName.contains("황혼전") || raidName.contains("twilight")) {
                                     dungeonStatus.put("twilight", true);
                                     System.out.println("✅ 이내 황혼전 클리어 상태 설정됨 (레이드)");
                                 }
@@ -564,6 +556,8 @@ public class DfoApiService {
                             // 던전 클리어 이벤트 (dungeonName)
                             if (data.has("dungeonName")) {
                                 String dungeonName = data.path("dungeonName").asText();
+                                // 줄바꿈과 공백 제거하여 정리
+                                dungeonName = dungeonName.replaceAll("\\s+", " ").trim();
                                 System.out.println("🎯 던전 이벤트 발견: " + dungeonName);
                                 
                                 // 던전명에 따른 클리어 상태 설정

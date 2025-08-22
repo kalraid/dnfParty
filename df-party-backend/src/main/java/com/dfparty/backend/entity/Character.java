@@ -188,6 +188,14 @@ public class Character {
     @Builder.Default
     private Boolean isTwilightEligible = false;
     
+    @Column(name = "is_venus_eligible")
+    @Builder.Default
+    private Boolean isVenusEligible = false;
+    
+    @Column(name = "is_fog_eligible")
+    @Builder.Default
+    private Boolean isFogEligible = false;
+    
     @Column(name = "last_dungeon_check")
     private LocalDateTime lastDungeonCheck;
     
@@ -207,10 +215,8 @@ public class Character {
     }
     
     public void setAdventureName(String adventureName) {
-        if (this.adventure == null) {
-            this.adventure = new Adventure();
-        }
-        this.adventure.setAdventureName(adventureName);
+        // 이 메서드는 사용하지 않음 - Adventure 객체는 별도로 설정해야 함
+        // setAdventure(Adventure adventure) 메서드를 사용하세요
     }
     
     // 하위 호환성을 위한 메서드들
@@ -343,5 +349,23 @@ public class Character {
     
     public void setIsTwilightEligible(Boolean isTwilightEligible) {
         this.isTwilightEligible = isTwilightEligible;
+    }
+    
+    // 베누스 대상자 여부 getter/setter
+    public Boolean getIsVenusEligible() {
+        return isVenusEligible;
+    }
+    
+    public void setIsVenusEligible(Boolean isVenusEligible) {
+        this.isVenusEligible = isVenusEligible;
+    }
+    
+    // 안개신 대상자 여부 getter/setter
+    public Boolean getIsFogEligible() {
+        return isFogEligible;
+    }
+    
+    public void setIsFogEligible(Boolean isFogEligible) {
+        this.isFogEligible = isFogEligible;
     }
 }

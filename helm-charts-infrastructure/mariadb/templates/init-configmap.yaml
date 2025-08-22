@@ -127,6 +127,9 @@ data:
         is_hard_nabel_eligible BOOLEAN DEFAULT FALSE,
         is_normal_nabel_eligible BOOLEAN DEFAULT FALSE,
         is_matching_nabel_eligible BOOLEAN DEFAULT FALSE,
+        is_twilight_eligible BOOLEAN DEFAULT FALSE,
+        is_venus_eligible BOOLEAN DEFAULT FALSE,
+        is_fog_eligible BOOLEAN DEFAULT FALSE,
         last_dungeon_check TIMESTAMP,
         last_stats_update TIMESTAMP,
         

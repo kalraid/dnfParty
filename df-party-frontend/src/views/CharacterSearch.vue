@@ -29,6 +29,19 @@
         {{ searching ? '검색 중...' : '검색' }}
       </button>
       
+      <!-- 메시지 표시 영역 (검색 버튼 바로 아래) -->
+      <div class="message-area">
+        <!-- 에러 메시지 -->
+        <div v-if="error" class="error-message">
+          {{ error }}
+        </div>
+        
+        <!-- 성공 메시지 -->
+        <div v-if="successMessage" class="success-message">
+          {{ successMessage }}
+        </div>
+      </div>
+      
       <!-- 던담 동기화 버튼들 -->
       <div class="dundam-sync-controls" v-if="selectedAdventure">
         
@@ -62,7 +75,7 @@
                       현재 동기화 중: {{ currentSyncingCharacter?.characterName || '대기 중...' }}
                     </div>
                     <div class="countdown-timer">
-                      예상 대기시간: {{ Math.max(0, Math.ceil((20 - (syncProgress / 90 * 19)))) }}초
+                      예상 대기시간: {{ Math.max(0, Math.ceil((10 - (syncProgress / 90 * 9)))) }}초
                     </div>
                   </div>
                   <div v-if="syncProgress >= 90 && !isCompleted" class="waiting-message">
@@ -115,25 +128,25 @@
             <div class="dungeon-clear-section">
               <h4 class="dungeon-title">남은 숙제</h4>
               <div class="dungeon-clear-status">
-                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearNabel }">
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearNabel && isNabelEligible(character) }">
                   <span class="dungeon-icon">🌟</span>
                   <span class="dungeon-name">나벨</span>
-                  <span class="clear-status">{{ character.dungeonClearNabel ? 'X' : 'O' }}</span>
+                  <span class="clear-status" :class="{ 'ineligible': !isNabelEligible(character) }">{{ getDungeonStatus(character, 'nabel') }}</span>
                 </div>
-                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearVenus }">
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearVenus && isVenusEligible(character) }">
                   <span class="dungeon-icon">⚡</span>
                   <span class="dungeon-name">베누스</span>
-                  <span class="clear-status">{{ character.dungeonClearVenus ? 'X' : 'O' }}</span>
+                  <span class="clear-status" :class="{ 'ineligible': !isVenusEligible(character) }">{{ getDungeonStatus(character, 'venus') }}</span>
                 </div>
-                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearFog }">
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearFog && isFogEligible(character) }">
                   <span class="dungeon-icon">🌫️</span>
                   <span class="dungeon-name">안개신</span>
-                  <span class="clear-status">{{ character.dungeonClearFog ? 'X' : 'O' }}</span>
+                  <span class="clear-status" :class="{ 'ineligible': !isFogEligible(character) }">{{ getDungeonStatus(character, 'fog') }}</span>
                 </div>
-                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearTwilight }">
+                <div class="dungeon-status-item" :class="{ 'cleared': character.dungeonClearTwilight && isTwilightEligible(character) }">
                   <span class="dungeon-icon">🌅</span>
                   <span class="dungeon-name">이내 황혼전</span>
-                  <span class="clear-status">{{ character.dungeonClearTwilight ? 'X' : 'O' }}</span>
+                  <span class="clear-status" :class="{ 'ineligible': !isTwilightEligible(character) }">{{ getDungeonStatus(character, 'twilight') }}</span>
                 </div>
               </div>
             </div>
@@ -282,16 +295,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 에러 메시지 -->
-    <div v-if="error" class="error-message">
-      {{ error }}
-    </div>
-
-    <!-- 성공 메시지 -->
-    <div v-if="successMessage" class="success-message">
-      {{ successMessage }}
-    </div>
   </div>
 
   <!-- Neople API 링크 -->
@@ -376,6 +379,53 @@ const syncedCount = ref(0);
 const syncProgress = ref(0);
 const currentSyncingCharacter = ref<any>(null);
 const isCompleted = ref(false);
+
+// 던전별 명성컷 기준
+const DUNGEON_FAME_REQUIREMENTS = {
+  nabel: 47684,      // 나벨
+  venus: 41929,      // 베누스
+  fog: 30135,        // 안개신
+  twilight: 72688    // 이내 황혼전
+};
+
+// 던전 적격 여부 확인 메서드들
+const isNabelEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.nabel;
+};
+
+const isVenusEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.venus;
+};
+
+const isFogEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.fog;
+};
+
+const isTwilightEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.twilight;
+};
+
+// 던전 상태 표시 메서드
+const getDungeonStatus = (character: any, dungeonType: string) => {
+  if (dungeonType === 'nabel') {
+    if (!isNabelEligible(character)) return '명성 부족';
+    return character.dungeonClearNabel ? 'X' : 'O';
+  } else if (dungeonType === 'venus') {
+    if (!isVenusEligible(character)) return '명성 부족';
+    return character.dungeonClearVenus ? 'X' : 'O';
+  } else if (dungeonType === 'fog') {
+    if (!isFogEligible(character)) return '명성 부족';
+    return character.dungeonClearFog ? 'X' : 'O';
+  } else if (dungeonType === 'twilight') {
+    if (!isTwilightEligible(character)) return '명성 부족';
+    return character.dungeonClearTwilight ? 'X' : 'O';
+  }
+  return 'O';
+};
 
 // WebSocket 이벤트 리스너 등록
 const handleCharacterUpdated = (event: any) => {
@@ -487,15 +537,17 @@ const startAutoDundamSync = async () => {
   }
   
   try {
+    // 진행바 상태 초기화 및 활성화
     isAutoSyncing.value = true;
     syncedCount.value = 0;
     syncProgress.value = 0;
+    isCompleted.value = false;
     error.value = '';
     
     console.log('자동 던담 동기화 시작:', searchResults.value.length, '개 캐릭터');
     
-    // 카운트다운 진행바 설정 (30초 → 1초)
-    const maxWaitTime = 30000; // 30초
+    // 카운트다운 진행바 설정 (10초 → 1초)
+    const maxWaitTime = 10000; // 10초
     const minWaitTime = 1000;  // 1초
     const countdownInterval = 100; // 100ms마다 업데이트
     let currentWaitTime = maxWaitTime;
@@ -504,7 +556,7 @@ const startAutoDundamSync = async () => {
     const countdownTimer = setInterval(() => {
       if (currentWaitTime > minWaitTime) {
         currentWaitTime -= countdownInterval;
-        // 진행률 계산: 30초에서 1초로 줄어들면서 0%에서 90%까지
+        // 진행률 계산: 10초에서 1초로 줄어들면서 0%에서 90%까지
         const progressRatio = (maxWaitTime - currentWaitTime) / (maxWaitTime - minWaitTime);
         syncProgress.value = progressRatio * 90;
       }
@@ -574,20 +626,23 @@ const startAutoDundamSync = async () => {
     successMessage.value = `완료되었습니다! 던담 동기화: ${syncedCount.value}/${searchResults.value.length} 성공`;
     console.log('자동 던담 동기화 완료');
     
-    // WebSocket으로 실시간 데이터 업데이트 대기 (3초 후 진행바 숨김)
+    // WebSocket으로 실시간 데이터 업데이트 대기 (2초 후 진행바 숨김)
     setTimeout(() => {
       // 진행바와 메시지 숨김
       successMessage.value = '';
       isAutoSyncing.value = false;
       currentSyncingCharacter.value = null;
       isCompleted.value = false;
-    }, 3000);
+      syncProgress.value = 0;
+    }, 2000);
     
   } catch (err) {
     console.error('자동 던담 동기화 실패:', err);
     error.value = '던담 동기화 중 오류가 발생했습니다.';
     isAutoSyncing.value = false;
     currentSyncingCharacter.value = null;
+    syncProgress.value = 0;
+    isCompleted.value = false;
   }
 };
 
@@ -717,6 +772,13 @@ const searchCharacters = async () => {
     error.value = '';
     successMessage.value = '';
     selectedCharacter.value = null; // 검색 시 선택된 캐릭터 초기화
+    
+    // 새로운 검색 시 이전 진행바 상태 초기화
+    isAutoSyncing.value = false;
+    syncedCount.value = 0;
+    syncProgress.value = 0;
+    currentSyncingCharacter.value = null;
+    isCompleted.value = false;
 
     // 캐릭터 검색 (DFO API 호출)
     const serverId = searchMode.value;
@@ -1712,6 +1774,13 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   color: #f44336;
 }
 
+/* 명성컷 미달로 인한 "명성 부족" 표시 스타일 */
+.clear-status.ineligible {
+  color: #f44336;
+  font-weight: normal;
+  font-size: 11px;
+}
+
 /* 컨텍스트 메뉴 스타일 */
 .context-menu {
   position: fixed;
@@ -2045,22 +2114,30 @@ const saveAdventureToDungeonHistory = (characters: any[]) => {
   background: #c82333;
 }
 
+/* 메시지 영역 스타일 */
+.message-area {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
 .error-message {
   background: #f8d7da;
   color: #721c24;
-  padding: 15px;
+  padding: 12px;
   border-radius: 4px;
-  margin-top: 20px;
+  margin-bottom: 10px;
   text-align: center;
+  border: 1px solid #f5c6cb;
 }
 
 .success-message {
   background: #d4edda;
   color: #155724;
-  padding: 15px;
+  padding: 12px;
   border-radius: 4px;
-  margin-top: 20px;
+  margin-bottom: 10px;
   text-align: center;
+  border: 1px solid #c3e6cb;
 }
 
 @media (max-width: 768px) {

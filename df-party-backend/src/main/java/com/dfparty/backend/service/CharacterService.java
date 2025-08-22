@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Async;
+import java.util.concurrent.CompletableFuture;
 import com.dfparty.backend.utils.CharacterUtils;
 
 
@@ -870,7 +872,7 @@ public class CharacterService {
             
             Character character = new Character(characterId, characterName, serverId);
             character.setJobName(jobName);
-            character.setAdventureName(adventureName);
+            setAdventureForCharacter(character, adventureName);
             if (fame != null) character.setFame(fame);
             if (level != null) character.setLevel(level);
             
@@ -888,7 +890,7 @@ public class CharacterService {
             if (characterDetail instanceof JsonNode) {
                 JsonNode root = (JsonNode) characterDetail;
                 character.setJobName(root.path("jobName").asText());
-                character.setAdventureName(root.path("adventureName").asText());
+                setAdventureForCharacter(character, root.path("adventureName").asText());
                 if (root.has("fame")) {
                     character.setFame(root.path("fame").asLong());
                 }
@@ -899,7 +901,7 @@ public class CharacterService {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> detail = (Map<String, Object>) characterDetail;
                 character.setJobName((String) detail.get("jobName"));
-                character.setAdventureName((String) detail.get("adventureName"));
+                setAdventureForCharacter(character, (String) detail.get("adventureName"));
                 if (detail.get("fame") != null) {
                     character.setFame(((Number) detail.get("fame")).longValue());
                 }
@@ -1983,6 +1985,26 @@ public class CharacterService {
         return character.getFame() != null && character.getFame() >= 47684L;
     }
     
+    /**
+     * 베누스 대상자 여부 확인 (명성만 충족하면 가능)
+     */
+    public boolean isVenusEligible(Character character) {
+        if (character == null) return false;
+        
+        // 명성 41,929 이상 조건만 확인 (스펙컷 없음)
+        return character.getFame() != null && character.getFame() >= 41929L;
+    }
+    
+    /**
+     * 안개신 대상자 여부 확인 (명성만 충족하면 가능)
+     */
+    public boolean isFogEligible(Character character) {
+        if (character == null) return false;
+        
+        // 명성 30,135 이상 조건만 확인 (스펙컷 없음)
+        return character.getFame() != null && character.getFame() >= 30135L;
+    }
+    
        /**
      * 이내 황혼전 대상자 여부 확인
      */
@@ -2464,16 +2486,17 @@ public class CharacterService {
     }
 
     /**
-     * 모험단 전체 캐릭터 최신화
+     * 모험단 전체 캐릭터 최신화 (비동기 처리)
      */
-    public Map<String, Object> refreshAdventureCharacters(String adventureName) {
+    @Async
+    public CompletableFuture<Map<String, Object>> refreshAdventureCharacters(String adventureName) {
         try {
             log.info("=== 모험단 전체 캐릭터 최신화 시작: {} ===", adventureName);
             
             // 1. 모험단 존재 확인
             Optional<Adventure> adventure = adventureRepository.findByAdventureName(adventureName);
             if (adventure.isEmpty()) {
-                return createErrorResponse("모험단 '" + adventureName + "'을 찾을 수 없습니다.");
+                return CompletableFuture.completedFuture(createErrorResponse("모험단 '" + adventureName + "'을 찾을 수 없습니다."));
             }
             
             // 2. 해당 모험단의 모든 캐릭터 조회
@@ -2481,7 +2504,7 @@ public class CharacterService {
             log.info("모험단 '{}'의 캐릭터 {}개 발견", adventureName, characters.size());
             
             if (characters.isEmpty()) {
-                return createErrorResponse("모험단 '" + adventureName + "'에 캐릭터가 없습니다.");
+                return CompletableFuture.completedFuture(createErrorResponse("모험단 '" + adventureName + "'에 캐릭터가 없습니다."));
             }
             
             // 3. 각 캐릭터별 최신화 수행
@@ -2586,7 +2609,7 @@ public class CharacterService {
             log.info("성공: {}개, 실패: {}개", successCount, failCount);
             log.info("결과 상세: {}", results.toString());
             
-            return createSuccessResponse(
+            return CompletableFuture.completedFuture(createSuccessResponse(
                 String.format("모험단 '%s' 최신화 완료: 성공 %d개, 실패 %d개", 
                     adventureName, successCount, failCount),
                 Map.of(
@@ -2596,11 +2619,11 @@ public class CharacterService {
                     "failCount", failCount,
                     "results", results.toString()
                 )
-            );
+            ));
             
         } catch (Exception e) {
             log.error("모험단 전체 캐릭터 최신화 실패: adventureName={}, error={}", adventureName, e.getMessage(), e);
-            return createErrorResponse("모험단 전체 캐릭터 최신화 중 오류가 발생했습니다: " + e.getMessage());
+            return CompletableFuture.completedFuture(createErrorResponse("모험단 전체 캐릭터 최신화 중 오류가 발생했습니다: " + e.getMessage()));
         }
     }
     
@@ -2692,19 +2715,23 @@ public class CharacterService {
             }
             
             if (updated) {
-                // 나벨 자격 자동 업데이트 (총딜/버프력 변경 후)
+                // 던전 자격 자동 업데이트 (총딜/버프력 변경 후)
                 boolean isHardEligible = isHardNabelEligible(character);
                 boolean isNormalEligible = isNormalNabelEligible(character);
                 boolean isMatchingEligible = isMatchingNabelEligible(character);
                 boolean isTwilightEligible = isTwilightEligible(character);
+                boolean isVenusEligible = isVenusEligible(character);
+                boolean isFogEligible = isFogEligible(character);
                 
                 character.setIsHardNabelEligible(isHardEligible);
                 character.setIsNormalNabelEligible(isNormalEligible);
                 character.setIsMatchingNabelEligible(isMatchingEligible);
                 character.setIsTwilightEligible(isTwilightEligible);
+                character.setIsVenusEligible(isVenusEligible);
+                character.setIsFogEligible(isFogEligible);
                 
-                log.info("나벨 자격 업데이트 완료: 하드={}, 일반={}, 매칭={}, 황혼전={}", 
-                    isHardEligible, isNormalEligible, isMatchingEligible, isTwilightEligible);
+                log.info("던전 자격 업데이트 완료: 나벨(하드={}, 일반={}, 매칭={}), 황혼전={}, 베누스={}, 안개신={}", 
+                    isHardEligible, isNormalEligible, isMatchingEligible, isTwilightEligible, isVenusEligible, isFogEligible);
                 
                 character.setLastStatsUpdate(LocalDateTime.now());
                 characterRepository.save(character);

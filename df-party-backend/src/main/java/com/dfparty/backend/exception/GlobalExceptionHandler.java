@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.io.IOException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -60,6 +62,52 @@ public class GlobalExceptionHandler {
         errorResponse.put("error", "RuntimeException");
         errorResponse.put("message", ex.getMessage());
         errorResponse.put("path", request.getDescription(false));
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * SSE 연결 관련 IOException 처리 (Broken pipe 등)
+     * SSE 연결 중 발생하는 네트워크 오류는 정상적인 상황이므로 별도 처리
+     */
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<Map<String, Object>> handleIOException(IOException ex, WebRequest request) {
+        String requestUri = request.getDescription(false);
+        
+        // SSE 연결 관련 요청인지 확인
+        if (requestUri.contains("/api/sse/") || requestUri.contains("uri=/api/sse/")) {
+            System.out.println("=== SSE 연결 관련 IOException 처리 ===");
+            System.out.println("요청 URI: " + requestUri);
+            System.out.println("에러 타입: " + ex.getClass().getName());
+            System.out.println("에러 메시지: " + ex.getMessage());
+            System.out.println("발생 시간: " + LocalDateTime.now());
+            
+            // SSE 연결 관련 오류는 정상적인 상황 (클라이언트 연결 해제 등)
+            if (ex.getMessage() != null && ex.getMessage().contains("Broken pipe")) {
+                System.out.println("🔌 SSE Broken pipe 감지 - 클라이언트 연결이 정상적으로 해제됨");
+            }
+            
+            // SSE 연결 오류는 클라이언트에게 에러 응답을 보내지 않음
+            // 대신 로깅만 하고 정상적인 응답 반환
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "SSE 연결이 정상적으로 처리되었습니다.");
+            response.put("timestamp", LocalDateTime.now().toString());
+            
+            return ResponseEntity.ok(response);
+        }
+        
+        // 일반적인 IOException은 기존 로직으로 처리
+        System.out.println("=== 일반 IOException 처리 ===");
+        System.out.println("요청 URI: " + requestUri);
+        System.out.println("에러 메시지: " + ex.getMessage());
+        
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("error", "IOException");
+        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("path", requestUri);
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }

@@ -88,11 +88,10 @@
           <span class="stat-label">나벨 클리어</span>
           <span class="stat-value">{{ dungeonStats.nabel }}/{{ dungeonStats.nabelTotal }}</span>
           <span class="stat-percentage">({{ getDungeonPercentage('nabel') }}%)</span>
-          <span class="stat-limit">최대 {{ getDungeonLimit('nabel') }}캐릭</span>
-          <div class="clear-breakdown">
-            <span class="clear-type">일반: {{ dungeonStats.nabelNormal - dungeonStats.nabelHard }}/{{ dungeonStats.nabelTotal }}</span>
-            <span class="clear-type">하드: {{ dungeonStats.nabelHard }}/4</span>
-          </div>
+                                  <div class="clear-breakdown">
+                          <span class="clear-type">일반: {{ dungeonStats.nabelNormalCleared }}/{{ dungeonStats.nabelNormal }}</span>
+                          <span class="clear-type">하드: {{ dungeonStats.nabelHardCleared }}/{{ dungeonStats.nabelHard }}</span>
+                        </div>
         </div>
         <div class="stat-card">
           <span class="stat-label">베누스 클리어</span>
@@ -288,7 +287,7 @@
               </div>
             </td>
             <td class="dungeon-status-cell twilight-cell">
-              <div v-if="character.isTwilightEligible" class="dungeon-clear-status" 
+              <div v-if="isTwilightEligible(character)" class="dungeon-clear-status" 
                    :class="{ 
                      cleared: character.dungeonClearTwilight,
                      excluded: false
@@ -302,7 +301,7 @@
               </div>
               <div v-else class="dungeon-clear-status excluded">
                 <span class="clear-icon">-</span>
-                <span class="clear-text">스펙 부족</span>
+                <span class="clear-text">명성 부족</span>
               </div>
               <div class="action-buttons-mini">
                 <span class="coming-soon-text">안감</span>
@@ -650,6 +649,34 @@ const hardPartyCharacters = ref<Set<string>>(new Set()); // 하드 파티로 가
 // 정렬 관련
 const sortField = ref<string>('fame');
 const sortOrder = ref<'asc' | 'desc'>('desc');
+
+// 던전 자격 확인 함수들
+const DUNGEON_FAME_REQUIREMENTS = {
+  nabel: 47684,      // 나벨
+  venus: 41929,      // 베누스
+  fog: 30135,        // 안개신
+  twilight: 72688    // 이내 황혼전
+};
+
+const isNabelEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.nabel;
+};
+
+const isVenusEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.venus;
+};
+
+const isFogEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.fog;
+};
+
+const isTwilightEligible = (character: any) => {
+  if (!character.fame) return false;
+  return character.fame >= DUNGEON_FAME_REQUIREMENTS.twilight;
+};
 
 
 
@@ -1067,6 +1094,8 @@ const dungeonStats = computed(() => {
     twilightTotal: 0,
     nabelNormal: 0,
     nabelHard: 0,
+    nabelNormalCleared: 0,
+    nabelHardCleared: 0,
     venusNormal: 0,
     venusHard: 0,
     fogNormal: 0,
@@ -1081,12 +1110,20 @@ const dungeonStats = computed(() => {
   // 각 던전별로 최대치 제한 적용
   eligibleCharacters.forEach(char => {
     if (!char.isExcludedNabel) {
-      if (stats.nabelTotal < getDungeonLimit('nabel')) {
-        stats.nabelTotal++;
-        if (char.dungeonClearNabel) stats.nabel++;
-        // 하드 클리어 횟수 계산
-        if (char.dungeonClearNabel) {
+      // 나벨은 일반과 하드를 독립적으로 계산
+      if (char.isHardNabelEligible) {
+        // 하드 적격자는 4케릭 제한 적용
+        if (stats.nabelHard < 4) {
           stats.nabelHard++;
+          if (char.dungeonClearNabel) {
+            stats.nabelHardCleared++;
+          }
+        }
+      } else {
+        // 일반 적격자는 제한 없이 추가
+        stats.nabelTotal++;
+        if (char.dungeonClearNabel) {
+          stats.nabelNormalCleared++;
         }
       }
     }
@@ -1119,8 +1156,16 @@ const dungeonStats = computed(() => {
     }
   });
   
-  // 일반 클리어는 전체 적격 캐릭터 - 하드 클리어한 캐릭터
-  stats.nabelNormal = stats.nabelTotal - stats.nabelHard;
+  // 나벨 일반 통계는 일반 적격자 중에서 계산
+  stats.nabelNormal = 0;
+  eligibleCharacters.forEach(char => {
+    if (!char.isExcludedNabel && !char.isHardNabelEligible) {
+      stats.nabelNormal++;
+    }
+  });
+  
+  // 나벨 전체 클리어 수는 일반 + 하드 클리어 수
+  stats.nabel = stats.nabelNormalCleared + stats.nabelHardCleared;
   
   return stats;
 });

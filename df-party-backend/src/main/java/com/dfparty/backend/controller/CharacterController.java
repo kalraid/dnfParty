@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/characters")
 @CrossOrigin(origins = "*")
@@ -304,21 +305,32 @@ public class CharacterController {
 
 
     /**
-     * 캐릭터 정보 새로고침
+     * 캐릭터 정보 새로고침 (던담 동기화 포함)
      */
-    @GetMapping("/{serverId}/{characterId}/refresh")
+    @PostMapping("/{serverId}/{characterId}/refresh")
     public ResponseEntity<Map<String, Object>> refreshCharacter(
             @PathVariable String serverId,
             @PathVariable String characterId) {
         
         try {
-            Map<String, Object> result = characterService.refreshCharacter(serverId, characterId);
+            log.info("캐릭터 '{}' 개별 최신화 시작 (서버: {})", characterId, serverId);
+            
+            // 비동기로 처리 시작하고 즉시 응답
+            characterService.refreshCharacter(serverId, characterId);
+            
+            Map<String, Object> result = Map.of(
+                "success", true,
+                "message", "캐릭터 최신화가 백그라운드에서 시작되었습니다.",
+                "serverId", serverId,
+                "characterId", characterId,
+                "status", "processing"
+            );
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
             Map<String, Object> error = Map.of(
                 "success", false,
-                "message", "캐릭터 정보 새로고침 중 오류가 발생했습니다: " + e.getMessage()
+                "message", "캐릭터 최신화 시작 실패: " + e.getMessage()
             );
             return ResponseEntity.internalServerError().body(error);
         }
@@ -519,22 +531,31 @@ public class CharacterController {
 
 
     /**
-     * 모험단 전체 캐릭터 최신화
+     * 모험단 전체 캐릭터 최신화 (비동기 처리)
      */
     @PostMapping("/adventure/{adventureName}/refresh")
     public ResponseEntity<Map<String, Object>> refreshAdventureCharacters(
             @PathVariable String adventureName) {
         
         try {
-            Map<String, Object> result = characterService.refreshAdventureCharacters(adventureName);
+            // 비동기로 처리 시작하고 즉시 응답
+            characterService.refreshAdventureCharacters(adventureName);
+            
+            Map<String, Object> result = Map.of(
+                "success", true,
+                "message", "모험단 전체 최신화가 백그라운드에서 시작되었습니다.",
+                "adventureName", adventureName,
+                "status", "processing"
+            );
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
             Map<String, Object> error = Map.of(
                 "success", false,
-                "message", "모험단 전체 최신화 실패: " + e.getMessage()
+                "message", "모험단 전체 최신화 시작 실패: " + e.getMessage()
             );
             return ResponseEntity.internalServerError().body(error);
         }
     }
+
 }

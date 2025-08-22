@@ -71,6 +71,7 @@
                   :disabled="refreshingAll" 
                   class="refresh-all-btn">
             {{ refreshingAll ? '🔄 최신화 중...' : '🔄 전체 최신화' }}
+            <div class="refresh-subtitle">(던담 동기화 포함)</div>
           </button>
         </div>
       </div>
@@ -636,9 +637,9 @@ const manualInputData = ref({
 // 던담 동기화 관련
 const syncingCharacters = ref<Set<string>>(new Set()); // 동기화 진행 중인 캐릭터들
 
-// 아무 캐릭터라도 던담 동기화 중인지 확인
+// 아무 캐릭터라도 던담 동기화 중인지 확인 (전체 최신화 포함)
 const isAnyCharacterSyncing = (): boolean => {
-  return syncingCharacters.value.size > 0;
+  return syncingCharacters.value.size > 0 || refreshingAll.value;
 };
 const refreshingCharacters = ref<string[]>([]);
 const refreshingTimeline = ref<string[]>([]);
@@ -1595,7 +1596,7 @@ const toggleExclude = async (character: Character, dungeonType: string) => {
 
 
 
-// 모험단 전체 캐릭터 최신화
+// 모험단 전체 캐릭터 최신화 (던담 동기화 포함)
 const refreshAllCharacters = async () => {
   if (!selectedAdventure.value) {
     error.value = '모험단을 선택해주세요.';
@@ -1607,6 +1608,7 @@ const refreshAllCharacters = async () => {
     error.value = '';
     successMessage.value = '';
     
+    // 던담 동기화가 진행되는 동안 다른 던담 초기화 버튼들 비활성화
     const response = await apiFetch(`/characters/adventure/${encodeURIComponent(selectedAdventure.value)}/refresh`, {
       method: 'POST',
       headers: {
@@ -2244,6 +2246,17 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.refresh-subtitle {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.9;
+  line-height: 1.2;
 }
 
 .refresh-all-btn:hover:not(:disabled) {

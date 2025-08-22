@@ -202,48 +202,89 @@ if ($LASTEXITCODE -eq 0) {
     exit 1
 }
 
-# Force rollout restart for both frontend and backend to ensure new images are used
+# Force deployment restart by scaling replicas to 0 and back to 1 to ensure new images are used
 Write-Host ""
-Write-Host "Forcing rollout restart to ensure new images are used..." -ForegroundColor Cyan
+Write-Host "Forcing deployment restart by scaling replicas to ensure new images are used..." -ForegroundColor Cyan
 
-# Restart frontend deployment
-Write-Host "Restarting frontend deployment..." -ForegroundColor Yellow
-kubectl rollout restart deployment df-party-application-frontend -n $Namespace
+# Scale frontend deployment to 0 replicas
+Write-Host "Scaling frontend deployment to 0 replicas..." -ForegroundColor Yellow
+kubectl scale deployment df-party-application-frontend -n $Namespace --replicas=0
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Frontend rollout restart initiated successfully" -ForegroundColor Green
+    Write-Host "Frontend scaled down to 0 replicas successfully" -ForegroundColor Green
 } else {
-    Write-Host "Frontend rollout restart failed" -ForegroundColor Red
+    Write-Host "Frontend scale down failed" -ForegroundColor Red
 }
 
-# Restart backend deployment
-Write-Host "Restarting backend deployment..." -ForegroundColor Yellow
-kubectl rollout restart deployment df-party-application-backend -n $Namespace
+# Scale backend deployment to 0 replicas
+Write-Host "Scaling backend deployment to 0 replicas..." -ForegroundColor Yellow
+kubectl scale deployment df-party-application-backend -n $Namespace --replicas=0
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Backend rollout restart initiated successfully" -ForegroundColor Green
+    Write-Host "Backend scaled down to 0 replicas successfully" -ForegroundColor Green
 } else {
-    Write-Host "Backend rollout restart failed" -ForegroundColor Red
+    Write-Host "Backend scale down failed" -ForegroundColor Red
 }
 
-# Wait for rollouts to complete
+# Wait for pods to terminate completely
+Write-Host "Waiting for pods to terminate completely..." -ForegroundColor Cyan
+Start-Sleep -Seconds 10
+
+# Scale frontend deployment back to 1 replica
+Write-Host "Scaling frontend deployment back to 1 replica..." -ForegroundColor Yellow
+kubectl scale deployment df-party-application-frontend -n $Namespace --replicas=1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Frontend scaled up to 1 replica successfully" -ForegroundColor Green
+} else {
+    Write-Host "Frontend scale up failed" -ForegroundColor Red
+}
+
+# Scale backend deployment back to 1 replica
+Write-Host "Scaling backend deployment back to 1 replica..." -ForegroundColor Yellow
+kubectl scale deployment df-party-application-backend -n $Namespace --replicas=1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Backend scaled up to 1 replica successfully" -ForegroundColor Green
+} else {
+    Write-Host "Backend scale up failed" -ForegroundColor Red
+}
+
+# Wait for new pods to be ready
 Write-Host ""
-Write-Host "Waiting for rollouts to complete..." -ForegroundColor Cyan
+Write-Host "Waiting for new pods to be ready..." -ForegroundColor Cyan
+Start-Sleep -Seconds 15
 
-# Wait for frontend rollout
-Write-Host "Waiting for frontend rollout..." -ForegroundColor Yellow
-kubectl rollout status deployment df-party-application-frontend -n $Namespace --timeout=300s
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Frontend rollout completed successfully" -ForegroundColor Green
-} else {
-    Write-Host "Frontend rollout failed or timed out" -ForegroundColor Red
+# Check if pods are running
+Write-Host "Checking if new pods are running..." -ForegroundColor Yellow
+$maxAttempts = 10
+$attempt = 0
+$allReady = $false
+
+while ($attempt -lt $maxAttempts -and -not $allReady) {
+    $attempt++
+    Write-Host "Attempt $attempt/$maxAttempts: Checking pod status..." -ForegroundColor Cyan
+    
+    $pods = kubectl get pods -n $Namespace -o json | ConvertFrom-Json
+    $runningPods = $pods.items | Where-Object { $_.metadata.labels.app -like "*frontend*" -or $_.metadata.labels.app -like "*backend*" }
+    
+    $allReady = $true
+    foreach ($pod in $runningPods) {
+        if ($pod.status.phase -ne "Running" -or $pod.status.ready -ne $true) {
+            $allReady = $false
+            $podName = $pod.metadata.name
+            $podPhase = $pod.status.phase
+            Write-Host "Pod $podName is not ready: $podPhase" -ForegroundColor Yellow
+            break
+        }
+    }
+    
+    if (-not $allReady) {
+        Write-Host "Waiting for pods to be ready... (attempt $attempt/$maxAttempts)" -ForegroundColor Yellow
+        Start-Sleep -Seconds 10
+    }
 }
 
-# Wait for backend rollout
-Write-Host "Waiting for backend rollout..." -ForegroundColor Yellow
-kubectl rollout status deployment df-party-application-backend -n $Namespace --timeout=300s
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Backend rollout completed successfully" -ForegroundColor Green
+if ($allReady) {
+    Write-Host "All pods are now running successfully!" -ForegroundColor Green
 } else {
-    Write-Host "Backend rollout failed or timed out" -ForegroundColor Red
+    Write-Host "Some pods are still not ready after $maxAttempts attempts" -ForegroundColor Red
 }
 
 # Final status check

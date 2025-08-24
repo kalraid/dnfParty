@@ -443,31 +443,65 @@ const handleCharacterUpdated = (event: any) => {
       // 캐릭터 정보 업데이트
       const character = searchResults.value[characterIndex];
       
+      console.log(`🔄 SSE 업데이트 시작: ${character.characterName} (${character.adventureName})`);
+      console.log(`   기존 스탯 - 전투력: ${character.combatPower}, 버프력: ${character.buffPower}, 총딜: ${character.totalDamage}`);
+      
+      // ⚠️ SSE로 받은 데이터에서 명성과 레벨은 업데이트하지 않음 (DFO API가 소스)
       // characterInfo에서 직접 값 가져오기 (백엔드에서 추가된 필드)
       if (characterInfo) {
-        if (characterInfo.buffPower !== undefined) {
+        // 총딜 업데이트 (0인 경우 기존값 유지)
+        if (characterInfo.totalDamage !== undefined && characterInfo.totalDamage !== null) {
+          if (characterInfo.totalDamage === 0 && character.totalDamage && character.totalDamage > 0) {
+            console.log(`   ❌ ${character.characterName} 총딜 0값 무시, 기존값 유지: ${character.totalDamage}`);
+          } else {
+            const oldTotalDamage = character.totalDamage;
+            character.totalDamage = characterInfo.totalDamage;
+            console.log(`   ✅ ${character.characterName} 총딜 업데이트: ${oldTotalDamage} → ${characterInfo.totalDamage}`);
+          }
+        }
+        
+        // 버프력 업데이트
+        if (characterInfo.buffPower !== undefined && characterInfo.buffPower !== null) {
+          const oldBuffPower = character.buffPower;
           character.buffPower = characterInfo.buffPower;
-          console.log(`${character.characterName} 버프력 업데이트:`, characterInfo.buffPower);
+          console.log(`   ✅ ${character.characterName} 버프력 업데이트: ${oldBuffPower} → ${characterInfo.buffPower}`);
         }
-        if (characterInfo.totalDamage !== undefined) {
-          character.totalDamage = characterInfo.totalDamage;
-          console.log(`${character.characterName} 총딜 업데이트:`, characterInfo.totalDamage);
-        }
-        if (characterInfo.combatPower !== undefined) {
+        
+        // 전투력 업데이트
+        if (characterInfo.combatPower !== undefined && characterInfo.combatPower !== null) {
+          const oldCombatPower = character.combatPower;
           character.combatPower = characterInfo.combatPower;
-          console.log(`${character.characterName} 전투력 업데이트:`, characterInfo.combatPower);
+          console.log(`   ✅ ${character.characterName} 전투력 업데이트: ${oldCombatPower} → ${characterInfo.combatPower}`);
         }
       }
       
       // updateResult에서도 확인 (기존 로직 유지)
       if (updateResult && updateResult.characterInfo) {
         const { buffPower, totalDamage, combatPower } = updateResult.characterInfo;
-        if (buffPower !== undefined) character.buffPower = buffPower;
-        if (totalDamage !== undefined) character.totalDamage = totalDamage;
-        if (combatPower !== undefined) character.combatPower = combatPower;
+        if (buffPower !== undefined && buffPower !== null) {
+          const oldBuffPower = character.buffPower;
+          character.buffPower = buffPower;
+          console.log(`   ✅ ${character.characterName} 버프력 업데이트 (updateResult): ${oldBuffPower} → ${buffPower}`);
+        }
+        if (totalDamage !== undefined && totalDamage !== null) {
+          // totalDamage가 0이고 기존값이 유효한 경우 기존값 유지
+          if (totalDamage === 0 && character.totalDamage && character.totalDamage > 0) {
+            console.log(`   ❌ ${character.characterName} 총딜 0값 무시, 기존값 유지: ${character.totalDamage}`);
+          } else {
+            const oldTotalDamage = character.totalDamage;
+            character.totalDamage = totalDamage;
+            console.log(`   ✅ ${character.characterName} 총딜 업데이트 (updateResult): ${oldTotalDamage} → ${totalDamage}`);
+          }
+        }
+        if (combatPower !== undefined && combatPower !== null) {
+          const oldCombatPower = character.combatPower;
+          character.combatPower = combatPower;
+          console.log(`   ✅ ${character.characterName} 전투력 업데이트 (updateResult): ${oldCombatPower} → ${combatPower}`);
+        }
       }
       
-      console.log(`${character.characterName} 정보가 SSE로 업데이트되었습니다.`);
+      console.log(`   업데이트 후 스탯 - 전투력: ${character.combatPower}, 버프력: ${character.buffPower}, 총딜: ${character.totalDamage}`);
+      console.log(`🎉 ${character.characterName} 정보가 SSE로 업데이트되었습니다.`);
       
       // UI 강제 업데이트를 위해 배열 재할당
       searchResults.value = [...searchResults.value];

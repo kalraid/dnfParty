@@ -363,9 +363,9 @@
                 </div>
                 
                 <div class="action-cell">
-                  <div class="action-label">케릭정보 최신화</div>
-                  <button @click="refreshCharacterInfo(character)" class="action-btn refresh-btn" :disabled="refreshingCharacters.includes(character.characterId)" title="DFO API로 명성 최신화">
-                    {{ refreshingCharacters.includes(character.characterId) ? '🔄' : '🔄' }}
+                                      <div class="action-label">케릭정보 최신화 (비활성화)</div>
+                  <button @click="refreshCharacterInfo(character)" class="action-btn refresh-btn" disabled title="캐릭터 정보 최신화 기능이 일시적으로 비활성화되었습니다">
+                                          ⏸️
                   </button>
                 </div>
                 
@@ -1395,23 +1395,44 @@ const handleCharacterUpdate = (event: RealtimeEvent) => {
         if (characterIndex !== -1) {
           const character = characters.value[characterIndex];
           
-          // 스탯 업데이트
+          console.log(`🔄 SSE 업데이트 시작: ${character.characterName} (${character.adventureName})`);
+          console.log(`   기존 스탯 - 전투력: ${character.combatPower}, 버프력: ${character.buffPower}, 총딜: ${character.totalDamage}`);
+          
+          // ⚠️ SSE로 받은 데이터에서 명성과 레벨은 업데이트하지 않음 (DFO API가 소스)
+          // 스탯 업데이트 (총딜, 버프력, 전투력만)
           if (characterInfo) {
+            // 총딜 업데이트 (0인 경우 기존값 유지)
             if (characterInfo.totalDamage !== undefined && characterInfo.totalDamage !== null) {
-              character.totalDamage = characterInfo.totalDamage;
+              if (characterInfo.totalDamage === 0 && character.totalDamage && character.totalDamage > 0) {
+                console.log(`   ❌ ${character.characterName} 총딜 0값 무시, 기존값 유지: ${character.totalDamage}`);
+              } else {
+                const oldTotalDamage = character.totalDamage;
+                character.totalDamage = characterInfo.totalDamage;
+                console.log(`   ✅ ${character.characterName} 총딜 업데이트: ${oldTotalDamage} → ${characterInfo.totalDamage}`);
+              }
             }
+            
+            // 버프력 업데이트
             if (characterInfo.buffPower !== undefined && characterInfo.buffPower !== null) {
+              const oldBuffPower = character.buffPower;
               character.buffPower = characterInfo.buffPower;
+              console.log(`   ✅ ${character.characterName} 버프력 업데이트: ${oldBuffPower} → ${characterInfo.buffPower}`);
             }
+            
+            // 전투력 업데이트
             if (characterInfo.combatPower !== undefined && characterInfo.combatPower !== null) {
+              const oldCombatPower = character.combatPower;
               character.combatPower = characterInfo.combatPower;
+              console.log(`   ✅ ${character.characterName} 전투력 업데이트: ${oldCombatPower} → ${characterInfo.combatPower}`);
             }
           }
+          
+          console.log(`   업데이트 후 스탯 - 전투력: ${character.combatPower}, 버프력: ${character.buffPower}, 총딜: ${character.totalDamage}`);
           
           // 성공 메시지 표시
           successMessage.value = `${character.characterName}의 던담 동기화가 완료되었습니다.`;
           
-          console.log('캐릭터 실시간 업데이트 완료:', character.characterName);
+          console.log(`🎉 ${character.characterName} 실시간 업데이트 완료`);
         }
       }
     }

@@ -428,10 +428,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { apiFetch } from '../config/api';
 import { isBuffer } from '../utils/characterUtils';
+import sseService from '@/services/sseService'
 
 // 던전별 명성 요구사항 상수
 const DUNGEON_FAME_REQUIREMENTS = {
@@ -503,8 +504,91 @@ watch(advancedOptions, () => {
   saveAdvancedOptions();
 }, { deep: true });
 
+// SSE 이벤트 리스너 등록
+const handleCharacterUpdated = (event: any) => {
+  console.log('캐릭터 업데이트 이벤트 수신 (파티 구성):', event);
+  
+  if (event.type === 'CHARACTER_UPDATED' && event.data) {
+    const { characterId, serverId, updateResult, characterInfo } = event.data;
+    
+    // allCharacters에서 해당 캐릭터 찾기
+    const characterIndex = allCharacters.value.findIndex(
+      (char: any) => char.characterId === characterId && char.serverId === serverId
+    );
+    
+    if (characterIndex !== -1) {
+      // 캐릭터 정보 업데이트
+      const character = allCharacters.value[characterIndex];
+      
+      console.log(`🔄 SSE 업데이트 시작 (파티 구성): ${character.characterName} (${character.adventureName})`);
+      console.log(`   기존 스탯 - 전투력: ${character.combatPower}, 버프력: ${character.buffPower}, 총딜: ${character.totalDamage}`);
+      
+      // characterInfo에서 직접 값 가져오기 (백엔드에서 추가된 필드)
+      if (characterInfo) {
+        // ⚠️ 명성과 레벨은 SSE로 업데이트하지 않음 (DFO API가 소스)
+        // 버프력 업데이트
+        if (characterInfo.buffPower !== undefined && characterInfo.buffPower !== null) {
+          const oldBuffPower = character.buffPower;
+          character.buffPower = characterInfo.buffPower;
+          console.log(`   ✅ ${character.characterName} 버프력 업데이트: ${oldBuffPower} → ${characterInfo.buffPower}`);
+        }
+        
+        // 총딜 업데이트 (0인 경우 기존값 유지)
+        if (characterInfo.totalDamage !== undefined && characterInfo.totalDamage !== null) {
+          // totalDamage가 0이고 기존값이 유효한 경우 기존값 유지
+          if (characterInfo.totalDamage === 0 && character.totalDamage && character.totalDamage > 0) {
+            console.log(`   ❌ ${character.characterName} 총딜 0값 무시, 기존값 유지: ${character.totalDamage}`);
+          } else {
+            const oldTotalDamage = character.totalDamage;
+            character.totalDamage = characterInfo.totalDamage;
+            console.log(`   ✅ ${character.characterName} 총딜 업데이트: ${oldTotalDamage} → ${characterInfo.totalDamage}`);
+          }
+        }
+        
+        // 전투력 업데이트
+        if (characterInfo.combatPower !== undefined && characterInfo.combatPower !== null) {
+          const oldCombatPower = character.combatPower;
+          character.combatPower = characterInfo.combatPower;
+          console.log(`   ✅ ${character.characterName} 전투력 업데이트: ${oldCombatPower} → ${characterInfo.combatPower}`);
+        }
+      }
+      
+      // updateResult에서도 확인 (기존 로직 유지)
+      if (updateResult && updateResult.characterInfo) {
+        const { buffPower, totalDamage, combatPower } = updateResult.characterInfo;
+        if (buffPower !== undefined && buffPower !== null) {
+          const oldBuffPower = character.buffPower;
+          character.buffPower = buffPower;
+          console.log(`   ✅ ${character.characterName} 버프력 업데이트 (updateResult): ${oldBuffPower} → ${buffPower}`);
+        }
+        if (totalDamage !== undefined && totalDamage !== null) {
+          // totalDamage가 0이고 기존값이 유효한 경우 기존값 유지
+          if (totalDamage === 0 && character.totalDamage && character.totalDamage > 0) {
+            console.log(`   ❌ ${character.characterName} 총딜 0값 무시, 기존값 유지: ${character.totalDamage}`);
+          } else {
+            const oldTotalDamage = character.totalDamage;
+            character.totalDamage = totalDamage;
+            console.log(`   ✅ ${character.characterName} 총딜 업데이트 (updateResult): ${oldTotalDamage} → ${totalDamage}`);
+          }
+        }
+        if (combatPower !== undefined && combatPower !== null) {
+          const oldCombatPower = character.combatPower;
+          character.combatPower = combatPower;
+          console.log(`   ✅ ${character.characterName} 전투력 업데이트 (updateResult): ${oldCombatPower} → ${combatPower}`);
+        }
+      }
+      
+      console.log(`   업데이트 후 스탯 - 전투력: ${character.combatPower}, 버프력: ${character.buffPower}, 총딜: ${character.totalDamage}`);
+      console.log(`🎉 ${character.characterName} 정보가 SSE로 업데이트되었습니다. (파티 구성)`);
+      
+      // UI 강제 업데이트를 위해 배열 재할당
+      allCharacters.value = [...allCharacters.value];
+    }
+  }
+};
+
 // 컴포넌트 마운트
-onMounted(() => {
+onMounted(async () => {
   console.log('=== 파티 구성 페이지 마운트 ===');
   // 기본값: 나벨 일반 선택
   selectedDungeon.value = 'nabel-normal';
@@ -513,6 +597,25 @@ onMounted(() => {
   loadSearchHistory();
   loadCharactersFromAPI();
   loadAdvancedOptions(); // Advanced 옵션 복원
+  
+  // SSE 연결
+  try {
+    await sseService.connect();
+    
+    // CHARACTER_UPDATED 이벤트 리스너 등록
+    sseService.addEventListener('CHARACTER_UPDATED', handleCharacterUpdated);
+    
+    console.log('SSE 연결 및 이벤트 리스너 등록 완료 (파티 구성)');
+  } catch (error) {
+    console.error('SSE 연결 실패 (파티 구성):', error);
+    console.log('SSE 연결 실패로 인해 실시간 업데이트가 비활성화됩니다.');
+  }
+});
+
+// 컴포넌트 언마운트 시 SSE 연결 해제
+onUnmounted(() => {
+  sseService.removeEventListener('CHARACTER_UPDATED', handleCharacterUpdated);
+  console.log('SSE 이벤트 리스너 해제 완료 (파티 구성)');
 });
 
 // 검색 기록에서 모험단 목록 가져오기 (CharacterSearch.vue와 동일한 localStorage 키 사용)
@@ -1750,6 +1853,8 @@ const debugLocalStorage = async () => {
         `제외된 모험단 목록:\n${Array.from(invalidAdventures).join('\n') || '없음'}\n\n` +
         `자세한 내용은 브라우저 콘솔을 확인하세요.`);
 };
+
+
 </script>
 
 <style scoped>

@@ -737,10 +737,6 @@ public class PlaywrightCrawlingService {
             String pageContent = page.content();
             log.info("=== 페이지 전체 HTML 크기: {} bytes ===", pageContent.length());
 
-            // HTML 파일로 저장
-            saveHtmlToFile(pageContent);
-            log.info("✅ HTML 파일 저장 완료");
-
             // 페이지 텍스트 내용도 확인
             String pageText = page.textContent("body");
             log.info("=== 페이지 텍스트 내용 크기: {} 문자 ===", pageText != null ? pageText.length() : 0);
@@ -814,23 +810,7 @@ public class PlaywrightCrawlingService {
     }
 }
 
-/**
- * HTML 내용을 파일로 저장 (backend 프로젝트 폴더 내에 playwright_crawl.html로 저장)
- */
-private void saveHtmlToFile(String htmlContent) {
-    try {
-        // backend 프로젝트 폴더 내에 저장
-        String fileName = "playwright_crawl.html";
-        String filePath = Paths.get(fileName).toAbsolutePath().normalize().toString();
-        
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(htmlContent);
-            log.info("✅ HTML 파일 저장 완료: {}", filePath);
-        }
-    } catch (IOException e) {
-        log.warn("HTML 파일 저장 실패: {}", e.getMessage());
-    }
-}
+
 
 /**
  * 서비스 종료 시 리소스 정리

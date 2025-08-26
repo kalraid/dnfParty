@@ -1067,6 +1067,7 @@ public class CharacterService {
         dto.put("dungeonClearNabel", character.getDungeonClearNabel());
         dto.put("dungeonClearVenus", character.getDungeonClearVenus());
         dto.put("dungeonClearFog", character.getDungeonClearFog());
+        dto.put("dungeonClearTwilight", character.getDungeonClearTwilight());
         dto.put("isFavorite", character.getIsFavorite());
         dto.put("excludedDungeons", parseExcludedDungeons(character.getExcludedDungeons()));
         dto.put("createdAt", character.getCreatedAt());
@@ -1579,7 +1580,38 @@ public class CharacterService {
                     character.getLevel(), character.getFame());
             }
             
-            // 4. DTO 변환
+            // 4. 각 캐릭터의 던전 클리어 현황 조회 및 업데이트
+            log.info("각 캐릭터의 던전 클리어 현황 조회 시작...");
+            for (Character character : characters) {
+                try {
+                    log.info("캐릭터 {}의 던전 클리어 현황 조회 중...", character.getCharacterName());
+                    Map<String, Object> clearStatusInfo = dungeonClearService.getDungeonClearStatus(
+                        character.getServerId(), 
+                        character.getCharacterId()
+                    );
+                    
+                    if (clearStatusInfo != null && Boolean.TRUE.equals(clearStatusInfo.get("success"))) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Boolean> clearStatus = (Map<String, Boolean>) clearStatusInfo.get("clearStatus");
+                        
+                        // 던전 클리어 상태 업데이트
+                        character.setDungeonClearNabel(clearStatus.getOrDefault("nabel", false));
+                        character.setDungeonClearVenus(clearStatus.getOrDefault("venus", false));
+                        character.setDungeonClearFog(clearStatus.getOrDefault("fog", false));
+                        character.setDungeonClearTwilight(clearStatus.getOrDefault("twilight", false));
+                        
+                        log.info("캐릭터 {} 던전 클리어 현황 업데이트: nabel={}, venus={}, fog={}, twilight={}", 
+                            character.getCharacterName(), clearStatus.get("nabel"), clearStatus.get("venus"), 
+                            clearStatus.get("fog"), clearStatus.get("twilight"));
+                    } else {
+                        log.warn("캐릭터 {}의 던전 클리어 현황 조회 실패: {}", character.getCharacterName(), clearStatusInfo);
+                    }
+                } catch (Exception e) {
+                    log.warn("캐릭터 {}의 던전 클리어 현황 조회 중 오류: {}", character.getCharacterName(), e.getMessage());
+                }
+            }
+            
+            // 5. DTO 변환
             log.info("캐릭터 정보를 DTO로 변환 중...");
             List<Map<String, Object>> characterDtos = characters.stream()
                 .map(this::convertToDto)

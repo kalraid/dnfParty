@@ -21,6 +21,7 @@ export const useCharacterStore = defineStore('character', {
     error: null as string | null,
     searchHistory: [] as SearchRecord[],
     adventures: new Map<string, Character[]>(), // 모험단별 캐릭터 그룹
+    lockedCharacters: new Set<string>(), // 잠긴 캐릭터 ID 목록
   }),
 
   getters: {
@@ -47,6 +48,21 @@ export const useCharacterStore = defineStore('character', {
 
     highFameCharacters: (state) => {
       return (minFame: number) => state.characters.filter(c => (c.fame || 0) >= minFame)
+    },
+
+    // 잠금되지 않은 캐릭터만 반환 (자동 파티 구성용)
+    unlockedCharacters: (state) => {
+      return state.characters.filter(character => !state.lockedCharacters.has(character.characterId))
+    },
+
+    // 잠긴 캐릭터만 반환
+    lockedCharactersList: (state) => {
+      return state.characters.filter(character => state.lockedCharacters.has(character.characterId))
+    },
+
+    // 특정 캐릭터의 잠금 상태 확인
+    isCharacterLocked: (state) => {
+      return (characterId: string) => state.lockedCharacters.has(characterId)
     },
 
     // 모험단별 그룹화
@@ -290,6 +306,58 @@ export const useCharacterStore = defineStore('character', {
     clearSearchHistory() {
       this.searchHistory = [];
       this.saveSearchHistory();
+    },
+
+    // 캐릭터 잠금/해제 토글
+    toggleCharacterLock(characterId: string) {
+      if (this.lockedCharacters.has(characterId)) {
+        this.lockedCharacters.delete(characterId);
+      } else {
+        this.lockedCharacters.add(characterId);
+      }
+      this.saveLockedCharacters();
+    },
+
+    // 특정 캐릭터 잠금
+    lockCharacter(characterId: string) {
+      this.lockedCharacters.add(characterId);
+      this.saveLockedCharacters();
+    },
+
+    // 특정 캐릭터 잠금 해제
+    unlockCharacter(characterId: string) {
+      this.lockedCharacters.delete(characterId);
+      this.saveLockedCharacters();
+    },
+
+    // 모든 캐릭터 잠금 해제
+    unlockAllCharacters() {
+      this.lockedCharacters.clear();
+      this.saveLockedCharacters();
+    },
+
+    // 잠금 상태 로컬 스토리지에 저장
+    saveLockedCharacters() {
+      try {
+        const lockedArray = Array.from(this.lockedCharacters);
+        localStorage.setItem('df_locked_characters', JSON.stringify(lockedArray));
+      } catch (error) {
+        console.error('잠금 상태 저장 실패:', error);
+      }
+    },
+
+    // 잠금 상태 로컬 스토리지에서 복원
+    loadLockedCharacters() {
+      try {
+        const saved = localStorage.getItem('df_locked_characters');
+        if (saved) {
+          const lockedArray = JSON.parse(saved);
+          this.lockedCharacters = new Set(lockedArray);
+        }
+      } catch (error) {
+        console.error('잠금 상태 복원 실패:', error);
+        this.lockedCharacters = new Set();
+      }
     },
   },
 })

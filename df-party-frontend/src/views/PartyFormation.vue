@@ -307,11 +307,20 @@
                     :class="{ 
                       'in-use': isCharacterInParty(character.characterId),
                       'is-helper': isHelperCharacter(character),
-                      'draggable': !isCharacterInParty(character.characterId)
+                      'draggable': !isCharacterInParty(character.characterId),
+                      'locked': isCharacterLocked(character.characterId)
                     }"
                     :draggable="!isCharacterInParty(character.characterId)"
                     @dragstart="onDragStart($event, character)"
                   >
+                    <!-- 잠금 상태 표시 -->
+                    <button 
+                      @click="toggleCharacterLock(character.characterId)"
+                      :class="['lock-button', { 'locked': isCharacterLocked(character.characterId) }]"
+                      :title="isCharacterLocked(character.characterId) ? '잠금 해제' : '잠금'"
+                    >
+                      {{ isCharacterLocked(character.characterId) ? '🔒' : '🔓' }}
+                    </button>
                     <!-- 파티 포함 표시 - 카드 왼쪽 상단에 배치 -->
                     <div v-if="isCharacterInParty(character.characterId)" class="in-party-badge-left">
                       🔒
@@ -363,11 +372,20 @@
                     :class="{ 
                       'in-use': isCharacterInParty(character.characterId),
                       'is-helper': isHelperCharacter(character),
-                      'draggable': !isCharacterInParty(character.characterId)
+                      'draggable': !isCharacterInParty(character.characterId),
+                      'locked': isCharacterLocked(character.characterId)
                     }"
                     :draggable="!isCharacterInParty(character.characterId)"
                     @dragstart="onDragStart($event, character)"
                   >
+                    <!-- 잠금 상태 표시 -->
+                    <button 
+                      @click="toggleCharacterLock(character.characterId)"
+                      :class="['lock-button', { 'locked': isCharacterLocked(character.characterId) }]"
+                      :title="isCharacterLocked(character.characterId) ? '잠금 해제' : '잠금'"
+                    >
+                      {{ isCharacterLocked(character.characterId) ? '🔒' : '🔓' }}
+                    </button>
                     <!-- 파티 포함 표시 - 카드 왼쪽 상단에 배치 -->
                     <div v-if="isCharacterInParty(character.characterId)" class="in-party-badge-left">
                       🔒
@@ -433,6 +451,10 @@ import { RouterLink } from 'vue-router';
 import { apiFetch } from '../config/api';
 import { isBuffer } from '../utils/characterUtils';
 import sseService from '@/services/sseService'
+import { useCharacterStore } from '../stores/character'
+
+// Store 인스턴스화
+const characterStore = useCharacterStore();
 
 // 던전별 명성 요구사항 상수
 const DUNGEON_FAME_REQUIREMENTS = {
@@ -597,6 +619,9 @@ onMounted(async () => {
   loadSearchHistory();
   loadCharactersFromAPI();
   loadAdvancedOptions(); // Advanced 옵션 복원
+  
+  // 잠금 상태 로드
+  characterStore.loadLockedCharacters();
   
   // SSE 연결
   try {
@@ -963,9 +988,9 @@ const removeAdventure = (adventure: string) => {
   clearParty();
 };
 
-// 선택된 던전에 따라 조건에 맞는 캐릭터 필터링 (안감 제외, 업둥 포함)
+// 선택된 던전에 따라 조건에 맞는 캐릭터 필터링 (안감 제외, 업둥 포함, 잠금 제외)
 const getFilteredCharacters = (adventureName: string) => {
-  // console.log(`getFilteredCharacters 호출: adventureName="${adventureName}"`);
+  console.log(`getFilteredCharacters 호출: adventureName="${adventureName}"`);
   
   // allCharacters가 undefined이거나 null인 경우 빈 배열 반환
   if (!allCharacters.value || !Array.isArray(allCharacters.value)) {
@@ -975,18 +1000,23 @@ const getFilteredCharacters = (adventureName: string) => {
   
   // 1. 모험단별 캐릭터 필터링
   const adventureCharacters = allCharacters.value.filter(c => c.adventureName === adventureName);
+  console.log(`모험단 "${adventureName}" 캐릭터 수: ${adventureCharacters.length}`);
   
   if (adventureCharacters.length === 0) {
     return [];
   }
   
-  // 2. 던전이 선택되지 않았다면 모든 캐릭터 반환 (안감만 제외)
+  // 2. 잠긴 캐릭터는 제외하지 않고 모두 표시 (시각적으로만 구분)
+  const availableCharacters = adventureCharacters;
+  console.log(`전체 캐릭터 수: ${availableCharacters.length}`);
+  
+  // 3. 던전이 선택되지 않았다면 모든 캐릭터 반환
   if (!selectedDungeon.value) {
-    return adventureCharacters; // 던전 선택 안했을 때는 모든 캐릭터 표시
+    return availableCharacters; // 던전 선택 안했을 때는 모든 캐릭터 표시
   }
   
-  // 3. 선택된 던전에 따라 필터링
-  const filteredCharacters = adventureCharacters.filter(character => {
+  // 4. 선택된 던전에 따라 필터링
+  const filteredCharacters = availableCharacters.filter(character => {
     let dungeonCondition = false;
     let isExcluded = false;
     
@@ -1026,7 +1056,7 @@ const getFilteredCharacters = (adventureName: string) => {
     return shouldInclude;
   });
   
-  // 4. 딜러와 버퍼를 각각 정렬하여 반환
+  // 5. 딜러와 버퍼를 각각 정렬하여 반환
   const dealers = filteredCharacters.filter(char => !isBuffer(char));
   const buffers = filteredCharacters.filter(char => isBuffer(char));
   
@@ -1057,6 +1087,12 @@ const getCharactersInParties = (): string[] => {
 const onDragStart = (event: DragEvent, character: any) => {
   // 파티에 이미 들어간 캐릭터는 드래그 불가
   if (isCharacterInParty(character.characterId)) {
+    event.preventDefault();
+    return;
+  }
+  
+  // 잠긴 캐릭터는 드래그 불가
+  if (characterStore.isCharacterLocked(character.characterId)) {
     event.preventDefault();
     return;
   }
@@ -1118,6 +1154,12 @@ const onDrop = (event: DragEvent, partyIndex: number, slotIndex: number) => {
       // 새로운 캐릭터 추가
       const character = dragData.character;
       
+      // 우측 잠금된 캐릭터는 파티에 추가 불가
+      if (characterStore.isCharacterLocked(character.characterId)) {
+        error.value = `${character.characterName}은(는) 잠금 상태입니다. 파티에 추가할 수 없습니다.`;
+        return;
+      }
+      
       // 파티당 모험단 제한 체크
       if (!canAddCharacterToParty(character, partyIndex)) {
         error.value = `파티 ${partyIndex + 1}에는 이미 같은 모험단('${character.adventureName}')의 캐릭터가 있습니다. 한 파티당 하나의 모험단만 허용됩니다.`;
@@ -1139,6 +1181,9 @@ const onDrop = (event: DragEvent, partyIndex: number, slotIndex: number) => {
       
       // 기존 캐릭터가 있다면 교체, 없다면 추가
       parties.value[partyIndex][slotIndex] = character;
+      
+      // 파티에 추가된 캐릭터는 자동으로 잠금 해제 (파티 포함 상태로 변경)
+      characterStore.unlockCharacter(character.characterId);
     }
   }
 };
@@ -1164,6 +1209,15 @@ const canAddCharacterToParty = (character: any, partyIndex: number): boolean => 
   return true;
 };
 
+// 잠금 관련 메서드 및 computed
+const isCharacterLocked = (characterId: string): boolean => {
+  return characterStore.isCharacterLocked(characterId);
+};
+
+const toggleCharacterLock = (characterId: string) => {
+  characterStore.toggleCharacterLock(characterId);
+};
+
 // 슬롯 역할 체크 함수 (버퍼/딜러)
 // slotIndex는 실제 배열 인덱스 (0-3)
 const canAddCharacterToSlot = (character: any, slotIndex: number): boolean => {
@@ -1187,6 +1241,17 @@ const addNewParty = () => {
 };
 
 const removeFromParty = (partyIndex: number, slotIndex: number) => {
+  const removedCharacter = parties.value[partyIndex][slotIndex];
+  if (removedCharacter) {
+    // 파티에서 제거된 캐릭터는 원래 잠금 상태로 복원
+    // 단, 우측 잠금된 캐릭터는 복원하지 않음 (이미 잠금 상태이므로)
+    if (!characterStore.isCharacterLocked(removedCharacter.characterId)) {
+      characterStore.lockCharacter(removedCharacter.characterId);
+      console.log(`🔒 파티 제거로 자동 잠금 복원: ${removedCharacter.characterName}`);
+    } else {
+      console.log(`🔒 우측 잠금된 캐릭터는 잠금 복원하지 않음: ${removedCharacter.characterName}`);
+    }
+  }
   parties.value[partyIndex][slotIndex] = null;
 };
 
@@ -1320,9 +1385,9 @@ const generateBasicParty = async () => {
     return;
   }
   
-  // 1. 캐릭터 분류 및 정렬
-  const dealers = availableCharacters.filter(char => !isBuffer(char));
-  const buffers = availableCharacters.filter(char => isBuffer(char));
+  // 1. 캐릭터 분류 및 정렬 (우측 잠금된 캐릭터는 제외)
+  const dealers = availableCharacters.filter(char => !isBuffer(char) && !characterStore.isCharacterLocked(char.characterId));
+  const buffers = availableCharacters.filter(char => isBuffer(char) && !characterStore.isCharacterLocked(char.characterId));
   
   // 딜러 리스트: 전투력 기준 내림차순 정렬 (강한 순)
   dealers.sort((a, b) => (b.totalDamage || 0) - (a.totalDamage || 0));
@@ -1502,6 +1567,16 @@ const generateBasicParty = async () => {
   if (newParties.length > 0) {
     parties.value = newParties;
     console.log('파티 생성 완료:', newParties);
+    
+    // 파티에 추가된 모든 캐릭터를 자동으로 잠금 해제 (파티 포함 상태로 변경)
+    newParties.forEach(party => {
+      party.forEach(character => {
+        if (character) {
+          characterStore.unlockCharacter(character.characterId);
+          console.log(`🔓 파티 포함으로 자동 잠금 해제: ${character.characterName}`);
+        }
+      });
+    });
   } else {
     // 파티 생성 실패 시 alert로 원인 설명
     let failureReason = '';
@@ -2706,6 +2781,55 @@ const debugLocalStorage = async () => {
   position: relative;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* 잠금 버튼 스타일 (사용 가능한 캐릭터 목록용) */
+.lock-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  z-index: 10;
+}
+
+.lock-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.lock-button.locked {
+  color: #dc3545;
+}
+
+.lock-button:not(.locked) {
+  color: #6c757d;
+}
+
+/* 잠긴 캐릭터 카드 스타일 */
+.character-card.locked {
+  opacity: 0.6;
+  background: #f8f9fa;
+  border: 2px solid #dc3545;
+}
+
+.character-card.locked .character-name {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.character-card.locked .lock-button {
+  color: #dc3545;
 }
 
 /* 반응형 캐릭터 카드: 작은 화면에서 크기 조정 */

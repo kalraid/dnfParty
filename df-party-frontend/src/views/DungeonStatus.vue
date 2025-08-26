@@ -162,7 +162,7 @@
           <tr v-for="character in sortedCharacters" :key="character.characterId" 
               :class="{ 'all-cleared': character.dungeonClearNabel && character.dungeonClearVenus && character.dungeonClearFog && character.dungeonClearTwilight }">
             <td class="character-name">{{ character.characterName }}</td>
-            <td>{{ character.level || 'N/A' }}</td>
+            <td>{{ character.level || '0' }}</td>
             <td>{{ formatNumber(character.fame) }}</td>
             <td class="job-name">
               <span v-if="character.jobGrowName">{{ formatJobName(character.jobGrowName || '') }}</span>
@@ -484,7 +484,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useCharacterStore } from '../stores/character'
+
 import { usePartyStore } from '../stores/party'
 import sseService from '../services/sseService'
 import { apiFetch } from '../config/api'
@@ -505,6 +505,8 @@ interface RealtimeEvent {
 
 // 라우터 정보 가져오기
 const route = useRoute();
+
+
 
 // 반응형 데이터
 const searchQuery = ref(''); // 모험단 검색어
@@ -969,6 +971,8 @@ onMounted(async () => {
   // 저장된 필터 조건 복원
   restoreFilterCondition();
   
+  
+  
   // URL 파라미터에서 adventure 값 확인
   const adventureParam = route.query.adventure as string;
   if (adventureParam) {
@@ -1068,6 +1072,8 @@ const filteredCharacters = computed(() => {
   }
   return characters.value.filter(char => char.adventureName === selectedAdventure.value);
 });
+
+
 
 const filterByAdventure = async () => {
   if (selectedAdventure.value) {
@@ -2514,6 +2520,8 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
   font-weight: bold;
   color: #212529;
 }
+
+
 
 .dungeon-clear-column {
   text-align: center;

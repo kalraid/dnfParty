@@ -13,11 +13,10 @@ RUN apk add --no-cache --virtual .build-deps \
 # Copy package files first (for better layer caching)
 COPY package*.json ./
 
-# Install dependencies with optimizations and fix esbuild version mismatch
+# Install dependencies with optimizations
+# Let Vite handle esbuild version automatically
 RUN npm ci --cache .npm --prefer-offline --no-audit \
-    && npm cache clean --force \
-    && npm uninstall esbuild \
-    && npm install esbuild
+    && npm cache clean --force
 
 # Copy source code (this layer changes frequently)
 COPY . .

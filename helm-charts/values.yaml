@@ -14,6 +14,9 @@ backend:
   # DFO API Configuration
   dfoApiKey: ""
   
+  # Spring Profile Configuration
+  springProfilesActive: "production"
+  
   image:
     repository: kimrie92/dfo-party-backend
     tag: latest
@@ -72,8 +75,8 @@ frontend:
   
   # Environment variables for frontend
   env:
-    VITE_API_BASE_URL: "http://www.dnfpartyhelper.xyz/api"
-    VITE_WS_BASE_URL: "http://www.dnfpartyhelper.xyz"
+    VITE_API_BASE_URL: "https://www.dnfpartyhelper.xyz/api"
+    VITE_WS_BASE_URL: "https://www.dnfpartyhelper.xyz"
   
   resources:
     limits:

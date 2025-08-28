@@ -224,6 +224,16 @@ Write-Host "DB_HOST: $env:DB_HOST" -ForegroundColor Green
 Write-Host "DB_PORT: $env:DB_PORT" -ForegroundColor Green
 Write-Host "DB_NAME: $env:DB_NAME" -ForegroundColor Green
 
+# Set local profile for DB safety
+if (-not $env:SPRING_PROFILES_ACTIVE) {
+    $env:SPRING_PROFILES_ACTIVE = "local"
+    Write-Host "SPRING_PROFILES_ACTIVE not set, using 'local' profile for DB safety" -ForegroundColor Yellow
+} else {
+    Write-Host "SPRING_PROFILES_ACTIVE already set to: $env:SPRING_PROFILES_ACTIVE" -ForegroundColor Green
+}
+
+Write-Host "Final SPRING_PROFILES_ACTIVE: $env:SPRING_PROFILES_ACTIVE" -ForegroundColor Cyan
+
 # Check if Java is available
 if (-not (Get-Command "java" -ErrorAction SilentlyContinue)) {
     Write-Host "Error: Java is not installed or not in PATH" -ForegroundColor Red

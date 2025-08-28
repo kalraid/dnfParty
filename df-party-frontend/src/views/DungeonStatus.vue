@@ -1,6 +1,9 @@
 <template>
   <div class="dungeon-status">
-          <h2>던전 클리어 현황</h2>
+    <!-- RefreshProgress 컴포넌트 추가 -->
+    <RefreshProgress ref="refreshProgressRef" />
+    
+    <h2>던전 클리어 현황</h2>
       
       <!-- 모험단 검색 섹션 -->
       <div class="adventure-selection">
@@ -490,6 +493,7 @@ import sseService from '../services/sseService'
 import { apiFetch } from '../config/api'
 import { isBuffer } from '../utils/characterUtils'
 import type { Character } from '../types'
+import RefreshProgress from '../components/RefreshProgress.vue'
 
 // RealtimeEvent 타입 정의
 interface RealtimeEvent {
@@ -534,6 +538,9 @@ const lastAdventureSyncTimes = ref<Map<string, Date>>(new Map());
 
 // 실시간 타이머를 위한 상태
 const timerInterval = ref<number | null>(null);
+
+// RefreshProgress 컴포넌트 ref
+const refreshProgressRef = ref<InstanceType<typeof RefreshProgress> | null>(null);
 
 // 최근에 검색한 모험단 목록 (로컬스토리지에 저장)
 const recentSearchedAdventures = ref<string[]>([]);
@@ -1702,6 +1709,11 @@ const refreshAllCharacters = async () => {
     refreshingAll.value = true;
     error.value = '';
     successMessage.value = '';
+    
+    // RefreshProgress 컴포넌트 초기화 (캐릭터 수는 API 응답에서 가져옴)
+    if (refreshProgressRef.value) {
+      refreshProgressRef.value.initializeProgress(selectedAdventure.value, 0);
+    }
     
     // 던담 동기화가 진행되는 동안 다른 던담 초기화 버튼들 비활성화
     const response = await apiFetch(`/characters/adventure/${encodeURIComponent(selectedAdventure.value)}/refresh`, {

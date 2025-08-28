@@ -396,32 +396,50 @@
 # 2025년 8월 28일 작업 내용
 
 ## 31. GCP GKE 도메인 설정 및 HTTPS 구성
-- **작업 내용**: `dnfpartyhelper.xyz` 도메인을 GCP GKE에 연결하고 HTTPS 설정
-- **주요 변경사항**:
-  - **도메인 변경**: `dnfpartyhelper.xyz` → `www.dnfpartyhelper.xyz`
-  - **프로토콜 변경**: `https://` → `http://` (GKE Ingress에서 SSL 처리)
-  - **Ingress 생성**: `dnfpartyhelper-ingress.yaml`로 GKE Ingress, ManagedCertificate, FrontendConfig 설정
-  - **Nginx ConfigMap 업데이트**: `nginx-simple-configmap.yaml`로 서버명 변경
-  - **환경변수 업데이트**: `config-prod.env`와 `helm-charts/values.yaml`에서 도메인 설정 변경
+- **파일**: `dnfpartyhelper-ingress.yaml`, `nginx-simple-configmap.yaml`
+- **변경 내용**:
+  - GKE Ingress 생성: `www.dnfpartyhelper.xyz` 도메인 설정
+  - Managed Certificate 연결: 자동 SSL 인증서 발급
+  - Nginx ConfigMap 업데이트: HTTP to HTTPS 리다이렉트 설정
+  - helm-infra 재배포 없이 kubectl apply로 적용
 
-- **파일 변경사항**:
-  - `config-prod.env`: `VITE_API_BASE_URL`, `VITE_WS_BASE_URL` 도메인 변경
-  - `helm-charts/values.yaml`: `global.domain`, `frontend.env` 도메인 변경
-  - `dnfpartyhelper-ingress.yaml`: Ingress 호스트명과 ManagedCertificate 도메인 변경
-  - `nginx-simple-configmap.yaml`: Nginx 서버명 변경
+## 32. 운영 환경 Spring 프로필 최적화 및 이슈 해결
+- **파일**: `df-party-backend/src/main/resources/application.yml`, `df-party-backend/src/main/resources/application-production.yml`
+- **변경 내용**:
+  - application.yml에서 운영 환경 프로필 제거하여 중복 설정 해결
+  - application-production.yml에 운영 환경 전용 설정 추가
+  - 운영 환경: dnfp_prod 데이터베이스, 보안 강화, 성능 최적화
+  - 환경별 설정 분리: local, dev, production 명확한 구분
 
-- **배포 결과**:
-  - ✅ **백엔드**: 새로운 도메인 설정으로 재배포 완료 (Revision 36)
-  - ✅ **프론트엔드**: 새로운 도메인 설정으로 재배포 완료
-  - ⏳ **Infra**: 나중에 작업 예정 (helm-infra 재배포 없이 kubectl apply로 설정만 변경)
+## 33. 프론트엔드 환경 변수 설정 통합 및 최적화
+- **파일**: `df-party-frontend/env.production` (삭제), `df-party-frontend/src/config/api.ts`
+- **변경 내용**:
+  - 불필요한 env.production 파일 제거 (Helm 차트와 중복)
+  - API 설정을 런타임 환경 변수 읽기로 개선
+  - 개발/운영 환경별 동적 API URL 설정
+  - vite.config.ts 프록시와 Helm 차트 환경 변수 통합
 
-- **현재 상태**:
-  - Ingress External IP: `34.8.174.195`
-  - ManagedCertificate: `dnfpartyhelper-cert` (Provisioning 상태)
-  - DNS 설정 필요: GCP Cloud DNS에서 A 레코드 설정 및 네임서버 변경
+## 34. CORS 보안 설정 환경별 분리
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/config/CorsConfig.java`
+- **변경 내용**:
+  - 운영 환경: https://www.dnfpartyhelper.xyz만 허용
+  - 개발/로컬 환경: 모든 도메인 허용
+  - Spring 프로필 기반 동적 CORS 설정
+  - 보안 강화: 운영 환경에서 특정 도메인만 접근 허용
 
-## 작업 완료 상태
-- ✅ GCP GKE 도메인 설정 및 HTTPS 구성 완료
-- ✅ 백엔드/프론트엔드 새로운 도메인으로 재배포 완료
-- ✅ Ingress 및 ManagedCertificate 설정 완료
-- 📝 TODO.md에 새로운 작업 항목 추가 (영어 대소문자 문제, 모바일 반응형 처리)
+## 35. Helm 차트 백엔드 설정 운영 환경 최적화
+- **파일**: `helm-charts/backend/values.yaml`
+- **변경 내용**:
+  - Spring 프로필: kubernetes → production으로 변경
+  - 데이터베이스: dnfp → dnfp_prod로 변경
+  - 운영 환경에 맞는 환경 변수 설정
+  - Helm 차트와 application-production.yml 설정 일치
+
+## 36. 전체 시스템 운영 환경 이슈 해결 완료
+- **해결된 주요 이슈들**:
+  - 백엔드 설정 파일 중복 및 충돌 해결
+  - 프론트엔드 환경 변수 관리 통합
+  - CORS 보안 설정 환경별 분리
+  - Helm 차트 설정과 Spring 프로필 일치
+  - 데이터베이스 환경별 분리 (dnfp, dnfp_dev, dnfp_prod)
+  - 운영 환경 성능 및 보안 최적화

@@ -348,7 +348,7 @@ public class SseController {
                     } catch (IOException e) {
                         // Broken pipe는 클라이언트 연결 해제를 의미 (정상적인 상황)
                         if (e.getMessage() != null && e.getMessage().contains("Broken pipe")) {
-                            System.out.println("🔌 하트비트 전송 중 Broken pipe 감지: " + clientId + " - 클라이언트 연결이 정상적으로 해제됨");
+                            System.out.println("🔌 하트비트 전송 실패 - 연결 끊김: " + clientId);
                         } else {
                             System.err.println("❌ 하트비트 전송 실패: " + clientId + " - " + e.getMessage());
                         }

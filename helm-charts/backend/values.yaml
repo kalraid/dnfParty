@@ -51,7 +51,7 @@ ingress:
 
 env:
   - name: SPRING_PROFILES_ACTIVE
-    value: "kubernetes"
+    value: "production"
   - name: DF_API_KEY
     valueFrom:
       secretKeyRef:
@@ -63,13 +63,13 @@ env:
     value: "100"
   - name: DF_API_RATE_LIMIT_WINDOW
     value: "3600000"
-  # Database Configuration - Root 계정으로 접속
+  # Database Configuration - 운영 환경용 dnfp_prod 데이터베이스
   - name: DB_HOST
     value: "df-party-infrastructure-mariadb"
   - name: DB_PORT
     value: "3306"
   - name: DB_NAME
-    value: "dnfp"
+    value: "dnfp_prod"
   - name: DB_USERNAME
     value: "root"
   - name: DB_PASSWORD

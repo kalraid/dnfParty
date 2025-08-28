@@ -1,0 +1,141 @@
+# Production Environment Profile Configuration
+# 운영 환경에 최적화된 설정
+spring:
+  config:
+    activate:
+      on-profile: production
+  
+  # 운영 환경 데이터베이스 설정
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp_prod?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:dfparty}
+    password: ${DB_PASSWORD:dfparty-password}
+    # 운영 환경 데이터베이스 연결 풀 최적화
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        # 운영 환경 성능 최적화
+        jdbc:
+          batch_size: 50
+          fetch_size: 100
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+  
+  # 운영 환경 CORS 설정
+  web:
+    cors:
+      allowed-origins: https://www.dnfpartyhelper.xyz
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: false
+  
+  # 운영 환경에서는 개발 도구 비활성화
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+# 운영 환경 서버 설정 최적화
+server:
+  # 운영 환경 Tomcat 설정
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    connection-timeout: 300000
+    max-connections: 8192
+    # 운영 환경 최적화
+    accept-count: 100
+    processor-cache: 200
+    # 보안 설정
+    relaxed-query-chars: "[]|{}"
+    relaxed-path-chars: "[]|{}"
+  
+  # 운영 환경 보안 헤더
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        secure: true
+        http-only: true
+        same-site: strict
+
+# 운영 환경 DFO API 설정
+df:
+  api:
+    base-url: https://api.neople.co.kr/df
+    key: ${DF_API_KEY:your_dfo_api_key_here}
+    rate-limit: 100
+    rate-limit-window: 60000
+
+# 운영 환경 Playwright 설정
+playwright:
+  headless: true
+  browser:
+    type: chromium
+  skip-browser-download: true
+  browsers-path: /ms-playwright
+  chromium-executable-path: /usr/bin/chromium-browser
+
+# 운영 환경 던담 설정
+dundam:
+  crawling:
+    enabled: true
+    timeout: 30000
+    retry-count: 3
+
+# 운영 환경 로깅 설정
+logging:
+  level:
+    com.dfparty.backend: INFO
+    org.springframework.web: INFO
+    org.hibernate: WARN
+    org.springframework.security: INFO
+    # 운영 환경 모니터링
+    com.dfparty.backend.service.MemoryMonitoringService: INFO
+    com.dfparty.backend.service.CharacterSyncSchedulerService: INFO
+
+# 운영 환경 Actuator 설정 (보안 강화)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+    info:
+      enabled: true
+    metrics:
+      enabled: true
+  # 운영 환경 모니터링
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 운영 환경 보안 설정
+security:
+  # 운영 환경에서는 보안 강화
+  require-ssl: true
+  # 세션 관리
+  session:
+    timeout: 30m
+    max-sessions: 1
+    create-session: if-required

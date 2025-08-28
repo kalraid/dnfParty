@@ -539,13 +539,14 @@ public class CharacterController {
         
         try {
             // 비동기로 처리 시작하고 즉시 응답
-            characterService.refreshAdventureCharacters(adventureName);
+            characterService.refreshAdventureCharactersAsync(adventureName);
             
             Map<String, Object> result = Map.of(
                 "success", true,
-                "message", "모험단 전체 최신화가 백그라운드에서 시작되었습니다.",
+                "message", "모험단 전체 최신화가 백그라운드에서 시작되었습니다. SSE를 통해 진행 상황을 확인할 수 있습니다.",
                 "adventureName", adventureName,
-                "status", "processing"
+                "status", "processing",
+                "sseEventType", "refresh_start"
             );
             return ResponseEntity.ok(result);
             

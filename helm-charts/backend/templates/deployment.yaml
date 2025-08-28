@@ -53,6 +53,8 @@ spec:
             - name: ms-playwright
               mountPath: /ms-playwright
           env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.springProfilesActive | default "production" | quote }}
             {{- range .Values.env }}
             - name: {{ .name }}
               {{- if .value }}

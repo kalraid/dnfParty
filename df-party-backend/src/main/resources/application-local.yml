@@ -1,0 +1,71 @@
+# Local Development Profile Configuration
+# 로컬 부팅 시 DB 수정을 완전히 방지하는 설정
+spring:
+  config:
+    activate:
+      on-profile: local
+  
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:dfparty}
+    password: ${DB_PASSWORD:dfparty-password}
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate  # DB 스키마 수정 금지
+      validate-schema: true  # 스키마 검증 활성화
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        # DB 수정 방지 추가 설정
+        hbm2ddl:
+          auto: validate
+        # 스키마 검증 강화
+        validator:
+          apply_to_ddl: false
+          auto-register: false
+  
+  sql:
+    init:
+      mode: never  # SQL 초기화 완전 비활성화
+      continue-on-error: false  # 오류 시 중단
+
+# Local-specific logging
+logging:
+  level:
+    com.dfparty.backend: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+    # DB 관련 로그 레벨 조정
+    org.springframework.jdbc: INFO
+    org.springframework.transaction: INFO
+
+# Local DFO API settings
+df:
+  api:
+    base-url: https://api.neople.co.kr/df
+    key: ${DF_API_KEY:your_dfo_api_key_here}
+    rate-limit: 100
+    rate-limit-window: 60000
+
+# Local Dundam settings (완전 비활성화)
+dundam:
+  scheduler:
+    enabled: false  # 로컬에서 던담 동기화 비활성화
+  crawling:
+    enabled: false  # 로컬에서 던담 크롤링 비활성화
+  sync:
+    enabled: false  # 로컬에서 던담 동기화 완전 비활성화
+
+# Local-specific configurations
+local:
+  development:
+    db-readonly: true  # DB 읽기 전용 모드
+    schema-validation: true  # 스키마 검증 활성화
+    auto-migration: false  # 자동 마이그레이션 비활성화
+
+# Local database configuration
+# Uses dnfp database for local development

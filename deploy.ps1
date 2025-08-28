@@ -89,8 +89,13 @@ if ($Component -eq "all" -or $Component -eq "frontend") {
 if ($Component -eq "all" -or $Component -eq "backend") {
     Write-Host "Building backend..." -ForegroundColor Yellow
     Set-Location df-party-backend
+    
+    # Set production profile for backend build
+    $env:SPRING_PROFILES_ACTIVE = "production"
+    Write-Host "Setting SPRING_PROFILES_ACTIVE=production for backend build" -ForegroundColor Cyan
+    
     Write-Host "Building backend with tags: $timestamp and latest" -ForegroundColor Cyan
-    docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from kimrie92/dfo-party-backend:latest -t kimrie92/dfo-party-backend:$timestamp -t kimrie92/dfo-party-backend:latest .
+    docker build --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg SPRING_PROFILES_ACTIVE="production" --cache-from kimrie92/dfo-party-backend:latest -t kimrie92/dfo-party-backend:$timestamp -t kimrie92/dfo-party-backend:latest .
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Backend build failed" -ForegroundColor Red
         exit 1

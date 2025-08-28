@@ -93,21 +93,28 @@ public class LoggingInterceptor implements HandlerInterceptor {
         }
         
         if (ex != null) {
-            log.error("=== API 요청 중 예외 발생 [{}] ===", requestId);
-            log.error("예외 타입: {}", ex.getClass().getName());
-            log.error("예외 메시지: {}", ex.getMessage());
-            log.error("예외 원인: {}", ex.getCause() != null ? ex.getCause().getMessage() : "원인 없음");
-            
-            // 스택 트레이스 상세 분석
-            StackTraceElement[] stackTrace = ex.getStackTrace();
-            log.error("스택 트레이스 (최대 15개):");
-            for (int i = 0; i < Math.min(stackTrace.length, 15); i++) {
-                StackTraceElement element = stackTrace[i];
-                log.error("  {}: {}.{}({}:{})", 
-                    i, element.getClassName(), element.getMethodName(), 
-                    element.getFileName(), element.getLineNumber());
+            // SSE 연결 끊김은 간단한 로그만 출력
+            if (ex instanceof IOException && ex.getMessage() != null && 
+                ex.getMessage().contains("Broken pipe") && 
+                request.getRequestURI().contains("/api/sse/")) {
+                log.info("🔌 SSE 연결 끊김 [{}]: {}", requestId, request.getRequestURI());
+            } else {
+                log.error("=== API 요청 중 예외 발생 [{}] ===", requestId);
+                log.error("예외 타입: {}", ex.getClass().getName());
+                log.error("예외 메시지: {}", ex.getMessage());
+                log.error("예외 원인: {}", ex.getCause() != null ? ex.getCause().getMessage() : "원인 없음");
+                
+                // 스택 트레이스 상세 분석
+                StackTraceElement[] stackTrace = ex.getStackTrace();
+                log.error("스택 트레이스 (최대 15개):");
+                for (int i = 0; i < Math.min(stackTrace.length, 15); i++) {
+                    StackTraceElement element = stackTrace[i];
+                    log.error("  {}: {}.{}({}:{})", 
+                        i, element.getClassName(), element.getMethodName(), 
+                        element.getFileName(), element.getLineNumber());
+                }
+                log.error("=== API 요청 예외 로깅 완료 [{}] ===", requestId);
             }
-            log.error("=== API 요청 예외 로깅 완료 [{}] ===", requestId);
         }
     }
 

@@ -76,15 +76,13 @@ public class GlobalExceptionHandler {
         
         // SSE 연결 관련 요청인지 확인
         if (requestUri.contains("/api/sse/") || requestUri.contains("uri=/api/sse/")) {
-            System.out.println("=== SSE 연결 관련 IOException 처리 ===");
-            System.out.println("요청 URI: " + requestUri);
-            System.out.println("에러 타입: " + ex.getClass().getName());
-            System.out.println("에러 메시지: " + ex.getMessage());
-            System.out.println("발생 시간: " + LocalDateTime.now());
-            
-            // SSE 연결 관련 오류는 정상적인 상황 (클라이언트 연결 해제 등)
+            // SSE 연결 끊김은 간단한 로그만 출력
             if (ex.getMessage() != null && ex.getMessage().contains("Broken pipe")) {
-                System.out.println("🔌 SSE Broken pipe 감지 - 클라이언트 연결이 정상적으로 해제됨");
+                System.out.println("🔌 SSE 연결 끊김: " + requestUri);
+                // 정상적인 연결 해제이므로 상세 로그 제거
+            } else {
+                // Broken pipe가 아닌 다른 SSE 오류는 간단한 로그만
+                System.out.println("⚠️ SSE 연결 오류: " + ex.getMessage());
             }
             
             // SSE 연결 오류는 클라이언트에게 에러 응답을 보내지 않음

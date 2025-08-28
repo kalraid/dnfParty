@@ -392,3 +392,36 @@
     - 각 모험단별로 성공/실패 결과 추적
     - 실패 시에도 다음 모험단 처리 계속 진행
     - 30초 타임아웃 상황에서도 안정적으로 동작
+
+# 2025년 8월 28일 작업 내용
+
+## 31. GCP GKE 도메인 설정 및 HTTPS 구성
+- **작업 내용**: `dnfpartyhelper.xyz` 도메인을 GCP GKE에 연결하고 HTTPS 설정
+- **주요 변경사항**:
+  - **도메인 변경**: `dnfpartyhelper.xyz` → `www.dnfpartyhelper.xyz`
+  - **프로토콜 변경**: `https://` → `http://` (GKE Ingress에서 SSL 처리)
+  - **Ingress 생성**: `dnfpartyhelper-ingress.yaml`로 GKE Ingress, ManagedCertificate, FrontendConfig 설정
+  - **Nginx ConfigMap 업데이트**: `nginx-simple-configmap.yaml`로 서버명 변경
+  - **환경변수 업데이트**: `config-prod.env`와 `helm-charts/values.yaml`에서 도메인 설정 변경
+
+- **파일 변경사항**:
+  - `config-prod.env`: `VITE_API_BASE_URL`, `VITE_WS_BASE_URL` 도메인 변경
+  - `helm-charts/values.yaml`: `global.domain`, `frontend.env` 도메인 변경
+  - `dnfpartyhelper-ingress.yaml`: Ingress 호스트명과 ManagedCertificate 도메인 변경
+  - `nginx-simple-configmap.yaml`: Nginx 서버명 변경
+
+- **배포 결과**:
+  - ✅ **백엔드**: 새로운 도메인 설정으로 재배포 완료 (Revision 36)
+  - ✅ **프론트엔드**: 새로운 도메인 설정으로 재배포 완료
+  - ⏳ **Infra**: 나중에 작업 예정 (helm-infra 재배포 없이 kubectl apply로 설정만 변경)
+
+- **현재 상태**:
+  - Ingress External IP: `34.8.174.195`
+  - ManagedCertificate: `dnfpartyhelper-cert` (Provisioning 상태)
+  - DNS 설정 필요: GCP Cloud DNS에서 A 레코드 설정 및 네임서버 변경
+
+## 작업 완료 상태
+- ✅ GCP GKE 도메인 설정 및 HTTPS 구성 완료
+- ✅ 백엔드/프론트엔드 새로운 도메인으로 재배포 완료
+- ✅ Ingress 및 ManagedCertificate 설정 완료
+- 📝 TODO.md에 새로운 작업 항목 추가 (영어 대소문자 문제, 모바일 반응형 처리)

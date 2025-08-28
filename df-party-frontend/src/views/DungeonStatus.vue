@@ -1155,7 +1155,9 @@ const dungeonStats = computed(() => {
       }
     }
     if (!char.isExcludedVenus && isVenusEligible(char)) {
-      if (stats.venusTotal < getDungeonLimit('venus')) {
+      // 베누스는 제한이 없음 (getDungeonLimit('venus')가 0)
+      const venusLimit = getDungeonLimit('venus');
+      if (venusLimit === 0 || stats.venusTotal < venusLimit) {
         stats.venusTotal++;
         if (char.dungeonClearVenus) stats.venus++;
         // 베누스는 일반 모드만 있음 (임시로 클리어 여부로 계산)
@@ -2176,7 +2178,7 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
     case 'nabel':
       return 4; // 나벨 하드는 4케릭 제한
     case 'venus':
-      return 20; // 베누스는 20케릭 제한
+      return 0; // 베누스는 제한 없음 (0은 제한 없음을 의미)
     case 'fog':
       return 20; // 안개신은 20케릭 제한
     case 'twilight':

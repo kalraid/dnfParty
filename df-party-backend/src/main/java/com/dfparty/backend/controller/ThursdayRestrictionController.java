@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 @Slf4j
@@ -16,6 +18,14 @@ import java.util.Map;
 public class ThursdayRestrictionController {
 
     private final ThursdayFallbackService thursdayFallbackService;
+
+    /**
+     * 한국 표준시(KST) 기준 현재 시간 반환
+     */
+    private ZonedDateTime getCurrentTimeKST() {
+        ZoneId kstZone = ZoneId.of("Asia/Seoul");
+        return ZonedDateTime.now(kstZone);
+    }
 
     /**
      * 목요일 API 제한 정보 조회
@@ -71,9 +81,10 @@ public class ThursdayRestrictionController {
             Map<String, Object> status = Map.of(
                 "isThursday", isThursday,
                 "isNearResetTime", isNearResetTime,
-                "resetTime", "매주 목요일 오전 8시50분",
+                "resetTime", "매주 목요일 오전 8시 (KST)",
                 "nextReset", isThursday ? "이번 주 목요일" : "다음 주 목요일",
-                "currentTime", java.time.LocalDateTime.now()
+                "currentTime", getCurrentTimeKST(),
+                "timezone", "Asia/Seoul (KST)"
             );
             
             return ResponseEntity.ok(status);

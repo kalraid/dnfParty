@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Slf4j
@@ -21,14 +22,22 @@ public class DungeonClearResetService {
     private final CharacterRepository characterRepository;
 
     /**
-     * 매주 목요일 오전 8시 모든 캐릭터의 던전 클리어 상태를 초기화
+     * 한국 표준시(KST) 기준 현재 시간 반환
+     */
+    private LocalDateTime getCurrentTimeKST() {
+        ZoneId kstZone = ZoneId.of("Asia/Seoul");
+        return LocalDateTime.now(kstZone);
+    }
+
+    /**
+     * 매주 목요일 오전 8시 모든 캐릭터의 던전 클리어 상태를 초기화 (KST 기준)
      * cron: 매주 목요일(4) 오전 8시 
      */
     @Scheduled(cron = "0 0 8 * * 4")
     @Transactional
     public void resetDungeonClearStatus() {
         try {
-            log.info("목요일 오전 8시 - 던전 클리어 상태 초기화 시작");
+            log.info("목요일 오전 8시 (KST) - 던전 클리어 상태 초기화 시작");
             
             // 모든 캐릭터 조회
             List<Character> characters = characterRepository.findAll();
@@ -41,8 +50,8 @@ public class DungeonClearResetService {
                 character.setDungeonClearFog(false);
                 character.setDungeonClearTwilight(false);
                 
-                // 마지막 던전 체크 시간 업데이트
-                character.setLastDungeonCheck(LocalDateTime.now());
+                // 마지막 던전 체크 시간 업데이트 (KST 기준)
+                character.setLastDungeonCheck(getCurrentTimeKST());
                 
                 // 변경사항 저장
                 characterRepository.save(character);
@@ -59,17 +68,17 @@ public class DungeonClearResetService {
     }
 
     /**
-     * 목요일인지 확인
+     * 목요일인지 확인 (KST 기준)
      */
     public boolean isThursday() {
-        return LocalDateTime.now().getDayOfWeek() == DayOfWeek.THURSDAY;
+        return getCurrentTimeKST().getDayOfWeek() == DayOfWeek.THURSDAY;
     }
 
     /**
-     * 목요일 오전 8시50분 전후인지 확인 (8시45분 ~ 8시55분)
+     * 목요일 오전 8시 전후인지 확인 (7시55분 ~ 8시05분, KST 기준)
      */
     public boolean isNearThursdayResetTime() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = getCurrentTimeKST();
         if (now.getDayOfWeek() != DayOfWeek.THURSDAY) {
             return false;
         }
@@ -77,7 +86,7 @@ public class DungeonClearResetService {
         LocalTime currentTime = now.toLocalTime();
         LocalTime resetTime = LocalTime.of(8, 0);
         
-        // 7시55분 ~ 8시05분 범위 내인지 확인
+        // 7시55분 ~ 8시05분 범위 내인지 확인 (KST 기준)
         return currentTime.isAfter(LocalTime.of(7, 55)) && 
                currentTime.isBefore(LocalTime.of(8, 5));
     }
@@ -87,7 +96,7 @@ public class DungeonClearResetService {
      */
     @Transactional
     public void manualResetDungeonClearStatus() {
-        log.info("수동 던전 클리어 상태 초기화 시작");
+        log.info("수동 던전 클리어 상태 초기화 시작 (KST 기준)");
         resetDungeonClearStatus();
     }
 }

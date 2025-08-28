@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dnfpartyhelper-ingress
+  namespace: dfo
+  annotations:
+    kubernetes.io/ingress.class: gce
+    networking.gke.io/managed-certificates: dnfpartyhelper-cert
+    networking.gke.io/v1beta1-frontend-config: dnfpartyhelper-frontend-config
+    # nginx를 통한 라우팅 유지
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: www.dnfpartyhelper.xyz
+    http:
+      paths:
+      # 모든 경로를 nginx 서비스로 라우팅 (nginx가 내부적으로 /와 /api 분기)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: df-party-infrastructure-nginx
+            port:
+              number: 80
+---
+apiVersion: networking.gke.io/v1beta1
+kind: ManagedCertificate
+metadata:
+  name: dnfpartyhelper-cert
+  namespace: dfo
+spec:
+  domains:
+  - www.dnfpartyhelper.xyz
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: dnfpartyhelper-frontend-config
+  namespace: dfo
+spec:
+  redirectToHttps:
+    enabled: true
+  sslPolicy: "gcp-compatible"

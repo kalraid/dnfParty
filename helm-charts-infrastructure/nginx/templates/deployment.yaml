@@ -42,6 +42,9 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/nginx.conf

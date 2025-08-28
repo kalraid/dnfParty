@@ -13,6 +13,9 @@
         <strong>던전 초기화:</strong> {{ restrictionStatus?.resetTime || '확인 중...' }}
       </p>
       <p class="reason">{{ restrictionInfo?.reason }}</p>
+      <p class="timezone">
+        <strong>시간대:</strong> {{ restrictionStatus?.timezone || 'KST (한국 표준시)' }}
+      </p>
     </div>
     <div class="notice-actions">
       <button @click="checkStatus" class="status-btn">상태 확인</button>
@@ -41,6 +44,7 @@ interface RestrictionStatus {
   restrictedTimeRange: string
   resetTime: string
   currentTime: string
+  timezone: string
 }
 
 const restrictionInfo = ref<RestrictionInfo | null>(null)
@@ -157,6 +161,12 @@ onMounted(() => {
 }
 
 .reason {
+  font-size: 13px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.timezone {
   font-size: 13px;
   opacity: 0.8;
   font-style: italic;

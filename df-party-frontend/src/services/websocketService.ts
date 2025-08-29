@@ -39,7 +39,18 @@ class WebSocketService {
         return
       }
 
-      const socket = new SockJS(`${getWsUrl('')}/ws`, null, {
+      let wsUrl = `${getWsUrl('')}/ws`
+      
+      // 프로덕션에서 HTTP를 WSS로 변환
+      if (!import.meta.env.DEV && wsUrl.startsWith('http://')) {
+        wsUrl = wsUrl.replace('http://', 'wss://')
+        console.log('🔄 프로덕션 환경에서 WSS로 변환됨')
+      } else if (!import.meta.env.DEV && wsUrl.startsWith('https://')) {
+        wsUrl = wsUrl.replace('https://', 'wss://')
+        console.log('🔄 프로덕션 환경에서 WSS로 변환됨')
+      }
+      
+      const socket = new SockJS(wsUrl, null, {
         transports: ['websocket', 'xhr-streaming', 'xhr-polling']
       })
       this.stompClient = Stomp.over(socket)

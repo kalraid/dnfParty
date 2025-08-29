@@ -1,20 +1,50 @@
 // API 설정
 const getBaseUrl = (): string => {
+  // Helm 차트에서 설정된 환경 변수 우선 사용
+  if (import.meta.env.VITE_API_BASE_URL) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL
+    // 프로덕션에서 HTTP를 HTTPS로 변환
+    if (!import.meta.env.DEV && baseUrl.startsWith('http://')) {
+      console.log('🔄 프로덕션 환경에서 API URL을 HTTPS로 변환:', baseUrl)
+      return baseUrl.replace('http://', 'https://')
+    }
+    return baseUrl
+  }
+  
   // 개발 환경에서는 로컬 백엔드 사용
   if (import.meta.env.DEV) {
     return 'http://localhost:8080/api'
   }
-  // 프로덕션에서는 환경 변수 사용
-  return import.meta.env.VITE_API_BASE_URL || '/api'
+  
+  // 기본값
+  return '/api'
 }
 
 const getWsBaseUrl = (): string => {
+  // Helm 차트에서 설정된 환경 변수 우선 사용
+  if (import.meta.env.VITE_WS_BASE_URL) {
+    const wsUrl = import.meta.env.VITE_WS_BASE_URL
+    
+    // 프로덕션에서 HTTP/HTTPS를 WSS로 변환
+    if (!import.meta.env.DEV) {
+      if (wsUrl.startsWith('http://')) {
+        console.log('🔄 프로덕션 환경에서 WebSocket URL을 WSS로 변환:', wsUrl)
+        return wsUrl.replace('http://', 'wss://')
+      } else if (wsUrl.startsWith('https://')) {
+        console.log('🔄 프로덕션 환경에서 WebSocket URL을 WSS로 변환:', wsUrl)
+        return wsUrl.replace('https://', 'wss://')
+      }
+    }
+    return wsUrl
+  }
+  
   // 개발 환경에서는 로컬 백엔드 사용
   if (import.meta.env.DEV) {
     return 'http://localhost:8080'
   }
-  // 프로덕션에서는 환경 변수 사용
-  return import.meta.env.VITE_WS_BASE_URL || ''
+  
+  // 기본값
+  return ''
 }
 
 // 런타임에 환경 변수를 읽는 함수

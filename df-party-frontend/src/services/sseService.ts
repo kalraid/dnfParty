@@ -41,7 +41,13 @@ class SSEService {
       this.lastError.value = null
       
       const clientId = this.generateClientId()
-      const url = `${import.meta.env.VITE_API_BASE_URL}/sse/connect?clientId=${clientId}`
+      let url = `${import.meta.env.VITE_API_BASE_URL}/sse/connect?clientId=${clientId}`
+      
+      // 프로덕션에서 HTTP를 HTTPS로 변환
+      if (!import.meta.env.DEV && url.startsWith('http://')) {
+        url = url.replace('http://', 'https://')
+        console.log('🔄 프로덕션 환경에서 HTTPS로 변환됨')
+      }
       
       console.log(`📍 SSE 연결 URL: ${url}`)
       console.log(`🆔 클라이언트 ID: ${clientId}`)

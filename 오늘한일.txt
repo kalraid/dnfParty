@@ -443,3 +443,25 @@
   - Helm 차트 설정과 Spring 프로필 일치
   - 데이터베이스 환경별 분리 (dnfp, dnfp_dev, dnfp_prod)
   - 운영 환경 성능 및 보안 최적화
+
+## 37. Mixed Content 에러 해결 및 HTTPS/WSS 프로토콜 자동 변환 구현
+- **파일**: `df-party-frontend/src/config/api.ts`, `df-party-frontend/src/services/sseService.ts`, `df-party-frontend/src/services/websocketService.ts`, `df-party-frontend/vite.config.ts`
+- **변경 내용**:
+  - **Mixed Content 에러 해결**: HTTPS 페이지에서 HTTP 리소스 접근 시 브라우저 차단 문제 해결
+  - **프로토콜 자동 변환**: 프로덕션 환경에서 HTTP → HTTPS, HTTP/HTTPS → WSS 자동 변환
+  - **API 설정 개선**: `getBaseUrl()`, `getWsBaseUrl()` 함수에서 환경별 프로토콜 처리
+  - **SSE 서비스 수정**: EventSource URL 생성 시 HTTPS 강제 적용
+  - **WebSocket 서비스 수정**: SockJS URL 생성 시 WSS 강제 적용
+  - **Vite 설정 최적화**: 환경 변수 로드 및 개발/프로덕션 모드 구분
+  - **환경 변수 파일**: `env.production`, `env.local` 파일 생성으로 환경별 설정 분리
+  - **브라우저 호환성**: HTTPS 페이지에서 HTTP 리소스 접근 시 자동으로 HTTPS/WSS로 변환하여 Mixed Content 에러 방지
+
+## 38. 백엔드 및 Helm 차트 HTTPS/WSS 설정 완료
+- **파일**: `helm-charts/values.yaml`, `helm-charts/backend/values.yaml`, `df-party-backend/src/main/java/com/dfparty/backend/config/CorsConfig.java`, `df-party-frontend/src/config/api.ts`
+- **변경 내용**:
+  - **프론트엔드 Helm 차트**: WebSocket URL을 `wss://`로 수정하여 올바른 프로토콜 사용
+  - **백엔드 Helm 차트**: HTTPS 및 CORS 관련 환경 변수 추가 (SERVER_SSL_ENABLED, CORS_ALLOWED_ORIGINS 등)
+  - **백엔드 CORS 설정**: 환경 변수 기반으로 동적 CORS 설정 처리
+  - **프론트엔드 API 설정**: Helm 차트 환경 변수 우선순위 적용 및 로컬 개발 환경 분리
+  - **환경 변수 파일 정리**: 중복되는 env.production, env.local 파일 삭제
+  - **완전한 HTTPS/WSS 지원**: 프론트엔드, 백엔드, Helm 차트 모두에서 HTTPS/WSS 프로토콜 일관성 확보\n\n## 39. 백엔드 MariaDB 설정 및 Hibernate 캐시 문제 해결 완료\n- **파일**: `df-party-backend/src/main/resources/application-production.yml`, `df-party-backend/src/main/resources/application.yml`, `df-party-backend/src/main/resources/application-dev.yml`, `df-party-backend/src/main/resources/application-local.yml`, `df-party-backend/build.gradle`\n- **변경 내용**:\n  - **데이터베이스 드라이버**: MySQL → MariaDB 변경 (`org.mariadb.jdbc:mariadb-java-client:3.3.3`)\n  - **데이터베이스 URL**: `jdbc:mysql://` → `jdbc:mariadb://` 변경\n  - **Hibernate Dialect**: `MySQLDialect` → `MariaDBDialect` 변경\n  - **Hibernate 캐시 비활성화**: `use_second_level_cache: false`, `use_query_cache: false`\n  - **Tomcat 설정 수정**: `relaxed-path-chars` 형식을 올바른 리스트 형식으로 변경\n  - **모든 환경 설정 통일**: local, dev, production 환경 모두 MariaDB 설정 적용\n  - **백엔드 정상 시작**: MariaDB 연결 성공 및 JPA 초기화 완료"

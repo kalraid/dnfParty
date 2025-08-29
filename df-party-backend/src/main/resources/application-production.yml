@@ -7,9 +7,10 @@ spring:
   
   # 운영 환경 데이터베이스 설정
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp_prod?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp_prod?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:dfparty}
     password: ${DB_PASSWORD:dfparty-password}
+    driver-class-name: org.mariadb.jdbc.Driver
     # 운영 환경 데이터베이스 연결 풀 최적화
     hikari:
       maximum-pool-size: 20
@@ -19,20 +20,27 @@ spring:
       max-lifetime: 1800000
   
   jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: validate  # 운영환경에서 DB 수정 금지
+      validate-schema: true  # 스키마 검증 활성화
+    show-sql: false  # 운영환경에서는 SQL 로그 비활성화
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
         format_sql: false
         use_sql_comments: false
-        # 운영 환경 성능 최적화
-        jdbc:
-          batch_size: 50
-          fetch_size: 100
+        # Hibernate 캐시 비활성화
         cache:
-          use_second_level_cache: true
-          use_query_cache: true
+          use_second_level_cache: false
+          use_query_cache: false
+        # DB 수정 방지 추가 설정
+        hbm2ddl:
+          auto: validate
+        # 스키마 검증 강화
+        validator:
+          apply_to_ddl: false
+          auto-register: false
   
   # 운영 환경 CORS 설정
   web:
@@ -62,8 +70,8 @@ server:
     accept-count: 100
     processor-cache: 200
     # 보안 설정
-    relaxed-query-chars: "[]|{}"
-    relaxed-path-chars: "[]|{}"
+    relaxed-query-chars: "[,],|,{,}"
+    relaxed-path-chars: "[,],|,{,}"
   
   # 운영 환경 보안 헤더
   servlet:

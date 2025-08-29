@@ -63,6 +63,15 @@ env:
     value: "100"
   - name: DF_API_RATE_LIMIT_WINDOW
     value: "3600000"
+  # HTTPS and CORS Configuration
+  - name: SERVER_SSL_ENABLED
+    value: "false"
+  - name: CORS_ALLOWED_ORIGINS
+    value: "https://www.dnfpartyhelper.xyz"
+  - name: CORS_ALLOWED_METHODS
+    value: "GET,POST,PUT,DELETE,OPTI
+  - name: CORS_ALLOWED_HEADERS
+    value: "*"
   # Database Configuration - 운영 환경용 dnfp_prod 데이터베이스
   - name: DB_HOST
     value: "df-party-infrastructure-mariadb"

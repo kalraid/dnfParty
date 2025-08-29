@@ -5,16 +5,19 @@ spring:
       on-profile: dev
   
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp_dev?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/dnfp_dev?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USERNAME:dfparty}
     password: ${DB_PASSWORD:dfparty-password}
   
   jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
       ddl-auto: validate  # 개발환경에서도 DB 수정 금지
     show-sql: true
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
         format_sql: true
         use_sql_comments: true
 

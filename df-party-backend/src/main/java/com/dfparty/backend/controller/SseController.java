@@ -143,7 +143,19 @@ public class SseController {
             System.err.println("🚨 SSE 연결 오류: " + clientId + " - " + ex.getMessage());
             if (ex instanceof java.io.IOException && ex.getMessage().contains("Broken pipe")) {
                 System.out.println("🔌 Broken pipe 감지 - 클라이언트 연결이 끊어짐");
+            } else {
+                System.err.println("⚠️ 기타 SSE 연결 오류: " + ex.getClass().getName() + " - " + ex.getMessage());
+                // 상세한 에러 정보 로깅
+                ex.printStackTrace();
             }
+            
+            // 에러 발생 시 에미터 정리
+            try {
+                emitter.complete();
+            } catch (Exception cleanupEx) {
+                System.err.println("❌ 에러 발생 시 에미터 정리 실패: " + cleanupEx.getMessage());
+            }
+            
             removeEmitter(clientId, emitter);
         });
         

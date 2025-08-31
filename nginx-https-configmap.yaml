@@ -71,31 +71,16 @@ data:
             server df-party-application-backend:8080;
         }
 
-        # HTTP server block (redirect to HTTPS)
+        # HTTP server block
         server {
             listen 80;
             server_name dnfpartyhelper.xyz localhost;
-            
-            # Redirect all HTTP traffic to HTTPS
-            return 301 https://$server_name$request_uri;
-        }
-
-        # HTTPS server block
-        server {
-            listen 443 ssl;
-            server_name dnfpartyhelper.xyz localhost;
-
-            # SSL configuration (GKE Ingress에서 자동으로 처리)
-            ssl_protocols TLSv1.2 TLSv1.3;
-            ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384;
-            ssl_prefer_server_ciphers off;
 
             # Security headers
             add_header X-Frame-Options "SAMEORIGIN" always;
             add_header X-Content-Type-Options "nosniff" always;
             add_header X-XSS-Protection "1; mode=block" always;
             add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-            add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
             # CORS headers for API requests
             location /api/ {

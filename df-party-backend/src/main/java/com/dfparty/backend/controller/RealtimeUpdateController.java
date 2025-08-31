@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,11 +62,14 @@ public class RealtimeUpdateController {
                 updateCharactersRealtime(characters, adventureName, userId);
             });
             
+            // refresh API는 동기화 시작 신호만 반환 (상세 진행 상황은 SSE로 전송)
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "실시간 업데이트가 시작되었습니다.",
+                "message", String.format("'%s' 모험단 %d개 캐릭터 동기화를 시작합니다.", adventureName, characters.size()),
                 "adventureName", adventureName,
-                "characterCount", characters.size()
+                "characterCount", characters.size(),
+                "status", "started",
+                "timestamp", LocalDateTime.now().toString()
             ));
             
         } catch (Exception e) {

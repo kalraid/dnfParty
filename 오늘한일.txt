@@ -554,3 +554,14 @@
   - **480px 이하**: section-header padding 5px 8px, 그리드 minmax(140px, 1fr), gap 4px
   - **일관된 레이아웃**: 모든 화면 크기에서 section-header와 character-card의 좌우 정렬 일치
   - **사용자 경험 개선**: 반응형 디자인에서도 깔끔한 정렬로 가독성 향상
+
+## 49. PartyFormation.vue grid-template-columns 제거 및 2개 섹션 고정 레이아웃
+- **파일**: `df-party-frontend/src/views/PartyFormation.vue`
+- **변경 내용**:
+  - **grid-template-columns 제거**: minmax(180px, 1fr) 설정으로 인한 레이아웃 문제 해결
+  - **2개 섹션 고정**: character-list을 딜러/버퍼 2개 섹션으로 고정
+  - **Flexbox 레이아웃**: character-list에 flex-direction: column 적용
+  - **섹션 간격 조정**: character-section 간 20px gap 설정
+  - **반응형 CSS 정리**: 768px, 480px 이하에서 grid-template-columns 제거
+  - **레이아웃 안정성**: 특정 상황에서 5개 섹션이 되는 문제 해결
+  - **일관된 구조**: 항상 딜러와 버퍼 2개 섹션으로 고정된 UI 제공

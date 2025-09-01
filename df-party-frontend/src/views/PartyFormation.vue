@@ -2600,7 +2600,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
     gap: 8px;
   }
 }
@@ -2636,7 +2636,7 @@ const debugLocalStorage = async () => {
 }
 
 .party-title-stats {
-  display: flex;
+  /* display: flex; */
   gap: 15px;
   align-items: center;
   flex-wrap: nowrap;
@@ -2721,9 +2721,18 @@ const debugLocalStorage = async () => {
   background: linear-gradient(135deg, #28a745, #1e7e34);
 }
 
+.character-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.character-section {
+  width: 100%;
+}
+
 .section-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 8px;
   margin-bottom: 15px;
   /* section-header와 동일한 좌우 여백 유지 */
@@ -2876,7 +2885,6 @@ const debugLocalStorage = async () => {
   
   /* section-content 반응형 그리드 조정 */
   .section-content {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 6px;
   }
 }
@@ -2920,7 +2928,6 @@ const debugLocalStorage = async () => {
   
   /* section-content 반응형 그리드 조정 */
   .section-content {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 4px;
   }
 }
@@ -3177,7 +3184,7 @@ const debugLocalStorage = async () => {
 .character-list {
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 10px;
   /* max-height와 overflow-y 제거하여 스크롤바 없이 아래로 쭉 나오도록 수정 */
 }
@@ -3185,21 +3192,21 @@ const debugLocalStorage = async () => {
 /* 반응형 그리드: 화면 크기에 따라 열 수 조정 */
 @media (max-width: 1400px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
     gap: 8px;
   }
 }
 
 @media (max-width: 1200px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
     gap: 8px;
   }
 }
 
 @media (max-width: 768px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
     gap: 6px;
     padding: 8px;
   }
@@ -3207,7 +3214,7 @@ const debugLocalStorage = async () => {
 
 @media (max-width: 480px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
     gap: 5px;
     padding: 5px;
   }
@@ -3589,7 +3596,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 25px;
   }
   
@@ -3600,7 +3607,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
     gap: 20px;
   }
 }
@@ -3613,7 +3620,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 22px;
   }
 }
@@ -3631,7 +3638,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
     gap: 18px;
   }
 }
@@ -3648,7 +3655,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 18px;
   }
   
@@ -3698,7 +3705,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
     gap: 16px;
   }
 }
@@ -3715,7 +3722,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
   }
   
@@ -3765,7 +3772,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
     gap: 15px;
   }
 }
@@ -3777,7 +3784,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
   }
   
@@ -3788,7 +3795,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
     gap: 12px;
   }
 }
@@ -3811,7 +3818,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
     gap: 10px;
   }
 }
@@ -3834,7 +3841,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
     gap: 8px;
   }
 }
@@ -3856,7 +3863,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-template-columns: repeat(2, minmax(70px, 1fr));
     gap: 6px;
   }
   

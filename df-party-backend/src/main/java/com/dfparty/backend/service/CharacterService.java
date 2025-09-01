@@ -2755,11 +2755,18 @@ public class CharacterService {
             );
             log.info("refresh_complete 데이터: {}", finalResult);
             
-            realtimeEventService.sendSystemNotification(
-                String.format("'%s' 모험단 캐릭터 정보 업데이트가 완료되었습니다. (성공: %d, 실패: %d)", 
-                    adventureName, successCount, failCount),
-                finalResult
-            );
+            RealtimeEvent completeEvent = RealtimeEvent.builder()
+                .id(UUID.randomUUID().toString())
+                .type(RealtimeEvent.EventType.SYSTEM_NOTIFICATION)
+                .userId("system")
+                .message(String.format("'%s' 모험단 캐릭터 정보 업데이트가 완료되었습니다. (성공: %d, 실패: %d)", 
+                    adventureName, successCount, failCount))
+                .data(finalResult)
+                .timestamp(LocalDateTime.now())
+                .broadcast(true)
+                .build();
+            
+            realtimeEventService.sendEvent(completeEvent);
             log.info("=== SSE refresh_complete 이벤트 전송 완료 ===");
             
             log.info("=== 모험단 '{}' 전체 캐릭터 비동기 최신화 완료 ===", adventureName);

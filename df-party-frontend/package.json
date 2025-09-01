@@ -18,6 +18,8 @@
   "dependencies": {
     "@stomp/stompjs": "^7.1.1",
     "axios": "^1.11.0",
+    "lz-string": "^1.5.0",
+    "pako": "^2.1.0",
     "pinia": "^3.0.3",
     "sockjs-client": "^1.6.1",
     "vue": "^3.5.18",
@@ -26,6 +28,7 @@
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.17.1",
+    "@types/pako": "^2.0.4",
     "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",

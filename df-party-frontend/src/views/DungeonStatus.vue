@@ -61,6 +61,13 @@
         
         <!-- 버튼 그룹 -->
         <div class="button-group">
+          <!-- 링크 복사 버튼 -->
+          <button @click="copyCurrentPageLink" 
+                  class="copy-link-btn"
+                  title="현재 페이지 링크를 클립보드에 복사">
+            🔗 링크 복사
+          </button>
+          
           <!-- 정렬 초기화 버튼 -->
           <button v-if="sortField !== 'characterName' || sortOrder !== 'asc'" 
                   @click="resetSort" 
@@ -845,12 +852,18 @@ const setNabelDifficulty = async (character: Character, difficulty: 'hard' | 'no
     });
     
     if (response.ok) {
+      const responseData = await response.json();
+      
+      // 백엔드 응답 데이터를 캐릭터 객체에 반영 (우선순위 1순위)
+      character.selectedNabelDifficulty = difficulty;
+      character.isHardNabelEligible = responseData.isHardNabelEligible;
+      character.isNormalNabelEligible = responseData.isNormalNabelEligible;
+      
       // 로컬스토리지에도 저장 (백업용)
       const key = `nabelDifficulty_${character.characterId}`;
       localStorage.setItem(key, difficulty);
-      console.log(`캐릭터 ${character.characterName} 나벨 난이도 저장 완료: ${difficulty}`);
       
-      // 성공 메시지 표시
+      console.log(`캐릭터 ${character.characterName} 나벨 난이도 저장 완료: ${difficulty}`, responseData);
       successMessage.value = `캐릭터 ${character.characterName}의 나벨 난이도가 ${difficulty}로 설정되었습니다.`;
     } else {
       console.error('나벨 난이도 저장 실패:', response.statusText);
@@ -859,6 +872,31 @@ const setNabelDifficulty = async (character: Character, difficulty: 'hard' | 'no
   } catch (err) {
     console.error('나벨 난이도 저장 중 오류:', err);
     error.value = '나벨 난이도 저장 중 오류가 발생했습니다.';
+  }
+};
+
+// 현재 페이지 링크 복사
+const copyCurrentPageLink = async () => {
+  try {
+    const currentUrl = window.location.href;
+    
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(currentUrl);
+    } else {
+      // Fallback for non-secure contexts or older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    
+    // Show success alert
+    alert('현재 페이지 링크가 클립보드에 복사되었습니다!');
+  } catch (error) {
+    console.error('링크 복사 실패:', error);
+    alert('링크 복사에 실패했습니다.');
   }
 };
 
@@ -2402,6 +2440,25 @@ const getDungeonLimit = (dungeon: 'nabel' | 'venus' | 'fog' | 'twilight'): numbe
   background: linear-gradient(135deg, #5a6268, #6c757d);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.copy-link-btn {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+}
+
+.copy-link-btn:hover {
+  background: linear-gradient(135deg, #138496, #17a2b8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
 }
 
 .summary-stats {

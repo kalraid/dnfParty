@@ -2,7 +2,9 @@ package com.dfparty.backend.service;
 
 import com.dfparty.backend.dto.CharacterDto;
 import com.dfparty.backend.entity.Character;
+import com.dfparty.backend.entity.NabelDifficultySelection;
 import com.dfparty.backend.repository.CharacterRepository;
+import com.dfparty.backend.repository.NabelDifficultySelectionRepository;
 import com.dfparty.backend.utils.CharacterUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ public class PartyOptimizationService {
     
     private final CharacterService characterService;
     private final CharacterRepository characterRepository;
+    private final NabelDifficultySelectionRepository nabelDifficultySelectionRepository;
     private final CharacterUtils characterUtils;
 
 
@@ -574,6 +577,7 @@ public class PartyOptimizationService {
     
     /**
      * 나벨 난이도별 적격 여부 판단
+     * 사용자의 명시적 선택이 우선순위를 가짐
      */
     private boolean isEligibleForNabel(Map<String, Object> character, String difficulty) {
         // 나벨 클리어 여부 확인
@@ -588,50 +592,42 @@ public class PartyOptimizationService {
             return false;
         }
         
-        // 난이도별 스탯 기준 확인
+        // 사용자의 명시적 선택 확인 (우선순위 1순위)
+        String characterId = (String) character.get("characterId");
+        if (characterId != null) {
+            try {
+                NabelDifficultySelection selection = nabelDifficultySelectionRepository.findByCharacterId(characterId).orElse(null);
+                if (selection != null) {
+                    // 명시적 선택이 있는 경우, 해당 선택만 허용
+                    if ("hard".equals(difficulty) && selection.getSelectedDifficulty() == NabelDifficultySelection.NabelDifficulty.HARD) {
+                        return true;
+                    } else if ("normal".equals(difficulty) && selection.getSelectedDifficulty() == NabelDifficultySelection.NabelDifficulty.NORMAL) {
+                        return true;
+                    } else if ("matching".equals(difficulty) && selection.getSelectedDifficulty() == NabelDifficultySelection.NabelDifficulty.MATCHING) {
+                        return true;
+                    }
+                    // 선택한 난이도와 다른 경우 false
+                    return false;
+                }
+            } catch (Exception e) {
+                log.warn("나벨 난이도 선택 조회 중 오류 발생: characterId={}, error={}", characterId, e.getMessage());
+            }
+        }
+        
+        // 명시적 선택이 없는 경우, DB 필드 기반 적격성 확인 (우선순위 2순위)
         if ("hard".equals(difficulty)) {
-            return isHardNabelEligible(character);
+            // 하드 난이도: isHardNabelEligible = true인 캐릭터만
+            Boolean isHardEligible = (Boolean) character.get("isHardNabelEligible");
+            return Boolean.TRUE.equals(isHardEligible);
         } else {
-            // 일반 난이도: 하드 대상자는 제외하고 일반 대상자만
-            return isNormalNabelEligible(character) && !isHardNabelEligible(character);
+            // 일반 난이도: isNormalNabelEligible = true인 캐릭터만
+            // (하드 기준을 만족해도 일반 기준을 만족하면 일반 난이도로도 참여 가능)
+            Boolean isNormalEligible = (Boolean) character.get("isNormalNabelEligible");
+            return Boolean.TRUE.equals(isNormalEligible);
         }
     }
     
-    /**
-     * 하드 나벨 적격 여부
-     */
-    private boolean isHardNabelEligible(Map<String, Object> character) {
-        Number totalDamage = (Number) character.get("totalDamage");
-        Number buffPower = (Number) character.get("buffPower");
-        
-        if (totalDamage != null && totalDamage.longValue() >= 10000000000L) { // 100억 이상
-            return true;
-        }
-        
-        if (buffPower != null && buffPower.longValue() >= 5000000L) { // 500만 이상
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * 일반 나벨 적격 여부
-     */
-    private boolean isNormalNabelEligible(Map<String, Object> character) {
-        Number totalDamage = (Number) character.get("totalDamage");
-        Number buffPower = (Number) character.get("buffPower");
-        
-        if (totalDamage != null && totalDamage.longValue() >= 3000000000L) { // 30억 이상
-            return true;
-        }
-        
-        if (buffPower != null && buffPower.longValue() >= 4000000L) { // 400만 이상
-            return true;
-        }
-        
-        return false;
-    }
+
     
     /**
      * 최적화된 나벨 파티 구성
@@ -808,3 +804,4 @@ public class PartyOptimizationService {
         return stats;
     }
 }
+

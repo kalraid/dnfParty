@@ -133,6 +133,9 @@
               {{ refreshingAdventures ? '최신화 중...' : '🔄 모험단 최신화' }}
             </button>
             <button @click="clearParty" class="control-btn clear-btn">파티 초기화</button>
+            <button @click="copyPartyLink" class="control-btn link-btn">
+              🔗 링크 복사
+            </button>
             <button @click="copyPartyForWhisper" class="control-btn optimize-btn">
               📋 귓속말용 파티 복사
             </button>
@@ -452,6 +455,8 @@ import { apiFetch } from '../config/api';
 import { isBuffer } from '../utils/characterUtils';
 import sseService from '@/services/sseService'
 import { useCharacterStore } from '../stores/character'
+import type { Character } from '../types'
+import pako from 'pako';
 
 // Store 인스턴스화
 const characterStore = useCharacterStore();
@@ -617,11 +622,14 @@ onMounted(async () => {
   // 검색 모드를 adventure로 설정 (모험단 검색 전용)
   searchMode.value = 'adventure';
   loadSearchHistory();
-  loadCharactersFromAPI();
+  await loadCharactersFromAPI(); // 캐릭터 데이터 로드 완료 대기
   loadAdvancedOptions(); // Advanced 옵션 복원
   
   // 잠금 상태 로드
   characterStore.loadLockedCharacters();
+  
+  // 캐릭터 데이터 로드 완료 후 URL에서 파티 구성 정보 복원 (공유 링크)
+  restorePartyFromUrl();
   
   // SSE 연결
   try {
@@ -990,7 +998,7 @@ const removeAdventure = (adventure: string) => {
 
 // 선택된 던전에 따라 조건에 맞는 캐릭터 필터링 (안감 제외, 업둥 포함, 잠금 제외)
 const getFilteredCharacters = (adventureName: string) => {
-  console.log(`getFilteredCharacters 호출: adventureName="${adventureName}"`);
+  
   
   // allCharacters가 undefined이거나 null인 경우 빈 배열 반환
   if (!allCharacters.value || !Array.isArray(allCharacters.value)) {
@@ -998,9 +1006,29 @@ const getFilteredCharacters = (adventureName: string) => {
     return [];
   }
   
+  // 나벨 난이도별 적격 여부 판단 (사용자 선택 우선)
+  const isEligibleForNabel = (character: Character, difficulty: 'normal' | 'hard'): boolean => {
+    // 1순위: 사용자의 명시적 선택 확인
+    if (character.selectedNabelDifficulty) {
+      if (difficulty === 'hard' && character.selectedNabelDifficulty === 'hard') {
+        return true;
+      } else if (difficulty === 'normal' && character.selectedNabelDifficulty === 'normal') {
+        return true;
+      }
+      return false; // 선택한 난이도와 다른 경우
+    }
+    
+    // 2순위: 백엔드 계산된 적격성 사용
+    if (difficulty === 'hard') {
+      return character.isHardNabelEligible === true;
+    } else {
+      return character.isNormalNabelEligible === true && character.isHardNabelEligible !== true;
+    }
+  };
+
   // 1. 모험단별 캐릭터 필터링
   const adventureCharacters = allCharacters.value.filter(c => c.adventureName === adventureName);
-  console.log(`모험단 "${adventureName}" 캐릭터 수: ${adventureCharacters.length}`);
+  
   
   if (adventureCharacters.length === 0) {
     return [];
@@ -1008,7 +1036,7 @@ const getFilteredCharacters = (adventureName: string) => {
   
   // 2. 잠긴 캐릭터는 제외하지 않고 모두 표시 (시각적으로만 구분)
   const availableCharacters = adventureCharacters;
-  console.log(`전체 캐릭터 수: ${availableCharacters.length}`);
+  
   
   // 3. 던전이 선택되지 않았다면 모든 캐릭터 반환
   if (!selectedDungeon.value) {
@@ -1024,14 +1052,14 @@ const getFilteredCharacters = (adventureName: string) => {
       case 'nabel-normal':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
         isExcluded = character.isExcludedNabel; // 안감 여부
-        // 일반: 일반 대상자 이상 포함 (30억 딜러, 400만 버퍼 이상) - 하드급도 포함
-        dungeonCondition = dungeonCondition && character.isNormalNabelEligible;
+        // 일반: 사용자 선택 우선, 없으면 자동 계산된 적격성 사용
+        dungeonCondition = dungeonCondition && isEligibleForNabel(character, 'normal');
         break;
       case 'nabel-hard':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
         isExcluded = character.isExcludedNabel; // 안감 여부
-        // 하드: 하드 대상자만 포함 (100억 딜러, 500만 버퍼)
-        dungeonCondition = dungeonCondition && character.isHardNabelEligible;
+        // 하드: 사용자 선택 우선, 없으면 자동 계산된 적격성 사용
+        dungeonCondition = dungeonCondition && isEligibleForNabel(character, 'hard');
         break;
       case 'venus':
         dungeonCondition = !character.dungeonClearVenus && character.isVenusEligible; // 클리어 안한 캐릭터 + 베누스 명성 체크
@@ -1641,6 +1669,163 @@ const copyPartyForWhisper = async () => {
 
 
 
+// 파티 구성 링크 복사 (base64 인코딩)
+const copyPartyLink = async () => {
+  try {
+    // 최적화된 데이터 구조로 URL 길이 최소화
+    const partyData = {
+      d: selectedDungeon.value, // dungeon -> d
+      a: selectedAdventures.value, // adventures -> a
+      p: parties.value.map(party => 
+        party.map(slot => slot ? {
+          id: slot.characterId, // characterId -> id
+          s: slot.serverId, // serverId -> s
+          adv: slot.adventureName, // adventureName -> adv
+          l: characterStore.isCharacterLocked(slot.characterId) // isLocked -> l
+        } : null).filter(slot => slot !== null)
+      ),
+      o: { // options -> o
+        m: selectedPartyFormationMode.value, // mode -> m
+        adv: selectedPartyFormationMode.value === 'advanced' ? advancedOptions.value : undefined
+      },
+      t: Date.now() // timestamp -> t
+    };
+    
+    const jsonString = JSON.stringify(partyData);
+    
+    // gzip 압축 후 base64 인코딩 (안전한 방법)
+    const compressed = pako.deflate(jsonString);
+    const base64Data = btoa(String.fromCharCode.apply(null, Array.from(compressed)));
+    
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('share', base64Data);
+    
+    // Copy to clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(currentUrl.toString());
+    } else {
+      // Fallback for non-secure contexts or older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = currentUrl.toString();
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    
+    // Show success alert
+    alert('파티 링크가 클립보드에 복사되었습니다!');
+  } catch (error) {
+    console.error('파티 링크 복사 실패:', error);
+    alert('파티 링크 복사에 실패했습니다.');
+  }
+};
+
+// URL에서 파티 구성 정보 복원
+const restorePartyFromUrl = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareData = urlParams.get('share');
+  
+  if (!shareData) return;
+  
+  try {
+    // base64 디코딩 후 gzip 압축 해제
+    console.log('🔗 파티 링크 복원 시작...');
+    const compressed = atob(shareData);
+    console.log('📦 Base64 디코딩 완료, 압축 데이터 크기:', compressed.length);
+    
+    const compressedArray = new Uint8Array(compressed.length);
+    for (let i = 0; i < compressed.length; i++) {
+      compressedArray[i] = compressed.charCodeAt(i);
+    }
+    console.log('🔄 Uint8Array 변환 완료');
+    
+    const jsonString = pako.inflate(compressedArray, { to: 'string' });
+    console.log('🗜️ Gzip 압축 해제 완료, JSON 크기:', jsonString.length);
+    
+    const partyData = JSON.parse(jsonString);
+    console.log('📋 JSON 파싱 완료, 파티 데이터:', partyData);
+    
+    // Restore party configuration
+    if (partyData.d) { // dungeon
+      selectedDungeon.value = partyData.d;
+      console.log('🏰 던전 설정 복원:', partyData.d);
+    }
+    
+    if (partyData.a) { // adventures
+      selectedAdventures.value = partyData.a;
+      console.log('👥 모험단 목록 복원:', partyData.a);
+    }
+    
+    if (partyData.p) { // parties
+      console.log('🎯 파티 구성 복원 시작...');
+      // Restore parties by finding characters and placing them in the correct positions
+      const restoredParties: any[][] = [];
+      
+      for (let partyIndex = 0; partyIndex < partyData.p.length; partyIndex++) {
+        const party = partyData.p[partyIndex];
+        console.log(`🎮 ${partyIndex + 1}번째 파티 복원 중...`);
+        
+        const restoredParty: any[] = new Array(4).fill(null);
+        
+        for (let i = 0; i < Math.min(party.length, 4); i++) {
+          const slotData = party[i];
+          if (slotData) {
+            console.log(`  📍 슬롯 ${i + 1}: 캐릭터 ID=${slotData.id}, 서버=${slotData.s}, 모험단=${slotData.adv}`);
+            
+            // Find the character in the loaded characters
+            const character = allCharacters.value.find(char => 
+              char.characterId === slotData.id && // characterId
+              char.serverId === slotData.s // serverId
+            );
+            
+            if (character) {
+              restoredParty[i] = character;
+              console.log(`    ✅ 캐릭터 찾음: ${character.characterName}`);
+              
+              // Restore lock status
+              if (slotData.l) { // isLocked
+                characterStore.lockCharacter(character.characterId);
+                console.log(`    🔒 캐릭터 잠금 상태 복원: ${character.characterName}`);
+              }
+            } else {
+              console.log(`    ❌ 캐릭터를 찾을 수 없음: ID=${slotData.id}, 서버=${slotData.s}`);
+            }
+          }
+        }
+        
+        restoredParties.push(restoredParty);
+        console.log(`  🎉 ${partyIndex + 1}번째 파티 복원 완료`);
+      }
+      
+      parties.value = restoredParties;
+      console.log('🎊 모든 파티 구성 복원 완료!');
+    }
+    
+    if (partyData.o) { // options
+      if (partyData.o.m) { // mode
+        selectedPartyFormationMode.value = partyData.o.m;
+        console.log('⚙️ 최적화 모드 복원:', partyData.o.m);
+      }
+      if (partyData.o.adv) { // advanced
+        advancedOptions.value = { ...partyData.o.adv };
+        console.log('🔧 고급 옵션 복원:', partyData.o.adv);
+      }
+    }
+    
+    console.log('🎯 파티 구성 복원 완료!');
+    
+    // URL에서 share 파라미터 제거하여 정리
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('share');
+    window.history.replaceState({}, '', newUrl.toString());
+    
+  } catch (error) {
+    console.error('파티 구성 복원 실패:', error);
+    alert('파티 구성 복원에 실패했습니다. 링크가 올바르지 않을 수 있습니다.');
+  }
+};
+
 // Fallback 클립보드 복사 함수 (navigator.clipboard를 지원하지 않는 브라우저용)
 const fallbackCopyTextToClipboard = (text: string) => {
   try {
@@ -1889,15 +2074,15 @@ const debugLocalStorage = async () => {
       });
       
       console.log(`${adventureName} API 결과:`, data);
-    } catch (err) {
+    } catch (err: unknown) {
       apiResults.push({
         adventureName,
         status: 'ERROR',
         success: false,
         characterCount: 0,
-        message: err.toString()
+        message: err instanceof Error ? err.message : String(err)
       });
-      console.error(`${adventureName} API 오류:`, err as Error);
+      console.error(`${adventureName} API 오류:`, err);
     }
   }
   
@@ -2270,6 +2455,15 @@ const debugLocalStorage = async () => {
 
 .copy-btn:hover {
   background: linear-gradient(135deg, #1e7e34, #155724);
+}
+
+.link-btn {
+  background: linear-gradient(135deg, #6f42c1, #5a32a3);
+  color: white;
+}
+
+.link-btn:hover {
+  background: linear-gradient(135deg, #5a32a3, #4c2b8a);
 }
 
 .auto-btn {

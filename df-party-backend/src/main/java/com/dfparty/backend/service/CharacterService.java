@@ -1279,7 +1279,11 @@ public class CharacterService {
     @Transactional
     public Map<String, Object> saveNabelDifficultySelection(String characterId, String difficulty) {
         try {
-            log.info("나벨 난이도 선택 저장: characterId={}, difficulty={}", characterId, difficulty);
+            log.info("나벨 난이도 선택 저장: characterId={}, difficulty={}", difficulty);
+            
+            // 캐릭터 조회
+            Character character = characterRepository.findByCharacterId(characterId)
+                .orElseThrow(() -> new RuntimeException("캐릭터를 찾을 수 없습니다: " + characterId));
             
             // 기존 선택 삭제
             nabelDifficultySelectionRepository.deleteByCharacterId(characterId);
@@ -1295,15 +1299,18 @@ public class CharacterService {
             
             nabelDifficultySelectionRepository.save(selection);
             
-            log.info("나벨 난이도 선택 저장 완료: characterId={}, difficulty={}", characterId, difficulty);
+                    // Character 엔티티의 나벨 적격성 필드는 스탯 기준으로 자동 계산되므로 수정하지 않음
+        // 사용자의 명시적 선택은 NabelDifficultySelection 테이블에만 저장
+        
+        log.info("나벨 난이도 선택 저장 완료: characterId={}, difficulty={}", characterId, difficulty);
             
-            return createSuccessResponse(
-                String.format("나벨 난이도 선택이 저장되었습니다: %s", difficulty),
-                Map.of(
-                    "characterId", characterId,
-                    "selectedDifficulty", difficulty
-                )
-            );
+                    return createSuccessResponse(
+            String.format("나벨 난이도 선택이 저장되었습니다: %s", difficulty),
+            Map.of(
+                "characterId", characterId,
+                "selectedDifficulty", difficulty
+            )
+        );
             
         } catch (Exception e) {
             log.error("나벨 난이도 선택 저장 실패: characterId={}, difficulty={}", characterId, difficulty, e);

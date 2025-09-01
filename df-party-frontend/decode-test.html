@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share 파라미터 복호화 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+</head>
+<body>
+    <h1>Share 파라미터 복호화 테스트</h1>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            const div = document.createElement('div');
+            div.textContent = message;
+            output.appendChild(div);
+            console.log(message);
+        }
+        
+        const shareData = 'eJyllE1rFEEQhv9Ln1foj6r%2B2LM%2FwHvIobq7GoPrB0a8hByUFULiTSJGWAkoxIOBVRLIIb9oZ%2FIfrBGjQiYi7mXoLqafrnnft2ZHVTVVjyjz7M59elrVRJGabqh7d%2FuD49XFsvv4WUqrb8vV%2BWm%2FOFt9XfaHl1Lp5nur87Pu5DMNm1cX3ZuFPPv9T1f7F93xniyG%2Bum8W1x2H05l3R8erZbv%2B8Xr%2FuWX%2FvhFdzBwr97OhyPzZXey1x8ddgfv1OZEPZEGNnbU1tAZJx%2BYOWEICcClGL2zwQRdPTUTmkC25bVMD2g29F6fy270rpmaNppt8%2B7kJ1pnFlbyCDZira2hrlCwuKQh1ziOvu1Tb9ChFPahGOMiQLCyK4S2JYtSxFxH6SN6jKCLTpqKtAsGSCNbH6LV1TZASiXm8cb%2FNOwXcnNyLbTD4jHo4kET6ZqjTi1aNiWW5ptZR2hXNMVKtuWUodSakZ0XY5mLZqhlDSmaplBrBSgJWsoJIppMDpzROVgT1%2FUQvGY0GorLnKrRKRauScDsQqNR%2Bs1ZGVG7RKroM6Pkr3FuwNaE7JGAtTMO1%2Bs71VZDkySQhISzXBaMDEvOvmFgewt9NCDXSKtdyJSbjVUcdGAkch5dRUAZTDsuxd89%2FK2GLQMcDQJw9CFZJs2%2BotMmtkTjLv7jkLsGJrmqLYl9oUWJss%2FQrEXxkXiN7BGzScPPI5aUWiawhmXWqRjHUSbp%2FzzclB%2FgYzXdUQ9%2FnN3eKmp3op6pqQnoAzgfbLB69zvqoCea';
+
+        log('🔗 Share 파라미터 복호화 시작...');
+        
+        // URL 디코딩
+        const decodedShareData = decodeURIComponent(shareData);
+        log(`📦 URL 디코딩 완료, 길이: ${decodedShareData.length}`);
+        
+        // Base64 디코딩
+        const compressed = atob(decodedShareData);
+        log(`📦 Base64 디코딩 완료, 압축 데이터 크기: ${compressed.length}`);
+        
+        // Uint8Array로 변환
+        const compressedArray = new Uint8Array(compressed.length);
+        for (let i = 0; i < compressed.length; i++) {
+            compressedArray[i] = compressed.charCodeAt(i);
+        }
+        log('🔄 Uint8Array 변환 완료');
+        
+        // 압축된 데이터 분석
+        log(`📊 압축된 데이터 (처음 20바이트): [${compressedArray.slice(0, 20).join(', ')}]`);
+        log(`🔍 Gzip 매직 넘버 확인: ${compressedArray[0]} ${compressedArray[1]} (0x${compressedArray[0].toString(16)} 0x${compressedArray[1].toString(16)})`);
+        
+        // pako로 gzip 압축 해제
+        try {
+            const jsonString = pako.inflate(compressedArray, { to: 'string' });
+            log(`🗜️ Gzip 압축 해제 완료, JSON 크기: ${jsonString.length}`);
+            
+            const partyData = JSON.parse(jsonString);
+            log('📋 JSON 파싱 완료');
+            
+            log('\n=== 파티 데이터 복호화 완료 ===');
+            log(`🏰 던전: ${partyData.d}`);
+            log(`👥 모험단 목록: ${partyData.a ? partyData.a.join(', ') : '없음'}`);
+            log(`🎯 파티 수: ${partyData.p ? partyData.p.length : 0}`);
+            log(`⚙️ 최적화 모드: ${partyData.o?.m || '없음'}`);
+            log(`⏰ 타임스탬프: ${partyData.t || '없음'}`);
+            
+            if (partyData.p) {
+                log('\n=== 파티 구성 상세 ===');
+                partyData.p.forEach((party, index) => {
+                    log(`\n🎮 파티 ${index + 1}:`);
+                    party.forEach((slot, slotIndex) => {
+                        if (slot) {
+                            log(`  📍 슬롯 ${slotIndex + 1}: ID=${slot.id}, 서버=${slot.s}, 모험단=${slot.adv}, 잠금=${slot.l}`);
+                        }
+                    });
+                });
+            }
+            
+            // 원본 파티 정보와 비교
+            log('\n=== 원본 파티 정보와 비교 ===');
+            log('원본 파티 정보:');
+            log('파티1|총 전투력: 367.7 억|버프력: 503만|파티 계수: 1850.64');
+            log('파티2|총 전투력: 378.6 억|버프력: 518만|파티 계수: 1961.02');
+            log('파티3|총 전투력: 260.3 억|버프력: 530만|파티 계수: 1378.81');
+            log('파티4|총 전투력: 215.3 억|버프력: 535만|파티 계수: 1151.61');
+            
+            log('\n✅ 파티 구성 데이터가 성공적으로 복호화되었습니다!');
+            
+        } catch (error) {
+            log(`❌ 압축 해제 실패: ${error.message}`);
+            log(`📊 압축된 데이터 (처음 100바이트): [${compressedArray.slice(0, 100).join(', ')}]`);
+        }
+    </script>
+</body>
+</html>

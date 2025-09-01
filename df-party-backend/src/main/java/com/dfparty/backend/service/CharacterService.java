@@ -917,6 +917,8 @@ public class CharacterService {
     private Map<String, Object> updateDundamInfo(Character character) {
         // Dundam에서 캐릭터 스펙 정보 조회 및 업데이트
         try {
+            log.info("=== 던담 크롤링 시작 (캐릭터: {}) ===", character.getCharacterName());
+            
             // DFO API에서 가져온 직업 정보를 함께 전달
             Map<String, Object> dundamInfo = dundamService.getCharacterInfoWithMethod(
                 character.getServerId(), 
@@ -924,10 +926,32 @@ public class CharacterService {
                 "playwright"
             );
             
+            log.info("던담 크롤링 결과: {}", dundamInfo);
+            
             if (dundamInfo != null && dundamInfo.get("success") == Boolean.TRUE) {
                 // 던담에서 가져온 스탯 값 확인
-                Long buffPower = (Long) dundamInfo.get("buffPower");
-                Long totalDamage = (Long) dundamInfo.get("totalDamage");
+                Object buffPowerObj = dundamInfo.get("buffPower");
+                Object totalDamageObj = dundamInfo.get("totalDamage");
+                
+                Long buffPower = null;
+                Long totalDamage = null;
+                
+                // 타입 변환 처리
+                if (buffPowerObj instanceof Integer) {
+                    buffPower = ((Integer) buffPowerObj).longValue();
+                } else if (buffPowerObj instanceof Long) {
+                    buffPower = (Long) buffPowerObj;
+                }
+                
+                if (totalDamageObj instanceof Integer) {
+                    totalDamage = ((Integer) totalDamageObj).longValue();
+                } else if (totalDamageObj instanceof Long) {
+                    totalDamage = (Long) totalDamageObj;
+                }
+                
+                log.info("던담 크롤링 스탯 값 - 버프력: {} (타입: {}), 총딜: {} (타입: {})", 
+                    buffPower, buffPowerObj != null ? buffPowerObj.getClass().getSimpleName() : "null",
+                    totalDamage, totalDamageObj != null ? totalDamageObj.getClass().getSimpleName() : "null");
                 
                 // 0이거나 null이면 업데이트하지 않음
                 if (buffPower != null && buffPower > 0 && totalDamage != null && totalDamage > 0) {
@@ -938,6 +962,8 @@ public class CharacterService {
                     
                     // 나벨 적격성 업데이트
                     updateNabelEligibility(character);
+                    
+                    log.info("=== 던담 크롤링 완료 (캐릭터: {}) ===", character.getCharacterName());
                 } else {
                     log.warn("던담 크롤링 결과가 0이거나 null이므로 업데이트 건너뜀 - 버프력: {}, 총딜: {}", buffPower, totalDamage);
                 }
@@ -946,11 +972,13 @@ public class CharacterService {
                 // 실패한 경우 로그만 남기고 업데이트하지 않음
                 String message = (String) dundamInfo.get("message");
                 log.warn("Dundam 크롤링 실패로 인한 업데이트 건너뜀: {}", message);
+            } else {
+                log.warn("Dundam 크롤링 결과가 null입니다.");
             }
             
             return dundamInfo != null ? dundamInfo : Map.of();
         } catch (Exception e) {
-            log.warn("Dundam 정보 업데이트 실패: {}", e.getMessage());
+            log.error("Dundam 정보 업데이트 실패: {}", e.getMessage(), e);
             return Map.of();
         }
     }

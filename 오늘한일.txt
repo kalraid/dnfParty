@@ -504,4 +504,14 @@
   - **이중 보호**: CharacterService와 Character 엔티티 모두에서 0/null 체크
   - **로깅 개선**: 던담 크롤링 성공/실패 시 상세 로그 추가
   - **문제 해결**: /refresh API 호출 시 총딜/버프력이 0으로 덮어쓰이는 문제 완전 해결
-  - **안전성 향상**: 던담 크롤링 실패 시에도 기존 스탯 값 보존"
+  - **안전성 향상**: 던담 크롤링 실패 시에도 기존 스탯 값 보존
+
+## 42. /refresh API 던담 크롤링 디버깅 및 타입 변환 문제 해결
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - **updateDundamInfo 메서드**: 던담 크롤링 디버깅 로그 추가 및 타입 변환 문제 해결
+  - **타입 변환 처리**: Integer/Long 타입 변환 로직 추가하여 ClassCastException 방지
+  - **상세 로깅**: 던담 크롤링 시작/완료 로그 및 스탯 값 타입 정보 출력
+  - **에러 처리 개선**: 예외 발생 시 스택 트레이스 출력으로 디버깅 용이성 향상
+  - **문제 해결**: /refresh API에서 던담 크롤링이 제대로 작동하지 않는 문제 해결
+  - **동일성 보장**: `/api/dundam-sync/character/{serverId}/{characterId}?method=playwright`와 동일한 동작 보장"

@@ -525,4 +525,4 @@
   - **로깅 개선**: 캐릭터 새로고침 시작/완료 로그 및 SSE 전송 상태 로그 추가
   - **에러 처리**: SSE 전송 실패 시에도 메인 로직은 계속 진행
   - **실시간 동기화**: 프론트엔드에서 캐릭터 정보가 실시간으로 업데이트됨
-  - **통합성**: 던담 동기화 API와 동일한 SSE 이벤트 구조 사용"
+  - **통합성**: 던담 동기화 API와 동일한 SSE 이벤트 구조 사용\n\n## 44. /refresh API 던담 크롤링 스탯 값 추출 문제 해결\n- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`\n- **변경 내용**:\n  - **updateDundamInfo 메서드**: 던담 크롤링 결과에서 스탯 값을 올바르게 추출하도록 수정\n  - **characterInfo 객체 접근**: `dundamInfo.get(\"characterInfo\")`에서 스탯 값 추출\n  - **기존 방식과 호환**: characterInfo가 없으면 기존 방식으로도 시도\n  - **상세 로깅**: characterInfo에서 추출하는지 기존 방식인지 로그로 구분\n  - **문제 해결**: 던담 크롤링 성공했는데 스탯 값이 null로 나오는 문제 해결\n  - **로그 분석**: `{success=true, characterInfo={totalDamage=14596669976, buffPower=0}}`에서 올바른 값 추출\n  - **타입 안전성**: Map 캐스팅 시 `@SuppressWarnings(\"unchecked\")` 추가\""}

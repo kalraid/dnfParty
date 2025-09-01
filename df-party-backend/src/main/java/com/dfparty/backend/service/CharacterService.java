@@ -968,9 +968,23 @@ public class CharacterService {
             log.info("던담 크롤링 결과: {}", dundamInfo);
             
             if (dundamInfo != null && dundamInfo.get("success") == Boolean.TRUE) {
-                // 던담에서 가져온 스탯 값 확인
-                Object buffPowerObj = dundamInfo.get("buffPower");
-                Object totalDamageObj = dundamInfo.get("totalDamage");
+                // 던담에서 가져온 스탯 값 확인 (characterInfo 객체에서 추출)
+                Object characterInfoObj = dundamInfo.get("characterInfo");
+                Object buffPowerObj = null;
+                Object totalDamageObj = null;
+                
+                if (characterInfoObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> characterInfo = (Map<String, Object>) characterInfoObj;
+                    buffPowerObj = characterInfo.get("buffPower");
+                    totalDamageObj = characterInfo.get("totalDamage");
+                    log.info("characterInfo에서 스탯 값 추출 - 버프력: {}, 총딜: {}", buffPowerObj, totalDamageObj);
+                } else {
+                    // 기존 방식으로도 시도
+                    buffPowerObj = dundamInfo.get("buffPower");
+                    totalDamageObj = dundamInfo.get("totalDamage");
+                    log.info("기존 방식으로 스탯 값 추출 - 버프력: {}, 총딜: {}", buffPowerObj, totalDamageObj);
+                }
                 
                 Long buffPower = null;
                 Long totalDamage = null;

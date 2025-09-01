@@ -532,3 +532,14 @@
   - **빌드 안정성**: Vite가 자동으로 적절한 esbuild 버전을 관리하여 버전 충돌 완전 방지
   - **Docker 빌드**: 프론트엔드 Docker 이미지 빌드 시 esbuild 버전 충돌 문제 완전 해결
   - **근본적 해결**: 수동 esbuild 설치 대신 Vite의 자동 관리 방식으로 전환
+
+## 47. 프론트엔드 Docker 빌드 npm 설치 방식 개선 및 성공적 배포
+- **파일**: `df-party-frontend/Dockerfile`
+- **변경 내용**:
+  - **npm ci → npm install**: package-lock.json 의존성 문제 해결
+  - **Docker 빌드 성공**: 143.7초 만에 정상 완료
+  - **이미지 푸시 성공**: kimrie92/dfo-party-frontend:202509011620, latest 태그
+  - **자동 이미지 정리**: 오래된 Docker 이미지들 자동 삭제
+  - **문제 해결**: "npm ci requires package-lock.json" 에러 완전 해결
+  - **캐시 최적화**: npm 캐시 정리 로직으로 빌드 안정성 확보
+  - **배포 성공**: 프론트엔드 Docker 이미지 빌드 및 레지스트리 푸시 완료

@@ -1024,8 +1024,8 @@ const getFilteredCharacters = (adventureName: string) => {
       case 'nabel-normal':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
         isExcluded = character.isExcludedNabel; // 안감 여부
-        // 일반: 일반 대상자만 포함 (30억 딜러, 400만 버퍼) + 하드 대상자 제외
-        dungeonCondition = dungeonCondition && character.isNormalNabelEligible && !character.isHardNabelEligible;
+        // 일반: 일반 대상자 이상 포함 (30억 딜러, 400만 버퍼 이상) - 하드급도 포함
+        dungeonCondition = dungeonCondition && character.isNormalNabelEligible;
         break;
       case 'nabel-hard':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터

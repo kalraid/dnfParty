@@ -462,10 +462,10 @@ public class CharacterService {
 
             Character character = characterOpt.get();
             
-            // 1. DFO API에서 최신 정보 조회
+            // 1. DFO API에서 최신 정보 조회 (총딜/버프력은 제외)
             Object characterDetail = dfoApiService.getCharacterDetail(serverId, characterId);
             if (characterDetail != null) {
-                updateCharacterFromDfoApi(character, characterDetail);
+                updateCharacterFromDfoApiExcludingStats(character, characterDetail);
             }
 
             // 2. Dundam 정보 업데이트
@@ -992,6 +992,46 @@ public class CharacterService {
         }
         if (data.getDungeonClearFog() != null) {
             character.setDungeonClearFog(data.getDungeonClearFog());
+        }
+    }
+
+    /**
+     * DFO API 데이터로 캐릭터 업데이트 (총딜/버프력 제외)
+     * refresh API에서 사용하여 던담 크롤링 결과가 0으로 덮어쓰이지 않도록 함
+     */
+    private void updateCharacterFromDfoApiExcludingStats(Character character, Object characterDetail) {
+        try {
+            CharacterDetailDto characterDetailDto = convertMapToCharacterDetailDto((Map<String, Object>) characterDetail);
+            
+            // 모험단 정보 설정
+            if (characterDetailDto.getAdventureName() != null && !characterDetailDto.getAdventureName().trim().isEmpty() && !"모험단 정보 없음".equals(characterDetailDto.getAdventureName())) {
+                setAdventureForCharacter(character, characterDetailDto.getAdventureName());
+            }
+            
+            // 기본 정보 업데이트 (총딜/버프력 제외)
+            character.setFame(characterDetailDto.getFame());
+            character.setLevel(characterDetailDto.getLevel());
+            
+            if (characterDetailDto.getJobName() != null) {
+                character.setJobName(characterDetailDto.getJobName());
+            }
+            if (characterDetailDto.getJobGrowName() != null) {
+                character.setJobGrowName(characterDetailDto.getJobGrowName());
+            }
+            if (characterDetailDto.getDungeonClearNabel() != null) {
+                character.setDungeonClearNabel(characterDetailDto.getDungeonClearNabel());
+            }
+            if (characterDetailDto.getDungeonClearVenus() != null) {
+                character.setDungeonClearVenus(characterDetailDto.getDungeonClearVenus());
+            }
+            if (characterDetailDto.getDungeonClearFog() != null) {
+                character.setDungeonClearFog(characterDetailDto.getDungeonClearFog());
+            }
+            
+            log.info("DFO API 데이터로 캐릭터 업데이트 완료 (총딜/버프력 제외): {}", character.getCharacterName());
+            
+        } catch (Exception e) {
+            log.warn("DFO API 데이터로 캐릭터 업데이트 실패: {}", e.getMessage());
         }
     }
 

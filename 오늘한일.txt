@@ -130,11 +130,30 @@
 - **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/DungeonClearService.java`
 - **변경 내용**:
   - `analyzeDungeonClear` 메서드를 `DfoApiService`와 동일한 최신 로직으로 업데이트
+
+## 13. /refresh API 던담 크롤링 0이 되는 문제 해결
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - `/api/characters/{serverId}/{characterId}/refresh` API에서 던담 크롤링 후 0이 되는 문제 해결
+  - `refreshCharacter()` 메서드에서 `updateCharacterFromDfoApi()` 대신 `updateCharacterFromDfoApiExcludingStats()` 사용
+  - 새로운 메서드 `updateCharacterFromDfoApiExcludingStats()` 추가하여 총딜/버프력을 제외한 DFO API 데이터만 업데이트
+  - 던담 크롤링 결과가 DFO API의 0값으로 덮어쓰이지 않도록 수정
+  - `/api/dundam-sync/character/{serverId}/{characterId}?method=playwright`와 동일한 동작 보장
   - 이내 황혼전 클리어 상태 처리 추가: `clearStatus.put("twilight", false)` 기본값 설정
   - DFO API 타임라인 파싱 로직 통일: `code == 201` (레이드 클리어), `code == 210` (레이드 선발대), `code == 209` (레기온 클리어)
   - 줄바꿈 및 공백 처리 로직 추가: `replaceAll("\\s+", " ").trim()`
   - "이내 황혼전" 클리어 상태가 캐릭터 검색 페이지와 던전 클리어 현황 페이지에서 일치하도록 수정
   - 문제 해결: 캐릭터 검색에서는 클리어로 표시되지만 던전 클리어 현황에서는 미클리어로 표시되는 불일치 현상 해결
+
+## 14. 파티 구성 나벨 일반에서 하드급 버퍼 표시 문제 해결
+- **파일**: `df-party-frontend/src/views/PartyFormation.vue`
+- **변경 내용**:
+  - 나벨 일반 선택 시 하드급 버퍼가 안 보이는 문제 해결
+  - 기존: `character.isNormalNabelEligible && !character.isHardNabelEligible` (하드급 제외)
+  - 수정: `character.isNormalNabelEligible` (하드급 포함)
+  - 나벨 일반에서도 하드급 버퍼(500만 이상)가 표시되도록 수정
+  - 일반 난이도에서 하드급 버퍼 사용 시 더 좋은 성능을 낼 수 있도록 개선
+  - 필터링 로직 주석 업데이트: "일반 대상자만 포함" → "일반 대상자 이상 포함"
 
 ## 13. 빌드 에러 수정 및 컴파일 문제 해결
 - **파일**: `df-party-backend/build.gradle`

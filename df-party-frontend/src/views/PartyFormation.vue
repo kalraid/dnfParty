@@ -2726,6 +2726,10 @@ const debugLocalStorage = async () => {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 8px;
   margin-bottom: 15px;
+  /* section-header와 동일한 좌우 여백 유지 */
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* 슬롯 텍스트 스타일 개선 */
@@ -2859,6 +2863,22 @@ const debugLocalStorage = async () => {
   .stat {
     font-size: 10px;
   }
+  
+  /* section-header 반응형 처리 추가 */
+  .section-header {
+    padding: 6px 10px;
+    margin-bottom: 8px;
+  }
+  
+  .section-header h5 {
+    font-size: 13px;
+  }
+  
+  /* section-content 반응형 그리드 조정 */
+  .section-content {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 6px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2886,6 +2906,22 @@ const debugLocalStorage = async () => {
   
   .stat {
     font-size: 9px;
+  }
+  
+  /* section-header 반응형 처리 추가 */
+  .section-header {
+    padding: 5px 8px;
+    margin-bottom: 6px;
+  }
+  
+  .section-header h5 {
+    font-size: 12px;
+  }
+  
+  /* section-content 반응형 그리드 조정 */
+  .section-content {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 4px;
   }
 }
 

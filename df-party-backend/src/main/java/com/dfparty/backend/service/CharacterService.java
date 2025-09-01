@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import com.dfparty.backend.model.RealtimeEvent;
 
 import com.dfparty.backend.entity.Adventure;
 import com.dfparty.backend.entity.JobType;
@@ -462,21 +464,58 @@ public class CharacterService {
 
             Character character = characterOpt.get();
             
-            // 1. DFO API에서 최신 정보 조회
+            log.info("=== 캐릭터 새로고침 시작: {} ({}) ===", character.getCharacterName(), characterId);
+            
+            // 1. DFO API에서 최신 정보 조회 (총딜/버프력은 제외)
             Object characterDetail = dfoApiService.getCharacterDetail(serverId, characterId);
             if (characterDetail != null) {
-                updateCharacterFromDfoApi(character, characterDetail);
+                updateCharacterFromDfoApiExcludingStats(character, characterDetail);
+                log.info("캐릭터 '{}' DFO API 정보 업데이트 완료", character.getCharacterName());
             }
 
             // 2. Dundam 정보 업데이트
-            updateDundamInfo(character);
+            Map<String, Object> dundamResult = updateDundamInfo(character);
+            log.info("캐릭터 '{}' 던담 정보 업데이트 완료", character.getCharacterName());
             
             // 3. DB에 저장
             characterRepository.save(character);
             
+            // 4. SSE로 실시간 업데이트 전송
+            try {
+                Map<String, Object> wsData = new HashMap<>();
+                wsData.put("characterId", characterId);
+                wsData.put("serverId", serverId);
+                wsData.put("updateType", "refresh_api");
+                wsData.put("characterName", character.getCharacterName());
+                wsData.put("adventureName", character.getAdventureName());
+                wsData.put("buffPower", character.getBuffPower());
+                wsData.put("totalDamage", character.getTotalDamage());
+                wsData.put("dundamResult", dundamResult);
+                wsData.put("timestamp", LocalDateTime.now());
+                
+                realtimeEventService.sendEventToTopic("character-updates", 
+                    RealtimeEvent.builder()
+                        .id(UUID.randomUUID().toString())
+                        .type(RealtimeEvent.EventType.CHARACTER_UPDATED)
+                        .targetId(characterId)
+                        .data(wsData)
+                        .timestamp(LocalDateTime.now())
+                        .message("캐릭터 새로고침이 완료되었습니다.")
+                        .broadcast(true)
+                        .build()
+                );
+                
+                log.info("SSE로 실시간 업데이트 전송 완료");
+            } catch (Exception e) {
+                log.warn("SSE 전송 실패: {}", e.getMessage());
+            }
+            
+            log.info("=== 캐릭터 새로고침 완료: {} ===", character.getCharacterName());
+            
             return createSuccessResponse("캐릭터 정보가 새로고침되었습니다.", convertToDto(character));
 
         } catch (Exception e) {
+            log.error("캐릭터 새로고침 실패: {}", e.getMessage(), e);
             return createErrorResponse("캐릭터 새로고침 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
@@ -917,6 +956,8 @@ public class CharacterService {
     private Map<String, Object> updateDundamInfo(Character character) {
         // Dundam에서 캐릭터 스펙 정보 조회 및 업데이트
         try {
+            log.info("=== 던담 크롤링 시작 (캐릭터: {}) ===", character.getCharacterName());
+            
             // DFO API에서 가져온 직업 정보를 함께 전달
             Map<String, Object> dundamInfo = dundamService.getCharacterInfoWithMethod(
                 character.getServerId(), 
@@ -924,27 +965,73 @@ public class CharacterService {
                 "playwright"
             );
             
+            log.info("던담 크롤링 결과: {}", dundamInfo);
+            
             if (dundamInfo != null && dundamInfo.get("success") == Boolean.TRUE) {
-                // 기본 스탯 업데이트
-                character.updateStats(
-                    (Long) dundamInfo.get("buffPower"),
-                    (Long) dundamInfo.get("totalDamage"),
-                    "dundam.xyz"
-                );
-
-                                 
-                // 나벨 적격성 업데이트
-                updateNabelEligibility(character);
+                // 던담에서 가져온 스탯 값 확인 (characterInfo 객체에서 추출)
+                Object characterInfoObj = dundamInfo.get("characterInfo");
+                Object buffPowerObj = null;
+                Object totalDamageObj = null;
+                
+                if (characterInfoObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> characterInfo = (Map<String, Object>) characterInfoObj;
+                    buffPowerObj = characterInfo.get("buffPower");
+                    totalDamageObj = characterInfo.get("totalDamage");
+                    log.info("characterInfo에서 스탯 값 추출 - 버프력: {}, 총딜: {}", buffPowerObj, totalDamageObj);
+                } else {
+                    // 기존 방식으로도 시도
+                    buffPowerObj = dundamInfo.get("buffPower");
+                    totalDamageObj = dundamInfo.get("totalDamage");
+                    log.info("기존 방식으로 스탯 값 추출 - 버프력: {}, 총딜: {}", buffPowerObj, totalDamageObj);
+                }
+                
+                Long buffPower = null;
+                Long totalDamage = null;
+                
+                // 타입 변환 처리
+                if (buffPowerObj instanceof Integer) {
+                    buffPower = ((Integer) buffPowerObj).longValue();
+                } else if (buffPowerObj instanceof Long) {
+                    buffPower = (Long) buffPowerObj;
+                }
+                
+                if (totalDamageObj instanceof Integer) {
+                    totalDamage = ((Integer) totalDamageObj).longValue();
+                } else if (totalDamageObj instanceof Long) {
+                    totalDamage = (Long) totalDamageObj;
+                }
+                
+                log.info("던담 크롤링 스탯 값 - 버프력: {} (타입: {}), 총딜: {} (타입: {})", 
+                    buffPower, buffPowerObj != null ? buffPowerObj.getClass().getSimpleName() : "null",
+                    totalDamage, totalDamageObj != null ? totalDamageObj.getClass().getSimpleName() : "null");
+                
+                // 0이거나 null이면 업데이트하지 않음
+                if (buffPower != null && buffPower > 0 && totalDamage != null && totalDamage > 0) {
+                    log.info("던담 크롤링 성공 - 버프력: {}, 총딜: {}", buffPower, totalDamage);
+                    
+                    // 기본 스탯 업데이트
+                    character.updateStats(buffPower, totalDamage, "dundam.xyz");
+                    
+                    // 나벨 적격성 업데이트
+                    updateNabelEligibility(character);
+                    
+                    log.info("=== 던담 크롤링 완료 (캐릭터: {}) ===", character.getCharacterName());
+                } else {
+                    log.warn("던담 크롤링 결과가 0이거나 null이므로 업데이트 건너뜀 - 버프력: {}, 총딜: {}", buffPower, totalDamage);
+                }
                 
             } else if (dundamInfo != null) {
                 // 실패한 경우 로그만 남기고 업데이트하지 않음
                 String message = (String) dundamInfo.get("message");
                 log.warn("Dundam 크롤링 실패로 인한 업데이트 건너뜀: {}", message);
+            } else {
+                log.warn("Dundam 크롤링 결과가 null입니다.");
             }
             
             return dundamInfo != null ? dundamInfo : Map.of();
         } catch (Exception e) {
-            log.warn("Dundam 정보 업데이트 실패: {}", e.getMessage());
+            log.error("Dundam 정보 업데이트 실패: {}", e.getMessage(), e);
             return Map.of();
         }
     }
@@ -992,6 +1079,46 @@ public class CharacterService {
         }
         if (data.getDungeonClearFog() != null) {
             character.setDungeonClearFog(data.getDungeonClearFog());
+        }
+    }
+
+    /**
+     * DFO API 데이터로 캐릭터 업데이트 (총딜/버프력 제외)
+     * refresh API에서 사용하여 던담 크롤링 결과가 0으로 덮어쓰이지 않도록 함
+     */
+    private void updateCharacterFromDfoApiExcludingStats(Character character, Object characterDetail) {
+        try {
+            CharacterDetailDto characterDetailDto = convertMapToCharacterDetailDto((Map<String, Object>) characterDetail);
+            
+            // 모험단 정보 설정
+            if (characterDetailDto.getAdventureName() != null && !characterDetailDto.getAdventureName().trim().isEmpty() && !"모험단 정보 없음".equals(characterDetailDto.getAdventureName())) {
+                setAdventureForCharacter(character, characterDetailDto.getAdventureName());
+            }
+            
+            // 기본 정보 업데이트 (총딜/버프력 제외)
+            character.setFame(characterDetailDto.getFame());
+            character.setLevel(characterDetailDto.getLevel());
+            
+            if (characterDetailDto.getJobName() != null) {
+                character.setJobName(characterDetailDto.getJobName());
+            }
+            if (characterDetailDto.getJobGrowName() != null) {
+                character.setJobGrowName(characterDetailDto.getJobGrowName());
+            }
+            if (characterDetailDto.getDungeonClearNabel() != null) {
+                character.setDungeonClearNabel(characterDetailDto.getDungeonClearNabel());
+            }
+            if (characterDetailDto.getDungeonClearVenus() != null) {
+                character.setDungeonClearVenus(characterDetailDto.getDungeonClearVenus());
+            }
+            if (characterDetailDto.getDungeonClearFog() != null) {
+                character.setDungeonClearFog(characterDetailDto.getDungeonClearFog());
+            }
+            
+            log.info("DFO API 데이터로 캐릭터 업데이트 완료 (총딜/버프력 제외): {}", character.getCharacterName());
+            
+        } catch (Exception e) {
+            log.warn("DFO API 데이터로 캐릭터 업데이트 실패: {}", e.getMessage());
         }
     }
 
@@ -2540,17 +2667,22 @@ public class CharacterService {
             log.info("모험단 '{}'에서 {}명의 캐릭터를 찾았습니다.", adventureName, totalCharacters);
             
             // SSE를 통해 진행 상황 전송
+            log.info("=== SSE refresh_start 이벤트 전송 시작 ===");
+            Map<String, Object> startData = Map.of(
+                "type", "refresh_start",
+                "adventureName", adventureName,
+                "totalCharacters", totalCharacters,
+                "processedCount", 0,
+                "successCount", 0,
+                "failCount", 0
+            );
+            log.info("refresh_start 데이터: {}", startData);
+            
             realtimeEventService.sendSystemNotification(
                 String.format("'%s' 모험단 캐릭터 정보 업데이트를 시작합니다. (총 %d명)", adventureName, totalCharacters),
-                Map.of(
-                    "type", "refresh_start",
-                    "adventureName", adventureName,
-                    "totalCharacters", totalCharacters,
-                    "processedCount", 0,
-                    "successCount", 0,
-                    "failCount", 0
-                )
+                startData
             );
+            log.info("=== SSE refresh_start 이벤트 전송 완료 ===");
             
             // 각 캐릭터를 순차적으로 처리
             for (Character character : characters) {
@@ -2612,6 +2744,7 @@ public class CharacterService {
             }
             
             // 최종 결과를 SSE로 전송
+            log.info("=== SSE refresh_complete 이벤트 전송 시작 ===");
             Map<String, Object> finalResult = Map.of(
                 "type", "refresh_complete",
                 "adventureName", adventureName,
@@ -2620,12 +2753,21 @@ public class CharacterService {
                 "successCount", successCount,
                 "failCount", failCount
             );
+            log.info("refresh_complete 데이터: {}", finalResult);
             
-            realtimeEventService.sendSystemNotification(
-                String.format("'%s' 모험단 캐릭터 정보 업데이트가 완료되었습니다. (성공: %d, 실패: %d)", 
-                    adventureName, successCount, failCount),
-                finalResult
-            );
+            RealtimeEvent completeEvent = RealtimeEvent.builder()
+                .id(UUID.randomUUID().toString())
+                .type(RealtimeEvent.EventType.SYSTEM_NOTIFICATION)
+                .userId("system")
+                .message(String.format("'%s' 모험단 캐릭터 정보 업데이트가 완료되었습니다. (성공: %d, 실패: %d)", 
+                    adventureName, successCount, failCount))
+                .data(finalResult)
+                .timestamp(LocalDateTime.now())
+                .broadcast(true)
+                .build();
+            
+            realtimeEventService.sendEvent(completeEvent);
+            log.info("=== SSE refresh_complete 이벤트 전송 완료 ===");
             
             log.info("=== 모험단 '{}' 전체 캐릭터 비동기 최신화 완료 ===", adventureName);
             log.info("총 처리: {}명, 성공: {}명, 실패: {}명", processedCount, successCount, failCount);

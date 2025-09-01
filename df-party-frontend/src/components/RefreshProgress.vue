@@ -90,29 +90,50 @@ const initializeProgress = (adventureName: string, totalCharacters: number) => {
 const handleSSEEvent = (event: MessageEvent) => {
   try {
     const data = JSON.parse(event.data)
+    console.log('🔍 SSE 이벤트 수신:', data)
     
-    if (data.type === 'refresh_start' && data.adventureName === progressInfo.value.adventureName) {
+    // RealtimeEvent 구조에서 data 필드 확인
+    const eventData = data.data || data
+    
+    console.log('📋 파싱된 이벤트 데이터:', eventData)
+    console.log('🔍 이벤트 타입:', eventData.type)
+    
+    if (eventData.type === 'refresh_start') {
+      console.log('🚀 모험단 최신화 시작:', eventData)
+      
+      // refresh_start 이벤트에서 전체 개수 정보 추출
+      const totalChars = eventData.totalCharacters || 0
+      const adventureName = eventData.adventureName || '알 수 없음'
+      
       progressInfo.value = {
-        ...progressInfo.value,
-        ...data,
-        title: `'${data.adventureName}' 모험단 최신화`
+        type: eventData.type,
+        adventureName: adventureName,
+        totalCharacters: totalChars,
+        processedCount: 0,
+        successCount: 0,
+        failCount: 0,
+        title: `'${adventureName}' 모험단 최신화`
       }
       showProgress.value = true
+      
+      console.log('✅ 진행도 초기화 완료:', progressInfo.value)
     }
     
-    if (data.type === 'refresh_progress' && data.adventureName === progressInfo.value.adventureName) {
+    if (eventData.type === 'refresh_progress' && eventData.adventureName === progressInfo.value.adventureName) {
+      console.log('📊 모험단 최신화 진행:', eventData)
       progressInfo.value = {
         ...progressInfo.value,
-        ...data,
-        currentCharacter: data.characterName
+        ...eventData,
+        currentCharacter: eventData.characterName
       }
     }
     
-    if (data.type === 'refresh_complete' && data.adventureName === progressInfo.value.adventureName) {
+    if (eventData.type === 'refresh_complete' && eventData.adventureName === progressInfo.value.adventureName) {
+      console.log('✅ 모험단 최신화 완료:', eventData)
       progressInfo.value = {
         ...progressInfo.value,
-        ...data,
-        message: `완료! 성공: ${data.successCount}명, 실패: ${data.failCount}명`
+        ...eventData,
+        message: `완료! 성공: ${eventData.successCount}명, 실패: ${eventData.failCount}명`
       }
       
       // 3초 후 자동으로 닫기
@@ -121,10 +142,11 @@ const handleSSEEvent = (event: MessageEvent) => {
       }, 3000)
     }
     
-    if (data.type === 'refresh_error' && data.adventureName === progressInfo.value.adventureName) {
+    if (eventData.type === 'refresh_error' && eventData.adventureName === progressInfo.value.adventureName) {
+      console.log('❌ 모험단 최신화 오류:', eventData)
       progressInfo.value = {
         ...progressInfo.value,
-        message: `오류 발생: ${data.error}`
+        message: `오류 발생: ${eventData.error}`
       }
       
       // 5초 후 자동으로 닫기

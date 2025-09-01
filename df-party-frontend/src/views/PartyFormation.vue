@@ -1024,8 +1024,8 @@ const getFilteredCharacters = (adventureName: string) => {
       case 'nabel-normal':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
         isExcluded = character.isExcludedNabel; // 안감 여부
-        // 일반: 일반 대상자만 포함 (30억 딜러, 400만 버퍼) + 하드 대상자 제외
-        dungeonCondition = dungeonCondition && character.isNormalNabelEligible && !character.isHardNabelEligible;
+        // 일반: 일반 대상자 이상 포함 (30억 딜러, 400만 버퍼 이상) - 하드급도 포함
+        dungeonCondition = dungeonCondition && character.isNormalNabelEligible;
         break;
       case 'nabel-hard':
         dungeonCondition = !character.dungeonClearNabel; // 클리어 안한 캐릭터
@@ -2600,7 +2600,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
     gap: 8px;
   }
 }
@@ -2636,7 +2636,7 @@ const debugLocalStorage = async () => {
 }
 
 .party-title-stats {
-  display: flex;
+  /* display: flex; */
   gap: 15px;
   align-items: center;
   flex-wrap: nowrap;
@@ -2721,11 +2721,24 @@ const debugLocalStorage = async () => {
   background: linear-gradient(135deg, #28a745, #1e7e34);
 }
 
+.character-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.character-section {
+  width: 100%;
+}
+
 .section-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 8px;
   margin-bottom: 15px;
+  /* section-header와 동일한 좌우 여백 유지 */
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* 슬롯 텍스트 스타일 개선 */
@@ -2859,6 +2872,21 @@ const debugLocalStorage = async () => {
   .stat {
     font-size: 10px;
   }
+  
+  /* section-header 반응형 처리 추가 */
+  .section-header {
+    padding: 6px 10px;
+    margin-bottom: 8px;
+  }
+  
+  .section-header h5 {
+    font-size: 13px;
+  }
+  
+  /* section-content 반응형 그리드 조정 */
+  .section-content {
+    gap: 6px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2886,6 +2914,21 @@ const debugLocalStorage = async () => {
   
   .stat {
     font-size: 9px;
+  }
+  
+  /* section-header 반응형 처리 추가 */
+  .section-header {
+    padding: 5px 8px;
+    margin-bottom: 6px;
+  }
+  
+  .section-header h5 {
+    font-size: 12px;
+  }
+  
+  /* section-content 반응형 그리드 조정 */
+  .section-content {
+    gap: 4px;
   }
 }
 
@@ -3141,7 +3184,7 @@ const debugLocalStorage = async () => {
 .character-list {
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 10px;
   /* max-height와 overflow-y 제거하여 스크롤바 없이 아래로 쭉 나오도록 수정 */
 }
@@ -3149,21 +3192,21 @@ const debugLocalStorage = async () => {
 /* 반응형 그리드: 화면 크기에 따라 열 수 조정 */
 @media (max-width: 1400px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
     gap: 8px;
   }
 }
 
 @media (max-width: 1200px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
     gap: 8px;
   }
 }
 
 @media (max-width: 768px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
     gap: 6px;
     padding: 8px;
   }
@@ -3171,7 +3214,7 @@ const debugLocalStorage = async () => {
 
 @media (max-width: 480px) {
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
     gap: 5px;
     padding: 5px;
   }
@@ -3553,7 +3596,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 25px;
   }
   
@@ -3564,7 +3607,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
     gap: 20px;
   }
 }
@@ -3577,7 +3620,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 22px;
   }
 }
@@ -3595,7 +3638,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
     gap: 18px;
   }
 }
@@ -3612,7 +3655,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 18px;
   }
   
@@ -3662,7 +3705,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
     gap: 16px;
   }
 }
@@ -3679,7 +3722,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
   }
   
@@ -3729,7 +3772,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
     gap: 15px;
   }
 }
@@ -3741,7 +3784,7 @@ const debugLocalStorage = async () => {
   }
   
   .party-slots {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
   }
   
@@ -3752,7 +3795,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
     gap: 12px;
   }
 }
@@ -3775,7 +3818,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
     gap: 10px;
   }
 }
@@ -3798,7 +3841,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
     gap: 8px;
   }
 }
@@ -3820,7 +3863,7 @@ const debugLocalStorage = async () => {
   }
   
   .character-list {
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    grid-template-columns: repeat(2, minmax(70px, 1fr));
     gap: 6px;
   }
   

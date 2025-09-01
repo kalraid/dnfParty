@@ -130,11 +130,30 @@
 - **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/DungeonClearService.java`
 - **변경 내용**:
   - `analyzeDungeonClear` 메서드를 `DfoApiService`와 동일한 최신 로직으로 업데이트
+
+## 13. /refresh API 던담 크롤링 0이 되는 문제 해결
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - `/api/characters/{serverId}/{characterId}/refresh` API에서 던담 크롤링 후 0이 되는 문제 해결
+  - `refreshCharacter()` 메서드에서 `updateCharacterFromDfoApi()` 대신 `updateCharacterFromDfoApiExcludingStats()` 사용
+  - 새로운 메서드 `updateCharacterFromDfoApiExcludingStats()` 추가하여 총딜/버프력을 제외한 DFO API 데이터만 업데이트
+  - 던담 크롤링 결과가 DFO API의 0값으로 덮어쓰이지 않도록 수정
+  - `/api/dundam-sync/character/{serverId}/{characterId}?method=playwright`와 동일한 동작 보장
   - 이내 황혼전 클리어 상태 처리 추가: `clearStatus.put("twilight", false)` 기본값 설정
   - DFO API 타임라인 파싱 로직 통일: `code == 201` (레이드 클리어), `code == 210` (레이드 선발대), `code == 209` (레기온 클리어)
   - 줄바꿈 및 공백 처리 로직 추가: `replaceAll("\\s+", " ").trim()`
   - "이내 황혼전" 클리어 상태가 캐릭터 검색 페이지와 던전 클리어 현황 페이지에서 일치하도록 수정
   - 문제 해결: 캐릭터 검색에서는 클리어로 표시되지만 던전 클리어 현황에서는 미클리어로 표시되는 불일치 현상 해결
+
+## 14. 파티 구성 나벨 일반에서 하드급 버퍼 표시 문제 해결
+- **파일**: `df-party-frontend/src/views/PartyFormation.vue`
+- **변경 내용**:
+  - 나벨 일반 선택 시 하드급 버퍼가 안 보이는 문제 해결
+  - 기존: `character.isNormalNabelEligible && !character.isHardNabelEligible` (하드급 제외)
+  - 수정: `character.isNormalNabelEligible` (하드급 포함)
+  - 나벨 일반에서도 하드급 버퍼(500만 이상)가 표시되도록 수정
+  - 일반 난이도에서 하드급 버퍼 사용 시 더 좋은 성능을 낼 수 있도록 개선
+  - 필터링 로직 주석 업데이트: "일반 대상자만 포함" → "일반 대상자 이상 포함"
 
 ## 13. 빌드 에러 수정 및 컴파일 문제 해결
 - **파일**: `df-party-backend/build.gradle`
@@ -464,4 +483,85 @@
   - **백엔드 CORS 설정**: 환경 변수 기반으로 동적 CORS 설정 처리
   - **프론트엔드 API 설정**: Helm 차트 환경 변수 우선순위 적용 및 로컬 개발 환경 분리
   - **환경 변수 파일 정리**: 중복되는 env.production, env.local 파일 삭제
-  - **완전한 HTTPS/WSS 지원**: 프론트엔드, 백엔드, Helm 차트 모두에서 HTTPS/WSS 프로토콜 일관성 확보\n\n## 39. 백엔드 MariaDB 설정 및 Hibernate 캐시 문제 해결 완료\n- **파일**: `df-party-backend/src/main/resources/application-production.yml`, `df-party-backend/src/main/resources/application.yml`, `df-party-backend/src/main/resources/application-dev.yml`, `df-party-backend/src/main/resources/application-local.yml`, `df-party-backend/build.gradle`\n- **변경 내용**:\n  - **데이터베이스 드라이버**: MySQL → MariaDB 변경 (`org.mariadb.jdbc:mariadb-java-client:3.3.3`)\n  - **데이터베이스 URL**: `jdbc:mysql://` → `jdbc:mariadb://` 변경\n  - **Hibernate Dialect**: `MySQLDialect` → `MariaDBDialect` 변경\n  - **Hibernate 캐시 비활성화**: `use_second_level_cache: false`, `use_query_cache: false`\n  - **Tomcat 설정 수정**: `relaxed-path-chars` 형식을 올바른 리스트 형식으로 변경\n  - **모든 환경 설정 통일**: local, dev, production 환경 모두 MariaDB 설정 적용\n  - **백엔드 정상 시작**: MariaDB 연결 성공 및 JPA 초기화 완료"
+  - **완전한 HTTPS/WSS 지원**: 프론트엔드, 백엔드, Helm 차트 모두에서 HTTPS/WSS 프로토콜 일관성 확보\n\n## 39. 백엔드 MariaDB 설정 및 Hibernate 캐시 문제 해결 완료\n- **파일**: `df-party-backend/src/main/resources/application-production.yml`, `df-party-backend/src/main/resources/application.yml`, `df-party-backend/src/main/resources/application-dev.yml`, `df-party-backend/src/main/resources/application-local.yml`, `df-party-backend/build.gradle`\n- **변경 내용**:\n  - **데이터베이스 드라이버**: MySQL → MariaDB 변경 (`org.mariadb.jdbc:mariadb-java-client:3.3.3`)\n  - **데이터베이스 URL**: `jdbc:mysql://` → `jdbc:mariadb://` 변경\n  - **Hibernate Dialect**: `MySQLDialect` → `MariaDBDialect` 변경\n  - **Hibernate 캐시 비활성화**: `use_second_level_cache: false`, `use_query_cache: false`\n  - **Tomcat 설정 수정**: `relaxed-path-chars` 형식을 올바른 리스트 형식으로 변경\n  - **모든 환경 설정 통일**: local, dev, production 환경 모두 MariaDB 설정 적용\n  - **백엔드 정상 시작**: MariaDB 연결 성공 및 JPA 초기화 완료
+
+## 40. 모험단 최신화 SSE 이벤트 전송 문제 해결
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/RealtimeEventService.java`, `df-party-frontend/src/components/RefreshProgress.vue`, `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - **RealtimeEventService**: `sendSystemNotification` 메서드에서 `userId` 필드 설정 추가 (`"system"`으로 설정)
+  - **RefreshProgress.vue**: SSE 이벤트 처리 로직 수정 - `data.data` 구조에서 이벤트 데이터 추출
+  - **CharacterService**: 모험단 최신화 SSE 이벤트 전송 시 상세 로그 추가
+  - **문제 해결**: 모험단 최신화 시 "진행: 0/0, 성공: 0, 실패: 0"으로 멈춰있는 문제 해결
+  - **SSE 이벤트 구조**: `RealtimeEvent.data` 필드에 `type`, `adventureName`, `totalCharacters` 등 포함
+  - **프론트엔드 처리**: `data.data.type`에서 이벤트 타입 확인하여 진행 상황 표시
+  - **디버깅 로그**: SSE 이벤트 수신 및 처리 과정에 상세 로그 추가
+
+## 41. /refresh API 던담 크롤링 0이 되는 문제 추가 보완
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`, `df-party-backend/src/main/java/com/dfparty/backend/entity/Character.java`
+- **변경 내용**:
+  - **updateDundamInfo 메서드**: 던담 크롤링 결과가 0이거나 null이면 업데이트하지 않는 로직 추가
+  - **Character.updateStats 메서드**: 0이거나 null인 스탯 값은 기존 값 유지하도록 수정
+  - **이중 보호**: CharacterService와 Character 엔티티 모두에서 0/null 체크
+  - **로깅 개선**: 던담 크롤링 성공/실패 시 상세 로그 추가
+  - **문제 해결**: /refresh API 호출 시 총딜/버프력이 0으로 덮어쓰이는 문제 완전 해결
+  - **안전성 향상**: 던담 크롤링 실패 시에도 기존 스탯 값 보존
+
+## 42. /refresh API 던담 크롤링 디버깅 및 타입 변환 문제 해결
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - **updateDundamInfo 메서드**: 던담 크롤링 디버깅 로그 추가 및 타입 변환 문제 해결
+  - **타입 변환 처리**: Integer/Long 타입 변환 로직 추가하여 ClassCastException 방지
+  - **상세 로깅**: 던담 크롤링 시작/완료 로그 및 스탯 값 타입 정보 출력
+  - **에러 처리 개선**: 예외 발생 시 스택 트레이스 출력으로 디버깅 용이성 향상
+  - **문제 해결**: /refresh API에서 던담 크롤링이 제대로 작동하지 않는 문제 해결
+  - **동일성 보장**: `/api/dundam-sync/character/{serverId}/{characterId}?method=playwright`와 동일한 동작 보장
+
+## 43. /refresh API SSE 이벤트 전송 기능 추가
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - **refreshCharacter 메서드**: 개별 캐릭터 새로고침 시 SSE 이벤트 전송 기능 추가
+  - **SSE 이벤트 구조**: `CHARACTER_UPDATED` 타입으로 실시간 업데이트 알림
+  - **이벤트 데이터**: 캐릭터 정보, 던담 크롤링 결과, 업데이트 타입(`refresh_api`) 포함
+  - **로깅 개선**: 캐릭터 새로고침 시작/완료 로그 및 SSE 전송 상태 로그 추가
+  - **에러 처리**: SSE 전송 실패 시에도 메인 로직은 계속 진행
+  - **실시간 동기화**: 프론트엔드에서 캐릭터 정보가 실시간으로 업데이트됨
+  - **통합성**: 던담 동기화 API와 동일한 SSE 이벤트 구조 사용\n\n## 44. /refresh API 던담 크롤링 스탯 값 추출 문제 해결\n- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`\n- **변경 내용**:\n  - **updateDundamInfo 메서드**: 던담 크롤링 결과에서 스탯 값을 올바르게 추출하도록 수정\n  - **characterInfo 객체 접근**: `dundamInfo.get(\"characterInfo\")`에서 스탯 값 추출\n  - **기존 방식과 호환**: characterInfo가 없으면 기존 방식으로도 시도\n  - **상세 로깅**: characterInfo에서 추출하는지 기존 방식인지 로그로 구분\n  - **문제 해결**: 던담 크롤링 성공했는데 스탯 값이 null로 나오는 문제 해결\n  - **로그 분석**: `{success=true, characterInfo={totalDamage=14596669976, buffPower=0}}`에서 올바른 값 추출\n  - **타입 안전성**: Map 캐스팅 시 `@SuppressWarnings(\"unchecked\")` 추가\n\n## 45. 프론트엔드 빌드 esbuild 버전 충돌 문제 해결\n- **파일**: `df-party-frontend/Dockerfile`, `df-party-frontend/package.json`\n- **변경 내용**:\n  - **Dockerfile**: esbuild 버전을 `^0.25.9`에서 `0.25.9`로 고정하여 버전 충돌 방지\n  - **package.json**: esbuild 버전을 `^0.25.9`에서 `0.25.9`로 고정\n  - **문제 해결**: \"Host version 0.25.8 does not match binary version 0.25.9\" 에러 해결\n  - **빌드 안정성**: 모든 환경에서 동일한 esbuild 버전 사용으로 일관성 확보\n  - **Docker 빌드**: 프론트엔드 Docker 이미지 빌드 시 esbuild 버전 충돌 문제 해결\n\n## 46. 프론트엔드 빌드 esbuild 완전 제거로 버전 충돌 문제 근본 해결\n- **파일**: `df-party-frontend/Dockerfile`, `df-party-frontend/package.json`\n- **변경 내용**:
+  - **Dockerfile**: esbuild 수동 설치 완전 제거하여 Vite가 자체적으로 관리하도록 변경
+  - **package.json**: esbuild 의존성 완전 제거
+  - **문제 해결**: "Host version 0.25.8 does not match binary version 0.25.9" 에러 근본 해결
+  - **빌드 안정성**: Vite가 자동으로 적절한 esbuild 버전을 관리하여 버전 충돌 완전 방지
+  - **Docker 빌드**: 프론트엔드 Docker 이미지 빌드 시 esbuild 버전 충돌 문제 완전 해결
+  - **근본적 해결**: 수동 esbuild 설치 대신 Vite의 자동 관리 방식으로 전환
+
+## 47. 프론트엔드 Docker 빌드 npm 설치 방식 개선 및 성공적 배포
+- **파일**: `df-party-frontend/Dockerfile`
+- **변경 내용**:
+  - **npm ci → npm install**: package-lock.json 의존성 문제 해결
+  - **Docker 빌드 성공**: 143.7초 만에 정상 완료
+  - **이미지 푸시 성공**: kimrie92/dfo-party-frontend:202509011620, latest 태그
+  - **자동 이미지 정리**: 오래된 Docker 이미지들 자동 삭제
+  - **문제 해결**: "npm ci requires package-lock.json" 에러 완전 해결
+  - **캐시 최적화**: npm 캐시 정리 로직으로 빌드 안정성 확보
+  - **배포 성공**: 프론트엔드 Docker 이미지 빌드 및 레지스트리 푸시 완료
+
+## 48. PartyFormation.vue character-card와 section-header 반응형 정렬 개선
+- **파일**: `df-party-frontend/src/views/PartyFormation.vue`
+- **변경 내용**:
+  - **section-header 반응형 처리 추가**: 768px, 480px 이하 화면에서 padding과 margin 조정
+  - **section-content 그리드 반응형 조정**: 화면 크기에 따라 그리드 컬럼과 gap 조정
+  - **좌우 정렬 통일**: character-card와 section-header의 좌우 여백을 동일하게 맞춤
+  - **768px 이하**: section-header padding 6px 10px, 그리드 minmax(160px, 1fr), gap 6px
+  - **480px 이하**: section-header padding 5px 8px, 그리드 minmax(140px, 1fr), gap 4px
+  - **일관된 레이아웃**: 모든 화면 크기에서 section-header와 character-card의 좌우 정렬 일치
+  - **사용자 경험 개선**: 반응형 디자인에서도 깔끔한 정렬로 가독성 향상
+
+## 49. PartyFormation.vue grid-template-columns 제거 및 2개 섹션 고정 레이아웃
+- **파일**: `df-party-frontend/src/views/PartyFormation.vue`
+- **변경 내용**:
+  - **grid-template-columns 제거**: minmax(180px, 1fr) 설정으로 인한 레이아웃 문제 해결
+  - **2개 섹션 고정**: character-list을 딜러/버퍼 2개 섹션으로 고정
+  - **Flexbox 레이아웃**: character-list에 flex-direction: column 적용
+  - **섹션 간격 조정**: character-section 간 20px gap 설정
+  - **반응형 CSS 정리**: 768px, 480px 이하에서 grid-template-columns 제거
+  - **레이아웃 안정성**: 특정 상황에서 5개 섹션이 되는 문제 해결
+  - **일관된 구조**: 항상 딜러와 버퍼 2개 섹션으로 고정된 UI 제공

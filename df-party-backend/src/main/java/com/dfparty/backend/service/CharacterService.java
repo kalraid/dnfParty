@@ -2580,17 +2580,22 @@ public class CharacterService {
             log.info("모험단 '{}'에서 {}명의 캐릭터를 찾았습니다.", adventureName, totalCharacters);
             
             // SSE를 통해 진행 상황 전송
+            log.info("=== SSE refresh_start 이벤트 전송 시작 ===");
+            Map<String, Object> startData = Map.of(
+                "type", "refresh_start",
+                "adventureName", adventureName,
+                "totalCharacters", totalCharacters,
+                "processedCount", 0,
+                "successCount", 0,
+                "failCount", 0
+            );
+            log.info("refresh_start 데이터: {}", startData);
+            
             realtimeEventService.sendSystemNotification(
                 String.format("'%s' 모험단 캐릭터 정보 업데이트를 시작합니다. (총 %d명)", adventureName, totalCharacters),
-                Map.of(
-                    "type", "refresh_start",
-                    "adventureName", adventureName,
-                    "totalCharacters", totalCharacters,
-                    "processedCount", 0,
-                    "successCount", 0,
-                    "failCount", 0
-                )
+                startData
             );
+            log.info("=== SSE refresh_start 이벤트 전송 완료 ===");
             
             // 각 캐릭터를 순차적으로 처리
             for (Character character : characters) {
@@ -2652,6 +2657,7 @@ public class CharacterService {
             }
             
             // 최종 결과를 SSE로 전송
+            log.info("=== SSE refresh_complete 이벤트 전송 시작 ===");
             Map<String, Object> finalResult = Map.of(
                 "type", "refresh_complete",
                 "adventureName", adventureName,
@@ -2660,12 +2666,14 @@ public class CharacterService {
                 "successCount", successCount,
                 "failCount", failCount
             );
+            log.info("refresh_complete 데이터: {}", finalResult);
             
             realtimeEventService.sendSystemNotification(
                 String.format("'%s' 모험단 캐릭터 정보 업데이트가 완료되었습니다. (성공: %d, 실패: %d)", 
                     adventureName, successCount, failCount),
                 finalResult
             );
+            log.info("=== SSE refresh_complete 이벤트 전송 완료 ===");
             
             log.info("=== 모험단 '{}' 전체 캐릭터 비동기 최신화 완료 ===", adventureName);
             log.info("총 처리: {}명, 성공: {}명, 실패: {}명", processedCount, successCount, failCount);

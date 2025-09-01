@@ -106,6 +106,7 @@ public class RealtimeEventService {
         RealtimeEvent event = RealtimeEvent.builder()
                 .id(UUID.randomUUID().toString())
                 .type(RealtimeEvent.EventType.SYSTEM_NOTIFICATION)
+                .userId("system") // 시스템 알림용 userId 설정
                 .message(message)
                 .data(data)
                 .timestamp(LocalDateTime.now())

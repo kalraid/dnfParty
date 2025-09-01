@@ -483,4 +483,15 @@
   - **백엔드 CORS 설정**: 환경 변수 기반으로 동적 CORS 설정 처리
   - **프론트엔드 API 설정**: Helm 차트 환경 변수 우선순위 적용 및 로컬 개발 환경 분리
   - **환경 변수 파일 정리**: 중복되는 env.production, env.local 파일 삭제
-  - **완전한 HTTPS/WSS 지원**: 프론트엔드, 백엔드, Helm 차트 모두에서 HTTPS/WSS 프로토콜 일관성 확보\n\n## 39. 백엔드 MariaDB 설정 및 Hibernate 캐시 문제 해결 완료\n- **파일**: `df-party-backend/src/main/resources/application-production.yml`, `df-party-backend/src/main/resources/application.yml`, `df-party-backend/src/main/resources/application-dev.yml`, `df-party-backend/src/main/resources/application-local.yml`, `df-party-backend/build.gradle`\n- **변경 내용**:\n  - **데이터베이스 드라이버**: MySQL → MariaDB 변경 (`org.mariadb.jdbc:mariadb-java-client:3.3.3`)\n  - **데이터베이스 URL**: `jdbc:mysql://` → `jdbc:mariadb://` 변경\n  - **Hibernate Dialect**: `MySQLDialect` → `MariaDBDialect` 변경\n  - **Hibernate 캐시 비활성화**: `use_second_level_cache: false`, `use_query_cache: false`\n  - **Tomcat 설정 수정**: `relaxed-path-chars` 형식을 올바른 리스트 형식으로 변경\n  - **모든 환경 설정 통일**: local, dev, production 환경 모두 MariaDB 설정 적용\n  - **백엔드 정상 시작**: MariaDB 연결 성공 및 JPA 초기화 완료"
+  - **완전한 HTTPS/WSS 지원**: 프론트엔드, 백엔드, Helm 차트 모두에서 HTTPS/WSS 프로토콜 일관성 확보\n\n## 39. 백엔드 MariaDB 설정 및 Hibernate 캐시 문제 해결 완료\n- **파일**: `df-party-backend/src/main/resources/application-production.yml`, `df-party-backend/src/main/resources/application.yml`, `df-party-backend/src/main/resources/application-dev.yml`, `df-party-backend/src/main/resources/application-local.yml`, `df-party-backend/build.gradle`\n- **변경 내용**:\n  - **데이터베이스 드라이버**: MySQL → MariaDB 변경 (`org.mariadb.jdbc:mariadb-java-client:3.3.3`)\n  - **데이터베이스 URL**: `jdbc:mysql://` → `jdbc:mariadb://` 변경\n  - **Hibernate Dialect**: `MySQLDialect` → `MariaDBDialect` 변경\n  - **Hibernate 캐시 비활성화**: `use_second_level_cache: false`, `use_query_cache: false`\n  - **Tomcat 설정 수정**: `relaxed-path-chars` 형식을 올바른 리스트 형식으로 변경\n  - **모든 환경 설정 통일**: local, dev, production 환경 모두 MariaDB 설정 적용\n  - **백엔드 정상 시작**: MariaDB 연결 성공 및 JPA 초기화 완료
+
+## 40. 모험단 최신화 SSE 이벤트 전송 문제 해결
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/RealtimeEventService.java`, `df-party-frontend/src/components/RefreshProgress.vue`, `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - **RealtimeEventService**: `sendSystemNotification` 메서드에서 `userId` 필드 설정 추가 (`"system"`으로 설정)
+  - **RefreshProgress.vue**: SSE 이벤트 처리 로직 수정 - `data.data` 구조에서 이벤트 데이터 추출
+  - **CharacterService**: 모험단 최신화 SSE 이벤트 전송 시 상세 로그 추가
+  - **문제 해결**: 모험단 최신화 시 "진행: 0/0, 성공: 0, 실패: 0"으로 멈춰있는 문제 해결
+  - **SSE 이벤트 구조**: `RealtimeEvent.data` 필드에 `type`, `adventureName`, `totalCharacters` 등 포함
+  - **프론트엔드 처리**: `data.data.type`에서 이벤트 타입 확인하여 진행 상황 표시
+  - **디버깅 로그**: SSE 이벤트 수신 및 처리 과정에 상세 로그 추가"

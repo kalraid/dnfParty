@@ -262,11 +262,15 @@ public class Character {
     
     // 스탯 정보 업데이트
     public void updateStats(Long buffPower, Long totalDamage, String source) {
-        this.buffPower = buffPower;
-        this.totalDamage = totalDamage;
+        // 0이거나 null인 경우 업데이트하지 않음 (기존 값 유지)
+        if (buffPower != null && buffPower > 0) {
+            this.buffPower = buffPower;
+        }
+        if (totalDamage != null && totalDamage > 0) {
+            this.totalDamage = totalDamage;
+        }
         this.dundamSource = source;
         this.lastStatsUpdate = LocalDateTime.now();
-        
     }
     
     // 수동 스탯 업데이트 메서드

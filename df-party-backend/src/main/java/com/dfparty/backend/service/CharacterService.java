@@ -925,16 +925,22 @@ public class CharacterService {
             );
             
             if (dundamInfo != null && dundamInfo.get("success") == Boolean.TRUE) {
-                // 기본 스탯 업데이트
-                character.updateStats(
-                    (Long) dundamInfo.get("buffPower"),
-                    (Long) dundamInfo.get("totalDamage"),
-                    "dundam.xyz"
-                );
-
-                                 
-                // 나벨 적격성 업데이트
-                updateNabelEligibility(character);
+                // 던담에서 가져온 스탯 값 확인
+                Long buffPower = (Long) dundamInfo.get("buffPower");
+                Long totalDamage = (Long) dundamInfo.get("totalDamage");
+                
+                // 0이거나 null이면 업데이트하지 않음
+                if (buffPower != null && buffPower > 0 && totalDamage != null && totalDamage > 0) {
+                    log.info("던담 크롤링 성공 - 버프력: {}, 총딜: {}", buffPower, totalDamage);
+                    
+                    // 기본 스탯 업데이트
+                    character.updateStats(buffPower, totalDamage, "dundam.xyz");
+                    
+                    // 나벨 적격성 업데이트
+                    updateNabelEligibility(character);
+                } else {
+                    log.warn("던담 크롤링 결과가 0이거나 null이므로 업데이트 건너뜀 - 버프력: {}, 총딜: {}", buffPower, totalDamage);
+                }
                 
             } else if (dundamInfo != null) {
                 // 실패한 경우 로그만 남기고 업데이트하지 않음

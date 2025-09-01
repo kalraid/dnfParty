@@ -514,4 +514,15 @@
   - **상세 로깅**: 던담 크롤링 시작/완료 로그 및 스탯 값 타입 정보 출력
   - **에러 처리 개선**: 예외 발생 시 스택 트레이스 출력으로 디버깅 용이성 향상
   - **문제 해결**: /refresh API에서 던담 크롤링이 제대로 작동하지 않는 문제 해결
-  - **동일성 보장**: `/api/dundam-sync/character/{serverId}/{characterId}?method=playwright`와 동일한 동작 보장"
+  - **동일성 보장**: `/api/dundam-sync/character/{serverId}/{characterId}?method=playwright`와 동일한 동작 보장
+
+## 43. /refresh API SSE 이벤트 전송 기능 추가
+- **파일**: `df-party-backend/src/main/java/com/dfparty/backend/service/CharacterService.java`
+- **변경 내용**:
+  - **refreshCharacter 메서드**: 개별 캐릭터 새로고침 시 SSE 이벤트 전송 기능 추가
+  - **SSE 이벤트 구조**: `CHARACTER_UPDATED` 타입으로 실시간 업데이트 알림
+  - **이벤트 데이터**: 캐릭터 정보, 던담 크롤링 결과, 업데이트 타입(`refresh_api`) 포함
+  - **로깅 개선**: 캐릭터 새로고침 시작/완료 로그 및 SSE 전송 상태 로그 추가
+  - **에러 처리**: SSE 전송 실패 시에도 메인 로직은 계속 진행
+  - **실시간 동기화**: 프론트엔드에서 캐릭터 정보가 실시간으로 업데이트됨
+  - **통합성**: 던담 동기화 API와 동일한 SSE 이벤트 구조 사용"

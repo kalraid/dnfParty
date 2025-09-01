@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import com.dfparty.backend.model.RealtimeEvent;
 
 import com.dfparty.backend.entity.Adventure;
 import com.dfparty.backend.entity.JobType;
@@ -462,21 +464,58 @@ public class CharacterService {
 
             Character character = characterOpt.get();
             
+            log.info("=== 캐릭터 새로고침 시작: {} ({}) ===", character.getCharacterName(), characterId);
+            
             // 1. DFO API에서 최신 정보 조회 (총딜/버프력은 제외)
             Object characterDetail = dfoApiService.getCharacterDetail(serverId, characterId);
             if (characterDetail != null) {
                 updateCharacterFromDfoApiExcludingStats(character, characterDetail);
+                log.info("캐릭터 '{}' DFO API 정보 업데이트 완료", character.getCharacterName());
             }
 
             // 2. Dundam 정보 업데이트
-            updateDundamInfo(character);
+            Map<String, Object> dundamResult = updateDundamInfo(character);
+            log.info("캐릭터 '{}' 던담 정보 업데이트 완료", character.getCharacterName());
             
             // 3. DB에 저장
             characterRepository.save(character);
             
+            // 4. SSE로 실시간 업데이트 전송
+            try {
+                Map<String, Object> wsData = new HashMap<>();
+                wsData.put("characterId", characterId);
+                wsData.put("serverId", serverId);
+                wsData.put("updateType", "refresh_api");
+                wsData.put("characterName", character.getCharacterName());
+                wsData.put("adventureName", character.getAdventureName());
+                wsData.put("buffPower", character.getBuffPower());
+                wsData.put("totalDamage", character.getTotalDamage());
+                wsData.put("dundamResult", dundamResult);
+                wsData.put("timestamp", LocalDateTime.now());
+                
+                realtimeEventService.sendEventToTopic("character-updates", 
+                    RealtimeEvent.builder()
+                        .id(UUID.randomUUID().toString())
+                        .type(RealtimeEvent.EventType.CHARACTER_UPDATED)
+                        .targetId(characterId)
+                        .data(wsData)
+                        .timestamp(LocalDateTime.now())
+                        .message("캐릭터 새로고침이 완료되었습니다.")
+                        .broadcast(true)
+                        .build()
+                );
+                
+                log.info("SSE로 실시간 업데이트 전송 완료");
+            } catch (Exception e) {
+                log.warn("SSE 전송 실패: {}", e.getMessage());
+            }
+            
+            log.info("=== 캐릭터 새로고침 완료: {} ===", character.getCharacterName());
+            
             return createSuccessResponse("캐릭터 정보가 새로고침되었습니다.", convertToDto(character));
 
         } catch (Exception e) {
+            log.error("캐릭터 새로고침 실패: {}", e.getMessage(), e);
             return createErrorResponse("캐릭터 새로고침 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
